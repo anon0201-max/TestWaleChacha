@@ -65,3 +65,31 @@ Stage Summary:
 - Admin panel hidden from students, accessible via ?admin=true
 - All lint checks pass
 - Browser verified: signup works, user profile shown, admin hidden
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix subscription bug, rebuild admin panel with test/question management UI, add admin accessibility
+
+Work Log:
+- Fixed payment create-order API bug: was requiring deviceId even for logged-in users; now accepts studentId OR deviceId
+- Completely rebuilt AdminPanel.tsx with professional UI:
+  - Admin Login with password visibility toggle
+  - Dashboard tab with stats, categories overview, active tests list
+  - Categories tab with add/delete functionality, exam type selection
+  - Tests tab with expandable question viewer, delete test/question actions
+  - Create Test tab with 3-step wizard: (1) Test details → (2) Add questions with correct answer selector, explanation, negative marking, duplicate/delete → (3) Success
+  - Question cards show green border when complete, amber when incomplete
+  - Sticky bottom action bar for save buttons
+  - Quick duplicate question button
+- Added subtle "Admin" link in AppFooter for easy access
+- All tabs use Tabs component from shadcn/ui
+
+Stage Summary:
+- Subscription payment flow fully working (create-order → payment method → processing → success → PRO badge)
+- Admin panel accessible via footer "Admin" link or ?admin=true query param
+- Admin credentials: admin / admin123
+- Full CRUD: Create categories, create tests with multiple questions, view/delete tests and questions
+- Created test "GK Practice Test - Indian History" with 1 question via browser to verify end-to-end
+- All lint checks pass, no server errors
+- Browser verified: homepage, admin login, create test, add question, save, subscription payment

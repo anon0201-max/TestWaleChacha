@@ -1,10 +1,14 @@
 'use client';
 
-import { GraduationCap, Heart, Crown, UserCircle } from 'lucide-react';
+import { GraduationCap, Heart, Crown, UserCircle, Shield } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 
 export function AppFooter() {
-  const { isSubscribed, isLoggedIn, setShowSubscriptionModal, setShowAuthModal } = useAppStore();
+  const { isSubscribed, isLoggedIn, setShowSubscriptionModal, setShowAuthModal, setView } = useAppStore();
+
+  function openAdmin() {
+    setView('admin');
+  }
 
   return (
     <footer className="border-t bg-white mt-auto">
@@ -25,6 +29,9 @@ export function AppFooter() {
                 <Crown className="w-3 h-3" /> ₹100 Unlimited
               </button>
             ) : null}
+            <button onClick={openAdmin} className="flex items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors">
+              <Shield className="w-3 h-3" /> Admin
+            </button>
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> in India

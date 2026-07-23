@@ -4,8 +4,10 @@ import crypto from 'crypto';
 // Simulated Razorpay order creation (works without actual API keys)
 export async function POST(request: Request) {
   try {
-    const { amount, deviceId } = await request.json();
-    if (!deviceId) return NextResponse.json({ error: 'deviceId required' }, { status: 400 });
+    const { amount, deviceId, studentId } = await request.json();
+    if (!deviceId && !studentId) {
+      return NextResponse.json({ error: 'deviceId or studentId is required' }, { status: 400 });
+    }
 
     const orderAmount = amount * 100; // Convert to paise
     const orderId = 'order_' + crypto.randomBytes(16).toString('hex');
