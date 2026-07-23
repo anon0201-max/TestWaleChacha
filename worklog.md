@@ -3,27 +3,34 @@
 ---
 Task ID: 1
 Agent: Main Agent
-Task: Build complete MCQ Test Platform with Next.js 16
+Task: Redesign MCQ platform to Testbook-style with Admin Panel and Payment Gateway
 
 Work Log:
-- Designed Prisma schema with Category, Test, Question, Student, TestAttempt models
-- Pushed schema to SQLite database
-- Created comprehensive seed script with 8 categories, 17 tests, and 170+ questions
-- Created API routes: /api/categories, /api/tests, /api/tests/[id], /api/attempts, /api/student, /api/subscribe
-- Built Zustand store with persist middleware for state management
-- Created HomePage component with hero section, stats, categories, how-it-works, pricing CTA
-- Created TestListPage with search, category filter, difficulty filter
-- Created TestTakingPage with timer, question navigation, keyboard shortcuts, submit confirmation
-- Created ResultsPage with score breakdown, answer review with explanations
-- Created SubscriptionModal with ₹100 upgrade flow
-- Created AppHeader and AppFooter components
-- Fixed bugs: missing BookOpen import, async test fetching before starting test
-- Browser verified all flows work correctly
+- Updated Prisma schema: added AdminPassword, Payment models, examType field on Category, section/negativeMark on Question, examName on Test
+- Reset database, pushed schema, seeded with 10 govt exam categories and 10 tests (100 questions)
+- Created Admin API routes: /api/admin/login, /api/admin/categories (CRUD), /api/admin/tests (CRUD), /api/admin/tests/questions (CRUD), /api/admin/stats
+- Created Payment API routes: /api/payment/create-order (Razorpay simulation), /api/payment/verify
+- Completely rebuilt TestTakingPage with Testbook-style government exam interface:
+  - Blue top bar with test name, section, timer, language toggle (Hindi/English), candidate info
+  - Instructions modal before test starts
+  - Question area with radio-style A/B/C/D options
+  - Right sidebar question palette (Not Visited/Not Answered/Answered/Marked/Marked+Answered)
+  - Action buttons: Clear Response, Mark for Review, Save & Next, Previous
+  - Mobile palette drawer
+  - Submit confirmation with detailed stats
+- Built Admin Panel with: Dashboard stats, Category management, Test management, Create Test with question bulk-add
+- Rebuilt HomePage with navy/blue gradient, exam type badges (SSC/UPSC/Banking/Railways/General), category grid
+- Rebuilt TestListPage with exam-style list cards, Admin button
+- Updated SubscriptionModal with 3-step Razorpay checkout simulation (form → payment method selection → processing → success)
+- Updated AppHeader with blue branding, Admin nav link
+- Updated Zustand store with admin state, new AppView type
+- Fixed all lint errors (setState-in-effect, variable hoisting, missing imports)
 
 Stage Summary:
-- Complete MCQ test platform with 17 tests across 8 categories
-- 5 free tests per student, ₹100 for unlimited subscription
-- Timer-based test taking with MCQ interface
-- Score calculation with detailed answer review and explanations
-- Responsive design with emerald/teal color scheme
-- All lint checks pass, no console errors
+- Complete Testbook-style government exam mock test platform
+- 10 categories: SSC CGL, UPSC, Banking & IBPS, Railways RRB, GK, Science, Math, English, Current Affairs, Computer Science
+- Real exam interface: question palette, mark for review, clear response, save & next
+- Admin panel (admin/admin123) with full CRUD for categories, tests, questions
+- Razorpay payment simulation (₹100 for unlimited)
+- Navy blue/white professional design
+- All lint checks pass

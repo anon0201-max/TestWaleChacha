@@ -3,291 +3,187 @@ import { db } from '../src/lib/db';
 async function seed() {
   console.log('🌱 Seeding database...');
 
-  // Create Categories
+  // Create admin password
+  await db.adminPassword.create({
+    data: { username: 'admin', password: 'admin123' },
+  });
+
+  // Categories mapped to government exam types
   const categories = await Promise.all([
-    db.category.create({
-      data: { name: 'General Knowledge', slug: 'general-knowledge', icon: 'Globe', color: '#f59e0b' },
-    }),
-    db.category.create({
-      data: { name: 'Science', slug: 'science', icon: 'Beaker', color: '#10b981' },
-    }),
-    db.category.create({
-      data: { name: 'Mathematics', slug: 'mathematics', icon: 'Calculator', color: '#8b5cf6' },
-    }),
-    db.category.create({
-      data: { name: 'History', slug: 'history', icon: 'Scroll', color: '#f97316' },
-    }),
-    db.category.create({
-      data: { name: 'English', slug: 'english', icon: 'BookOpen', color: '#06b6d4' },
-    }),
-    db.category.create({
-      data: { name: 'Computer Science', slug: 'computer-science', icon: 'Monitor', color: '#ec4899' },
-    }),
-    db.category.create({
-      data: { name: 'Geography', slug: 'geography', icon: 'MapPin', color: '#84cc16' },
-    }),
-    db.category.create({
-      data: { name: 'Current Affairs', slug: 'current-affairs', icon: 'Newspaper', color: '#ef4444' },
-    }),
+    db.category.create({ data: { name: 'SSC CGL', slug: 'ssc-cgl', icon: 'Shield', color: '#1e40af', examType: 'SSC' } }),
+    db.category.create({ data: { name: 'UPSC', slug: 'upsc', icon: 'Landmark', color: '#7c3aed', examType: 'UPSC' } }),
+    db.category.create({ data: { name: 'Banking & IBPS', slug: 'banking-ibps', icon: 'Building2', color: '#059669', examType: 'Banking' } }),
+    db.category.create({ data: { name: 'Railways RRB', slug: 'railways-rrb', icon: 'TrainFront', color: '#dc2626', examType: 'Railways' } }),
+    db.category.create({ data: { name: 'General Knowledge', slug: 'general-knowledge', icon: 'Globe', color: '#ea580c', examType: 'General' } }),
+    db.category.create({ data: { name: 'Science & Tech', slug: 'science-tech', icon: 'Beaker', color: '#0891b2', examType: 'General' } }),
+    db.category.create({ data: { name: 'Mathematics', slug: 'mathematics', icon: 'Calculator', color: '#4f46e5', examType: 'General' } }),
+    db.category.create({ data: { name: 'English', slug: 'english', icon: 'BookOpen', color: '#0d9488', examType: 'General' } }),
+    db.category.create({ data: { name: 'Current Affairs', slug: 'current-affairs', icon: 'Newspaper', color: '#b91c1c', examType: 'General' } }),
+    db.category.create({ data: { name: 'Computer Science', slug: 'computer-science', icon: 'Monitor', color: '#c026d3', examType: 'General' } }),
   ]);
 
-  // Helper to create a test with questions
-  async function createTest(title: string, description: string, categoryId: string, difficulty: string, timeLimit: number, questions: { question: string; optionA: string; optionB: string; optionC: string; optionD: string; correctOption: string; explanation: string }[]) {
-    const test = await db.test.create({
-      data: {
-        title,
-        description,
-        categoryId,
-        difficulty,
-        timeLimit,
-        totalQuestions: questions.length,
-        questions: {
-          create: questions.map((q, i) => ({ ...q, order: i })),
-        },
-      },
-      include: { questions: true },
+  // Helper
+  async function createTest(title: string, description: string, categoryId: string, difficulty: string, timeLimit: number, examName: string, questions: { question: string; optionA: string; optionB: string; optionC: string; optionD: string; correctOption: string; explanation: string; section?: string }[]) {
+    return db.test.create({
+      data: { title, description, categoryId, difficulty, timeLimit, totalQuestions: questions.length, examName, questions: { create: questions.map((q, i) => ({ ...q, order: i, section: q.section || 'General' })) } },
     });
-    return test;
   }
 
-  // ===== GENERAL KNOWLEDGE TESTS =====
-  await createTest('Basic General Knowledge', 'Test your everyday general knowledge', categories[0].id, 'easy', 300, [
-    { question: 'What is the capital of India?', optionA: 'Mumbai', optionB: 'New Delhi', optionC: 'Kolkata', optionD: 'Chennai', correctOption: 'B', explanation: 'New Delhi is the capital of India.' },
-    { question: 'Which planet is known as the Red Planet?', optionA: 'Venus', optionB: 'Jupiter', optionC: 'Mars', optionD: 'Saturn', correctOption: 'C', explanation: 'Mars is called the Red Planet due to its reddish appearance.' },
-    { question: 'What is the largest ocean on Earth?', optionA: 'Atlantic', optionB: 'Indian', optionC: 'Arctic', optionD: 'Pacific', correctOption: 'D', explanation: 'The Pacific Ocean is the largest and deepest ocean.' },
-    { question: 'How many continents are there?', optionA: '5', optionB: '6', optionC: '7', optionD: '8', correctOption: 'C', explanation: 'There are 7 continents: Asia, Africa, North America, South America, Antarctica, Europe, and Australia.' },
-    { question: 'What gas do plants absorb from the atmosphere?', optionA: 'Oxygen', optionB: 'Nitrogen', optionC: 'Carbon Dioxide', optionD: 'Hydrogen', correctOption: 'C', explanation: 'Plants absorb CO2 during photosynthesis.' },
-    { question: 'Who wrote the Indian national anthem?', optionA: 'Bankim Chandra', optionB: 'Rabindranath Tagore', optionC: 'Sarojini Naidu', optionD: 'Mahatma Gandhi', correctOption: 'B', explanation: 'Jana Gana Mana was written by Rabindranath Tagore.' },
-    { question: 'What is the hardest natural substance?', optionA: 'Gold', optionB: 'Iron', optionC: 'Diamond', optionD: 'Platinum', correctOption: 'C', explanation: 'Diamond is the hardest known natural material.' },
-    { question: 'Which animal is known as the King of the Jungle?', optionA: 'Tiger', optionB: 'Elephant', optionC: 'Lion', optionD: 'Bear', correctOption: 'C', explanation: 'The lion is traditionally called the King of the Jungle.' },
-    { question: 'What is the boiling point of water?', optionA: '90°C', optionB: '100°C', optionC: '110°C', optionD: '120°C', correctOption: 'B', explanation: 'Water boils at 100°C (212°F) at standard atmospheric pressure.' },
-    { question: 'How many days are in a leap year?', optionA: '364', optionB: '365', optionC: '366', optionD: '367', correctOption: 'C', explanation: 'A leap year has 366 days with February having 29 days.' },
+  // ===== SSC CGL TESTS =====
+  await createTest('SSC CGL - General Awareness Practice Set 1', 'Practice general awareness questions asked in SSC CGL', categories[0].id, 'medium', 600, 'SSC CGL 2024', [
+    { question: 'The Constitution of India was adopted on:', optionA: '26 January 1950', optionB: '15 August 1947', optionC: '26 November 1949', optionD: '2 October 1950', correctOption: 'C', explanation: 'The Constitution was adopted on 26 November 1949 and came into effect on 26 January 1950.' },
+    { question: 'Which vitamin is produced by the human body when exposed to sunlight?', optionA: 'Vitamin A', optionB: 'Vitamin B', optionC: 'Vitamin C', optionD: 'Vitamin D', correctOption: 'D', explanation: 'Vitamin D is produced when the skin is exposed to ultraviolet B (UVB) rays from sunlight.' },
+    { question: 'The Headquarters of the International Monetary Fund (IMF) is in:', optionA: 'New York', optionB: 'Geneva', optionC: 'Washington D.C.', optionD: 'Paris', correctOption: 'C', explanation: 'The IMF headquarters is located in Washington, D.C., United States.' },
+    { question: 'Which planet is known as the "Morning Star"?', optionA: 'Mars', optionB: 'Venus', optionC: 'Jupiter', optionD: 'Mercury', correctOption: 'B', explanation: 'Venus is called the Morning Star (and Evening Star) because it is visible just before sunrise and after sunset.' },
+    { question: 'The festival of "Baisakhi" is celebrated in which month?', optionA: 'March', optionB: 'April', optionC: 'May', optionD: 'January', correctOption: 'B', explanation: 'Baisakhi is celebrated on 13th or 14th April every year, marking the Sikh New Year.' },
+    { question: 'Who wrote the book "Discovery of India"?', optionA: 'Jawaharlal Nehru', optionB: 'Mahatma Gandhi', optionC: 'Sardar Patel', optionD: 'Rabindranath Tagore', correctOption: 'A', explanation: 'Jawaharlal Nehru wrote "The Discovery of India" during his imprisonment in 1942-46.' },
+    { question: 'The chemical name of Vitamin C is:', optionA: 'Ascorbic Acid', optionB: 'Citric Acid', optionC: 'Folic Acid', optionD: 'Retinol', correctOption: 'A', explanation: 'Vitamin C is scientifically known as Ascorbic Acid.' },
+    { question: 'Which river is known as the "Sorrow of Bihar"?', optionA: 'Ganga', optionB: 'Yamuna', optionC: 'Kosi', optionD: 'Son', correctOption: 'C', explanation: 'The Kosi river is called the "Sorrow of Bihar" due to its frequent devastating floods.' },
+    { question: 'The first Indian satellite was:', optionA: 'Bhaskara', optionB: 'Aryabhata', optionC: 'INSAT-1A', optionD: 'Rohini', correctOption: 'B', explanation: 'Aryabhata was India\'s first satellite, launched on 19 April 1975.' },
+    { question: 'The currency of Japan is:', optionA: 'Won', optionB: 'Yuan', optionC: 'Yen', optionD: 'Ringgit', correctOption: 'C', explanation: 'The Japanese Yen (¥) is the official currency of Japan.' },
   ]);
 
-  await createTest('Advanced General Knowledge', 'Challenge yourself with advanced GK questions', categories[0].id, 'hard', 600, [
-    { question: 'What is the smallest country in the world?', optionA: 'Monaco', optionB: 'Vatican City', optionC: 'San Marino', optionD: 'Liechtenstein', correctOption: 'B', explanation: 'Vatican City is the smallest country by area and population.' },
-    { question: 'Which element has the chemical symbol "Au"?', optionA: 'Silver', optionB: 'Aluminum', optionC: 'Gold', optionD: 'Argon', correctOption: 'C', explanation: 'Au comes from the Latin word "aurum" meaning gold.' },
-    { question: 'What is the longest river in the world?', optionA: 'Amazon', optionB: 'Mississippi', optionC: 'Yangtze', optionD: 'Nile', correctOption: 'D', explanation: 'The Nile River is approximately 6,650 km long.' },
-    { question: 'Who discovered penicillin?', optionA: 'Louis Pasteur', optionB: 'Alexander Fleming', optionC: 'Marie Curie', optionD: 'Joseph Lister', correctOption: 'B', explanation: 'Alexander Fleming discovered penicillin in 1928.' },
-    { question: 'What is the speed of light?', optionA: '300,000 km/s', optionB: '150,000 km/s', optionC: '500,000 km/s', optionD: '200,000 km/s', correctOption: 'A', explanation: 'The speed of light is approximately 300,000 km/s.' },
-    { question: 'Which is the largest desert in the world?', optionA: 'Sahara', optionB: 'Arabian', optionC: 'Gobi', optionD: 'Antarctic', correctOption: 'D', explanation: 'Antarctica is technically the largest desert in the world.' },
-    { question: 'What is the national flower of India?', optionA: 'Rose', optionB: 'Sunflower', optionC: 'Lotus', optionD: 'Jasmine', correctOption: 'C', explanation: 'Lotus is the national flower of India.' },
-    { question: 'Which country hosted the 2020 Olympics?', optionA: 'China', optionB: 'Japan', optionC: 'Brazil', optionD: 'USA', correctOption: 'B', explanation: 'The 2020 Olympics were held in Tokyo, Japan (in 2021 due to COVID).' },
-    { question: 'What is the currency of Japan?', optionA: 'Won', optionB: 'Yuan', optionC: 'Yen', optionD: 'Baht', correctOption: 'C', explanation: 'The Japanese Yen is the official currency of Japan.' },
-    { question: 'How many bones does an adult human have?', optionA: '196', optionB: '206', optionC: '216', optionD: '226', correctOption: 'B', explanation: 'An adult human skeleton consists of 206 bones.' },
+  await createTest('SSC CGL - Quantitative Aptitude Set 1', 'Practice quantitative aptitude questions for SSC CGL exam', categories[0].id, 'hard', 900, 'SSC CGL 2024', [
+    { question: 'A train 150m long running at 72 km/h crosses a platform in 25 seconds. What is the length of the platform?', optionA: '300m', optionB: '350m', optionC: '400m', optionD: '250m', correctOption: 'B', explanation: 'Speed = 72 km/h = 20 m/s. Distance = Speed × Time = 20 × 25 = 500m. Platform length = 500 - 150 = 350m.' },
+    { question: 'If the ratio of A to B is 3:5 and B to C is 4:7, then A:B:C is:', optionA: '3:5:7', optionB: '12:20:35', optionC: '12:20:28', optionD: '9:15:28', correctOption: 'B', explanation: 'A:B = 3:5 = 12:20, B:C = 4:7 = 20:35. So A:B:C = 12:20:35.' },
+    { question: 'The simple interest on ₹5000 at 8% per annum for 3 years is:', optionA: '₹1000', optionB: '₹1200', optionC: '₹1500', optionD: '₹800', correctOption: 'B', explanation: 'SI = P × R × T / 100 = 5000 × 8 × 3 / 100 = ₹1200.' },
+    { question: 'What is 25% of 80% of 500?', optionA: '80', optionB: '100', optionC: '120', optionD: '150', correctOption: 'B', explanation: '80% of 500 = 400. 25% of 400 = 100.' },
+    { question: 'A can do a work in 15 days and B can do it in 10 days. They work together for 4 days, then B leaves. In how many days will A complete the remaining work?', optionA: '5 days', optionB: '6 days', optionC: '7 days', optionD: '8 days', correctOption: 'C', explanation: 'A\'s rate = 1/15, B\'s rate = 1/10. Together = 1/15 + 1/10 = 1/6. In 4 days = 4/6 = 2/3 done. Remaining = 1/3. A takes (1/3)/(1/15) = 5 days.' },
+    { question: 'The average of 5 consecutive odd numbers is 23. The smallest number is:', optionA: '17', optionB: '19', optionC: '21', optionD: '15', correctOption: 'B', explanation: 'Average of 5 consecutive odd numbers is the middle number = 23. So numbers are 19, 21, 23, 25, 27.' },
+    { question: 'If x + 1/x = 5, then x² + 1/x² = ?', optionA: '23', optionB: '25', optionC: '27', optionD: '21', correctOption: 'A', explanation: '(x + 1/x)² = x² + 2 + 1/x² = 25. So x² + 1/x² = 23.' },
+    { question: 'A shopkeeper gives a discount of 20% and still makes a profit of 25%. If the cost price is ₹500, find the marked price.', optionA: '₹625', optionB: '₹750', optionC: '₹800', optionD: '₹781.25', correctOption: 'D', explanation: 'SP = 500 × 1.25 = ₹625. MP × 0.80 = 625. MP = 625/0.80 = ₹781.25.' },
+    { question: 'How many prime numbers are between 1 and 50?', optionA: '14', optionB: '15', optionC: '16', optionD: '17', correctOption: 'B', explanation: 'Primes: 2,3,5,7,11,13,17,19,23,29,31,37,41,43,47 = 15 primes.' },
+    { question: 'If the radius of a circle is increased by 20%, its area increases by:', optionA: '20%', optionB: '40%', optionC: '44%', optionD: '48%', correctOption: 'C', explanation: 'Area ∝ r². If r increases by 20%, new area = 1.2² = 1.44 times. Increase = 44%.' },
   ]);
 
-  await createTest('India Special GK', 'All about India - culture, facts and more', categories[0].id, 'medium', 480, [
-    { question: 'Which is the national bird of India?', optionA: 'Sparrow', optionB: 'Parrot', optionC: 'Peacock', optionD: 'Eagle', correctOption: 'C', explanation: 'The Indian Peacock is the national bird of India.' },
-    { question: 'In which year did India gain independence?', optionA: '1945', optionB: '1947', optionC: '1950', optionD: '1942', correctOption: 'B', explanation: 'India gained independence on 15th August 1947.' },
-    { question: 'Which is the longest river in India?', optionA: 'Yamuna', optionB: 'Godavari', optionC: 'Ganga', optionD: 'Brahmaputra', correctOption: 'C', explanation: 'The Ganga is the longest river in India at 2,525 km.' },
-    { question: 'Who was the first Prime Minister of India?', optionA: 'Sardar Patel', optionB: 'Jawaharlal Nehru', optionC: 'Rajendra Prasad', optionD: 'Mahatma Gandhi', correctOption: 'B', explanation: 'Jawaharlal Nehru was the first Prime Minister of India.' },
-    { question: 'Which state is known as "God\'s Own Country"?', optionA: 'Tamil Nadu', optionB: 'Kerala', optionC: 'Karnataka', optionD: 'Goa', correctOption: 'B', explanation: 'Kerala is famously known as "God\'s Own Country".' },
-    { question: 'What is the highest mountain peak in India?', optionA: 'Nanda Devi', optionB: 'K2', optionC: 'Kangchenjunga', optionD: 'Mount Everest', correctOption: 'C', explanation: 'Kangchenjunga (8,586m) is the highest peak in India.' },
-    { question: 'Which Indian city is called the "City of Joy"?', optionA: 'Mumbai', optionB: 'Delhi', optionC: 'Kolkata', optionD: 'Chennai', correctOption: 'C', explanation: 'Kolkata is known as the "City of Joy".' },
-    { question: 'What is the national animal of India?', optionA: 'Lion', optionB: 'Tiger', optionC: 'Elephant', optionD: 'Leopard', correctOption: 'B', explanation: 'The Bengal Tiger is the national animal of India.' },
-    { question: 'Which festival is known as the Festival of Lights?', optionA: 'Holi', optionB: 'Diwali', optionC: 'Eid', optionD: 'Christmas', correctOption: 'B', explanation: 'Diwali, the Festival of Lights, is one of India\'s biggest festivals.' },
-    { question: 'How many states does India have?', optionA: '28', optionB: '29', optionC: '30', optionD: '31', correctOption: 'A', explanation: 'India has 28 states and 8 Union Territories.' },
+  // ===== UPSC TESTS =====
+  await createTest('UPSC GS Paper - Indian Polity', 'Practice polity questions for UPSC Civil Services', categories[1].id, 'hard', 900, 'UPSC CSE 2024', [
+    { question: 'The concept of "Basic Structure" of the Constitution was established in which case?', optionA: 'Golaknath Case', optionB: 'Kesavananda Bharati Case', optionC: 'Minerva Mills Case', optionD: 'Maneka Gandhi Case', correctOption: 'B', explanation: 'The Basic Structure doctrine was laid down in the Kesavananda Bharati v. State of Kerala (1973) case.' },
+    { question: 'How many types of writs can the Supreme Court issue under Article 32?', optionA: '3', optionB: '4', optionC: '5', optionD: '6', correctOption: 'C', explanation: '5 writs: Habeas Corpus, Mandamus, Prohibition, Certiorari, and Quo Warranto.' },
+    { question: 'The Panchayati Raj system was constitutionalized by which amendment?', optionA: '71st', optionB: '72nd', optionC: '73rd', optionD: '74th', correctOption: 'C', explanation: 'The 73rd Amendment (1992) constitutionalized Panchayati Raj institutions. The 74th did the same for municipalities.' },
+    { question: 'Who appoints the Chief Election Commissioner of India?', optionA: 'Prime Minister', optionB: 'President', optionC: 'Parliament', optionD: 'Chief Justice of India', correctOption: 'B', explanation: 'The Chief Election Commissioner is appointed by the President of India.' },
+    { question: 'Article 370 was related to:', optionA: 'Emergency provisions', optionB: 'Special status of Jammu & Kashmir', optionC: 'Right to Education', optionD: 'GST provisions', correctOption: 'B', explanation: 'Article 370 granted special autonomous status to Jammu & Kashmir. It was abrogated in August 2019.' },
+    { question: 'The concept of "Directive Principles of State Policy" is borrowed from which constitution?', optionA: 'USA', optionB: 'UK', optionC: 'Ireland', optionD: 'France', correctOption: 'C', explanation: 'Directive Principles are borrowed from the Irish Constitution.' },
+    { question: 'How many members are nominated by the President to the Rajya Sabha?', optionA: '10', optionB: '12', optionC: '14', optionD: '16', correctOption: 'B', explanation: 'The President nominates 12 members to Rajya Sabha from fields of literature, science, art, and social service.' },
+    { question: 'The "Right to Property" was removed from Fundamental Rights by which amendment?', optionA: '42nd', optionB: '43rd', optionC: '44th', optionD: '45th', correctOption: 'C', explanation: 'The 44th Amendment (1978) removed the Right to Property from Fundamental Rights and made it a legal right under Article 300A.' },
+    { question: 'Which schedule of the Constitution deals with the Anti-Defection Law?', optionA: '8th', optionB: '9th', optionC: '10th', optionD: '11th', correctOption: 'C', explanation: 'The 10th Schedule (added by 52nd Amendment) contains provisions of the Anti-Defection Law.' },
+    { question: 'The quorum required for a meeting of the Lok Sabha is:', optionA: '1/3rd of total membership', optionB: '1/4th of total membership', optionC: '1/5th of total membership', optionD: '1/10th of total membership', correctOption: 'D', explanation: 'The quorum of the Lok Sabha is 1/10th of the total membership (55 members).' },
   ]);
 
-  // ===== SCIENCE TESTS =====
-  await createTest('Physics Fundamentals', 'Test your knowledge of basic physics', categories[1].id, 'medium', 480, [
-    { question: 'What is Newton\'s first law of motion about?', optionA: 'Acceleration', optionB: 'Inertia', optionC: 'Gravity', optionD: 'Friction', correctOption: 'B', explanation: 'Newton\'s first law states that an object at rest stays at rest unless acted upon by a force (inertia).' },
-    { question: 'What is the SI unit of force?', optionA: 'Joule', optionB: 'Watt', optionC: 'Newton', optionD: 'Pascal', correctOption: 'C', explanation: 'The Newton (N) is the SI unit of force.' },
-    { question: 'What is the acceleration due to gravity on Earth?', optionA: '8.9 m/s²', optionB: '9.8 m/s²', optionC: '10.8 m/s²', optionD: '7.8 m/s²', correctOption: 'B', explanation: 'Standard gravity on Earth is approximately 9.8 m/s².' },
-    { question: 'Which type of energy is possessed by a moving object?', optionA: 'Potential', optionB: 'Kinetic', optionC: 'Thermal', optionD: 'Chemical', correctOption: 'B', explanation: 'Kinetic energy is the energy possessed by a moving object.' },
-    { question: 'What is the formula for calculating speed?', optionA: 'Speed = Force × Distance', optionB: 'Speed = Distance / Time', optionC: 'Speed = Time / Distance', optionD: 'Speed = Mass × Velocity', correctOption: 'B', explanation: 'Speed is calculated as Distance divided by Time.' },
-    { question: 'Sound cannot travel through:', optionA: 'Air', optionB: 'Water', optionC: 'Steel', optionD: 'Vacuum', correctOption: 'D', explanation: 'Sound requires a medium to travel and cannot propagate through vacuum.' },
-    { question: 'What is the unit of electrical resistance?', optionA: 'Ampere', optionB: 'Volt', optionC: 'Ohm', optionD: 'Watt', correctOption: 'C', explanation: 'The Ohm (Ω) is the SI unit of electrical resistance.' },
-    { question: 'Light travels fastest in:', optionA: 'Water', optionB: 'Glass', optionC: 'Air', optionD: 'Vacuum', correctOption: 'D', explanation: 'Light travels fastest in vacuum at approximately 3×10⁸ m/s.' },
-    { question: 'What is the process of splitting an atom called?', optionA: 'Fusion', optionB: 'Fission', optionC: 'Ionization', optionD: 'Oxidation', correctOption: 'B', explanation: 'Nuclear fission is the process of splitting an atomic nucleus.' },
-    { question: 'Which mirror is used in car headlights?', optionA: 'Concave', optionB: 'Convex', optionC: 'Plane', optionD: 'Cylindrical', correctOption: 'A', explanation: 'Concave mirrors are used in car headlights to produce a parallel beam of light.' },
+  // ===== BANKING TESTS =====
+  await createTest('IBPS PO - Reasoning Ability', 'Practice reasoning and aptitude for banking exams', categories[2].id, 'medium', 600, 'IBPS PO 2024', [
+    { question: 'In a row of 40 students, Ravi is 7th from the left and Sumit is 12th from the right. How many students are between them?', optionA: '20', optionB: '21', optionC: '22', optionD: '23', correctOption: 'B', explanation: 'Ravi position from right = 40 - 7 + 1 = 34. Students between = 34 - 12 - 1 = 21.' },
+    { question: 'If APPLE is coded as ELPPA, then ORANGE is coded as:', optionA: 'EGNARO', optionB: 'ORANG E', optionC: 'EGNAR O', optionD: 'EGNAOR', correctOption: 'A', explanation: 'The word is reversed. ORANGE → EGNARO.' },
+    { question: 'A is B\'s brother. C is A\'s mother. D is C\'s father. How is B related to D?', optionA: 'Grandson', optionB: 'Granddaughter', optionC: 'Grandson or Granddaughter', optionD: 'Son', correctOption: 'C', explanation: 'D is grandfather of A. Since A and B are siblings (brother), B is D\'s grandchild (gender not specified).' },
+    { question: 'Find the odd one out: 2, 5, 10, 17, 28, 41', optionA: '10', optionB: '28', optionC: '41', optionD: '17', correctOption: 'B', explanation: 'Pattern: +3, +5, +7, +9, +11. Differences: 3,5,7,11,13. 28 should be 27 (17+10=27, not 28).' },
+    { question: 'If SOUTH is coded as 5392, what is the code for NORTH?', optionA: '47628', optionB: '46728', optionC: '46782', optionD: '47682', correctOption: 'B', explanation: 'Each letter coded: S=5,O=3,U=9,T=2,H=8. N=4,O=3,R=7,T=2,H=8. NORTH = 46728.' },
+    { question: 'Pointing to a man, a woman said "His mother is the only daughter of my mother." How is the woman related to the man?', optionA: 'Mother', optionB: 'Daughter', optionC: 'Sister', optionD: 'Grandmother', correctOption: 'A', explanation: '"Only daughter of my mother" = the woman herself. So man\'s mother = the woman. She is his mother.' },
+    { question: 'Complete the series: 3, 6, 18, 72, ?', optionA: '144', optionB: '216', optionC: '288', optionD: '360', correctOption: 'D', explanation: 'Pattern: ×2, ×3, ×4, ×5. So 72 × 5 = 360.' },
+    { question: 'If all roses are flowers and some flowers fade quickly, then:', optionA: 'All roses fade quickly', optionB: 'Some roses fade quickly', optionC: 'No roses fade quickly', optionD: 'Some roses may fade quickly', correctOption: 'D', explanation: 'Since some flowers fade quickly and all roses are flowers, it\'s possible some roses fade quickly but not certain.' },
+    { question: 'In a certain code "PEN" is written as "QFO". How will "CAT" be written?', optionA: 'DBU', optionB: 'DCA', optionC: 'BAU', optionD: 'BCU', correctOption: 'A', explanation: 'Each letter shifted by +1: P→Q, E→F, N→O. So C→D, A→B, T→U = DBU.' },
+    { question: 'A clock shows 3:15. What is the angle between the hour and minute hands?', optionA: '0°', optionB: '7.5°', optionC: '15°', optionD: '22.5°', correctOption: 'B', explanation: 'At 3:15, hour hand = 3×30 + 15×0.5 = 97.5°. Minute hand = 15×6 = 90°. Angle = 7.5°.' },
   ]);
 
-  await createTest('Biology Basics', 'Explore the world of living organisms', categories[1].id, 'easy', 360, [
-    { question: 'What is the powerhouse of the cell?', optionA: 'Nucleus', optionB: 'Ribosome', optionC: 'Mitochondria', optionD: 'Golgi Body', correctOption: 'C', explanation: 'Mitochondria are known as the powerhouse of the cell as they produce energy (ATP).' },
-    { question: 'What process do plants use to make food?', optionA: 'Respiration', optionB: 'Photosynthesis', optionC: 'Transpiration', optionD: 'Digestion', correctOption: 'B', explanation: 'Plants use photosynthesis to convert sunlight, water, and CO2 into food.' },
-    { question: 'DNA stands for:', optionA: 'Deoxyribonucleic Acid', optionB: 'Dinitrogen Acid', optionC: 'Deoxy Nitrogen Acid', optionD: 'Dynamic Nuclear Acid', correctOption: 'A', explanation: 'DNA stands for Deoxyribonucleic Acid.' },
-    { question: 'Which blood group is the universal donor?', optionA: 'A+', optionB: 'B+', optionC: 'AB+', optionD: 'O-', correctOption: 'D', explanation: 'O- blood type is the universal donor as it can be given to any blood type.' },
-    { question: 'How many chambers does the human heart have?', optionA: '2', optionB: '3', optionC: '4', optionD: '5', correctOption: 'C', explanation: 'The human heart has 4 chambers: 2 atria and 2 ventricles.' },
-    { question: 'What is the largest organ in the human body?', optionA: 'Liver', optionB: 'Heart', optionC: 'Brain', optionD: 'Skin', correctOption: 'D', explanation: 'The skin is the largest organ of the human body.' },
-    { question: 'Which vitamin is produced when skin is exposed to sunlight?', optionA: 'Vitamin A', optionB: 'Vitamin B', optionC: 'Vitamin C', optionD: 'Vitamin D', correctOption: 'D', explanation: 'Vitamin D is synthesized when skin is exposed to UV-B rays from sunlight.' },
-    { question: 'What is the basic unit of life?', optionA: 'Atom', optionB: 'Cell', optionC: 'Molecule', optionD: 'Organ', correctOption: 'B', explanation: 'The cell is the basic structural and functional unit of all living organisms.' },
-    { question: 'Which gas is essential for respiration?', optionA: 'Carbon Dioxide', optionB: 'Nitrogen', optionC: 'Oxygen', optionD: 'Hydrogen', correctOption: 'C', explanation: 'Oxygen is essential for cellular respiration in humans.' },
-    { question: 'What type of organism is an amoeba?', optionA: 'Multi-cellular', optionB: 'Uni-cellular', optionC: 'Prokaryotic', optionD: 'Viral', correctOption: 'B', explanation: 'Amoeba is a single-celled (unicellular) organism.' },
+  // ===== RAILWAYS TESTS =====
+  await createTest('RRB NTPC - General Science', 'General science questions for Railway recruitment exam', categories[3].id, 'easy', 300, 'RRB NTPC 2024', [
+    { question: 'The pH of human blood is approximately:', optionA: '6.4', optionB: '7.0', optionC: '7.4', optionD: '8.0', correctOption: 'C', explanation: 'Normal human blood pH is approximately 7.35-7.45 (slightly alkaline).' },
+    { question: 'Which gas is commonly used in electric bulbs?', optionA: 'Oxygen', optionB: 'Nitrogen', optionC: 'Argon', optionD: 'Carbon dioxide', correctOption: 'C', explanation: 'Argon (or a mixture of Argon and Nitrogen) is used as filling gas in incandescent light bulbs.' },
+    { question: 'The chemical formula of baking soda is:', optionA: 'NaCl', optionB: 'NaHCO₃', optionC: 'Na₂CO₃', optionD: 'NaOH', correctOption: 'B', explanation: 'Baking soda is Sodium Bicarbonate (NaHCO₃).' },
+    { question: 'The hardest naturally occurring substance is:', optionA: 'Platinum', optionB: 'Iron', optionC: 'Diamond', optionD: 'Gold', correctOption: 'C', explanation: 'Diamond (made of carbon) is the hardest known natural material.' },
+    { question: 'Which part of the body produces insulin?', optionA: 'Liver', optionB: 'Kidney', optionC: 'Pancreas', optionD: 'Stomach', correctOption: 'C', explanation: 'Insulin is produced by the beta cells of the Islets of Langerhans in the pancreas.' },
+    { question: 'The unit of electric resistance is:', optionA: 'Ampere', optionB: 'Volt', optionC: 'Ohm', optionD: 'Watt', correctOption: 'C', explanation: 'The SI unit of electrical resistance is the Ohm (Ω).' },
+    { question: 'The process of photosynthesis takes place in:', optionA: 'Roots', optionB: 'Stem', optionC: 'Leaves', optionD: 'Flowers', correctOption: 'C', explanation: 'Photosynthesis primarily takes place in the leaves, specifically in the chloroplasts of mesophyll cells.' },
+    { question: 'Sound cannot travel through:', optionA: 'Air', optionB: 'Water', optionC: 'Steel', optionD: 'Vacuum', correctOption: 'D', explanation: 'Sound needs a medium (solid, liquid, or gas) to travel. It cannot travel through vacuum.' },
+    { question: 'The normal body temperature of a human is:', optionA: '36.5°C', optionB: '37°C', optionC: '38°C', optionD: '35°C', correctOption: 'B', explanation: 'Normal human body temperature is approximately 37°C (98.6°F).' },
+    { question: 'Which organ purifies blood in the human body?', optionA: 'Heart', optionB: 'Liver', optionC: 'Kidney', optionD: 'Lungs', correctOption: 'C', explanation: 'Kidneys filter and purify blood, removing waste products and excess water to form urine.' },
   ]);
 
-  await createTest('Chemistry Essentials', 'Master the fundamentals of chemistry', categories[1].id, 'medium', 480, [
-    { question: 'What is the pH value of pure water?', optionA: '5', optionB: '7', optionC: '9', optionD: '6', correctOption: 'B', explanation: 'Pure water has a neutral pH of 7.' },
-    { question: 'Which element has the atomic number 1?', optionA: 'Helium', optionB: 'Hydrogen', optionC: 'Lithium', optionD: 'Carbon', correctOption: 'B', explanation: 'Hydrogen has atomic number 1 and is the lightest element.' },
-    { question: 'What is the chemical formula for water?', optionA: 'CO2', optionB: 'NaCl', optionC: 'H2O', optionD: 'O2', correctOption: 'C', explanation: 'Water is H2O - two hydrogen atoms and one oxygen atom.' },
-    { question: 'Which gas is known as laughing gas?', optionA: 'Nitrogen', optionB: 'Nitrous Oxide', optionC: 'Carbon Monoxide', optionD: 'Oxygen', correctOption: 'B', explanation: 'Nitrous Oxide (N2O) is commonly called laughing gas.' },
-    { question: 'What type of bond involves sharing of electrons?', optionA: 'Ionic', optionB: 'Covalent', optionC: 'Metallic', optionD: 'Hydrogen', correctOption: 'B', explanation: 'Covalent bonds involve the sharing of electron pairs between atoms.' },
-    { question: 'What is the most abundant gas in Earth\'s atmosphere?', optionA: 'Oxygen', optionB: 'Carbon Dioxide', optionC: 'Nitrogen', optionD: 'Argon', correctOption: 'C', explanation: 'Nitrogen makes up about 78% of Earth\'s atmosphere.' },
-    { question: 'What is the chemical symbol for Iron?', optionA: 'Ir', optionB: 'In', optionC: 'Fe', optionD: 'Io', correctOption: 'C', explanation: 'Fe comes from the Latin word "ferrum" meaning iron.' },
-    { question: 'Which acid is present in lemon juice?', optionA: 'Sulfuric Acid', optionB: 'Citric Acid', optionC: 'Acetic Acid', optionD: 'Hydrochloric Acid', correctOption: 'B', explanation: 'Lemon juice contains citric acid which gives it a sour taste.' },
-    { question: 'What is an atom\'s nucleus made of?', optionA: 'Electrons & Neutrons', optionB: 'Protons & Electrons', optionC: 'Protons & Neutrons', optionD: 'Only Protons', correctOption: 'C', explanation: 'The nucleus contains protons and neutrons.' },
-    { question: 'What happens during oxidation?', optionA: 'Gain of electrons', optionB: 'Loss of electrons', optionC: 'Gain of neutrons', optionD: 'Loss of protons', correctOption: 'B', explanation: 'Oxidation involves the loss of electrons from a substance.' },
+  // ===== GENERAL KNOWLEDGE =====
+  await createTest('General Knowledge - India & World', 'Mix of Indian and world GK questions', categories[4].id, 'medium', 480, 'Practice Set', [
+    { question: 'What is the national animal of India?', optionA: 'Lion', optionB: 'Tiger', optionC: 'Elephant', optionD: 'Leopard', correctOption: 'B', explanation: 'The Bengal Tiger (Panthera tigris tigris) is the national animal of India.' },
+    { question: 'Which country has the largest population in the world (2024)?', optionA: 'China', optionB: 'India', optionC: 'USA', optionD: 'Indonesia', correctOption: 'B', explanation: 'India surpassed China in 2023 to become the world\'s most populous country.' },
+    { question: 'The longest railway platform in India is at:', optionA: 'New Delhi', optionB: 'Howrah', optionC: 'Hubli', optionD: 'Kharagpur', correctOption: 'C', explanation: 'Hubli Junction in Karnataka has the longest railway platform in India (1,505 m).' },
+    { question: 'World Environment Day is celebrated on:', optionA: '22 April', optionB: '5 June', optionC: '21 March', optionD: '16 September', correctOption: 'B', explanation: 'World Environment Day is celebrated annually on 5 June.' },
+    { question: 'The currency of Bangladesh is:', optionA: 'Rupee', optionB: 'Taka', optionC: 'Rupiah', optionD: 'Kyat', correctOption: 'B', explanation: 'The Bangladeshi Taka (৳) is the official currency of Bangladesh.' },
+    { question: 'Who was the first Indian to go to space?', optionA: 'Kalpana Chawla', optionB: 'Rakesh Sharma', optionC: 'Sunita Williams', optionD: 'APJ Abdul Kalam', correctOption: 'B', explanation: 'Wing Commander Rakesh Sharma was the first Indian citizen to travel to space in 1984 aboard Soyuz T-11.' },
+    { question: 'The headquarters of ISRO is in:', optionA: 'Mumbai', optionB: 'Chennai', optionC: 'Bengaluru', optionD: 'Hyderabad', correctOption: 'C', explanation: 'The Indian Space Research Organisation (ISRO) is headquartered in Bengaluru, Karnataka.' },
+    { question: 'Which vitamin prevents scurvy?', optionA: 'Vitamin A', optionB: 'Vitamin B', optionC: 'Vitamin C', optionD: 'Vitamin K', correctOption: 'C', explanation: 'Vitamin C (Ascorbic Acid) deficiency causes scurvy.' },
+    { question: 'The largest desert in India is:', optionA: 'Thar Desert', optionB: 'Rann of Kutch', optionC: 'Deccan Plateau', optionD: 'Sundarbans', correctOption: 'A', explanation: 'The Thar Desert (Great Indian Desert) is the largest desert in India, spanning across Rajasthan.' },
+    { question: 'India\'s first nuclear power plant was established at:', optionA: 'Tarapur', optionB: 'Kalpakkam', optionC: 'Rawatbhata', optionD: 'Narora', correctOption: 'A', explanation: 'India\'s first nuclear power plant was established at Tarapur, Maharashtra, in 1969.' },
   ]);
 
-  // ===== MATHEMATICS TESTS =====
-  await createTest('Algebra Challenge', 'Test your algebra skills', categories[2].id, 'medium', 600, [
-    { question: 'If x + 5 = 12, what is x?', optionA: '5', optionB: '6', optionC: '7', optionD: '8', correctOption: 'C', explanation: 'x + 5 = 12, so x = 12 - 5 = 7.' },
-    { question: 'What is the value of 2² + 3²?', optionA: '13', optionB: '25', optionC: '10', optionD: '12', correctOption: 'A', explanation: '2² + 3² = 4 + 9 = 13.' },
-    { question: 'What is the square root of 144?', optionA: '10', optionB: '11', optionC: '12', optionD: '14', correctOption: 'C', explanation: '√144 = 12 because 12 × 12 = 144.' },
-    { question: 'Simplify: 3x + 2x', optionA: '6x', optionB: '5x', optionC: 'x', optionD: '5x²', correctOption: 'B', explanation: '3x + 2x = 5x (combining like terms).' },
-    { question: 'What is 15% of 200?', optionA: '25', optionB: '30', optionC: '35', optionD: '40', correctOption: 'B', explanation: '15% of 200 = (15/100) × 200 = 30.' },
-    { question: 'If a triangle has angles 60° and 80°, what is the third angle?', optionA: '30°', optionB: '40°', optionC: '50°', optionD: '60°', correctOption: 'B', explanation: 'Sum of angles in a triangle = 180°, so third angle = 180 - 60 - 80 = 40°.' },
-    { question: 'What is the LCM of 4 and 6?', optionA: '10', optionB: '12', optionC: '24', optionD: '8', correctOption: 'B', explanation: 'LCM of 4 and 6 is 12.' },
-    { question: 'What is the value of (a+b)² when a=3, b=4?', optionA: '25', optionB: '49', optionC: '36', optionD: '12', correctOption: 'B', explanation: '(3+4)² = 7² = 49.' },
-    { question: 'How many prime numbers are there between 1 and 10?', optionA: '3', optionB: '4', optionC: '5', optionD: '6', correctOption: 'B', explanation: 'The primes are: 2, 3, 5, 7 — total 4 primes.' },
-    { question: 'What is the area of a circle with radius 7? (Use π = 22/7)', optionA: '144', optionB: '154', optionC: '176', optionD: '196', correctOption: 'B', explanation: 'Area = πr² = (22/7) × 49 = 154.' },
+  // ===== SCIENCE =====
+  await createTest('Physics - Mechanics & Motion', 'Test your physics fundamentals', categories[5].id, 'medium', 480, 'Practice Set', [
+    { question: 'Newton\'s third law of motion states:', optionA: 'Every object remains at rest unless acted upon', optionB: 'Force equals mass times acceleration', optionC: 'Every action has an equal and opposite reaction', optionD: 'Energy cannot be created or destroyed', correctOption: 'C', explanation: 'Newton\'s Third Law: For every action, there is an equal and opposite reaction.' },
+    { question: 'The SI unit of power is:', optionA: 'Joule', optionB: 'Newton', optionC: 'Watt', optionD: 'Pascal', correctOption: 'C', explanation: 'The Watt (W) is the SI unit of power, equal to one Joule per second.' },
+    { question: 'What is the escape velocity from Earth?', optionA: '9.8 km/s', optionB: '11.2 km/s', optionC: '7.9 km/s', optionD: '15.0 km/s', correctOption: 'B', explanation: 'The escape velocity from Earth\'s surface is approximately 11.2 km/s.' },
+    { question: 'A convex lens is used to correct:', optionA: 'Myopia', optionB: 'Hypermetropia', optionC: 'Presbyopia', optionD: 'Astigmatism', correctOption: 'B', explanation: 'Convex lenses converge light and are used to correct hypermetropia (farsightedness).' },
+    { question: 'The weight of a body is maximum at:', optionA: 'Equator', optionB: 'Poles', optionC: 'Center of Earth', optionD: 'Same everywhere', correctOption: 'B', explanation: 'Weight = mg. g is maximum at the poles due to the oblate shape of Earth and no centrifugal effect.' },
+    { question: 'Which type of energy is stored in a stretched spring?', optionA: 'Kinetic', optionB: 'Thermal', optionC: 'Potential', optionD: 'Chemical', correctOption: 'C', explanation: 'Elastic potential energy is stored in a deformed (stretched or compressed) spring.' },
+    { question: 'The phenomenon of total internal reflection occurs when light travels from:', optionA: 'Rarer to denser medium', optionB: 'Denser to rarer medium', optionC: 'Vacuum to medium', optionD: 'Any medium to vacuum', correctOption: 'B', explanation: 'Total internal reflection occurs when light travels from a denser to a rarer medium at an angle greater than the critical angle.' },
+    { question: 'What is the unit of frequency?', optionA: 'Hertz', optionB: 'Watt', optionC: 'Pascal', optionD: 'Newton', correctOption: 'A', explanation: 'The Hertz (Hz) is the SI unit of frequency, equal to one cycle per second.' },
+    { question: 'Sound waves are:', optionA: 'Transverse', optionB: 'Longitudinal', optionC: 'Electromagnetic', optionD: 'None', correctOption: 'B', explanation: 'Sound waves are longitudinal waves where particles vibrate parallel to the direction of wave propagation.' },
+    { question: 'The boiling point of water at standard atmospheric pressure is:', optionA: '90°C', optionB: '100°C', optionC: '110°C', optionD: '120°C', correctOption: 'B', explanation: 'Water boils at 100°C (212°F) at standard atmospheric pressure (1 atm).' },
   ]);
 
-  await createTest('Speed Math', 'Quick calculations under time pressure', categories[2].id, 'easy', 180, [
-    { question: 'What is 17 × 3?', optionA: '48', optionB: '51', optionC: '54', optionD: '57', correctOption: 'B', explanation: '17 × 3 = 51.' },
-    { question: 'What is 256 ÷ 16?', optionA: '14', optionB: '15', optionC: '16', optionD: '18', correctOption: 'C', explanation: '256 ÷ 16 = 16.' },
-    { question: 'What is 45 + 67?', optionA: '102', optionB: '112', optionC: '122', optionD: '108', correctOption: 'B', explanation: '45 + 67 = 112.' },
-    { question: 'What is 1000 - 347?', optionA: '643', optionB: '653', optionC: '663', optionD: '673', correctOption: 'B', explanation: '1000 - 347 = 653.' },
-    { question: 'What is 25 × 4?', optionA: '50', optionB: '75', optionC: '100', optionD: '125', correctOption: 'C', explanation: '25 × 4 = 100.' },
+  // ===== MATH =====
+  await createTest('Speed Math & Simplification', 'Quick calculation practice', categories[6].id, 'easy', 180, 'Practice Set', [
+    { question: 'What is 23 × 17?', optionA: '371', optionB: '391', optionC: '411', optionD: '361', correctOption: 'B', explanation: '23 × 17 = 391.' },
+    { question: 'What is 789 + 456?', optionA: '1145', optionB: '1245', optionC: '1345', optionD: '1235', correctOption: 'B', explanation: '789 + 456 = 1245.' },
+    { question: 'What is 1000 - 457?', optionA: '533', optionB: '543', optionC: '553', optionD: '563', correctOption: 'B', explanation: '1000 - 457 = 543.' },
+    { question: 'What is 15% of 600?', optionA: '80', optionB: '85', optionC: '90', optionD: '95', correctOption: 'C', explanation: '15% of 600 = (15/100) × 600 = 90.' },
     { question: 'What is 144 ÷ 12?', optionA: '10', optionB: '11', optionC: '12', optionD: '13', correctOption: 'C', explanation: '144 ÷ 12 = 12.' },
-    { question: 'What is 8³?', optionA: '512', optionB: '524', optionC: '216', optionD: '729', correctOption: 'A', explanation: '8³ = 8 × 8 × 8 = 512.' },
-    { question: 'What is 99 + 99?', optionA: '188', optionB: '198', optionC: '208', optionD: '199', correctOption: 'B', explanation: '99 + 99 = 198.' },
-    { question: 'What is half of 250?', optionA: '115', optionB: '120', optionC: '125', optionD: '130', correctOption: 'C', explanation: '250 ÷ 2 = 125.' },
-    { question: 'What is 12 × 12?', optionA: '134', optionB: '144', optionC: '154', optionD: '124', correctOption: 'B', explanation: '12 × 12 = 144.' },
+    { question: 'What is 2⁸?', optionA: '128', optionB: '256', optionC: '512', optionD: '64', correctOption: 'B', explanation: '2⁸ = 256.' },
+    { question: 'What is √(625)?', optionA: '20', optionB: '25', optionC: '30', optionD: '35', correctOption: 'B', explanation: '√625 = 25 (since 25 × 25 = 625).' },
+    { question: 'What is 999 + 999?', optionA: '1998', optionB: '1898', optionC: '2008', optionD: '1888', correctOption: 'A', explanation: '999 + 999 = 1998.' },
+    { question: 'What is half of 384?', optionA: '182', optionB: '192', optionC: '172', optionD: '202', correctOption: 'B', explanation: '384 ÷ 2 = 192.' },
+    { question: 'What is 16 × 16?', optionA: '246', optionB: '256', optionC: '266', optionD: '236', correctOption: 'B', explanation: '16 × 16 = 256.' },
   ]);
 
-  // ===== HISTORY TESTS =====
-  await createTest('Indian History', 'Journey through India\'s rich past', categories[3].id, 'medium', 480, [
-    { question: 'Who was the founder of the Maurya Empire?', optionA: 'Ashoka', optionB: 'Chandragupta Maurya', optionC: 'Bindusara', optionD: 'Harsha', correctOption: 'B', explanation: 'Chandragupta Maurya founded the Maurya Empire in 322 BCE.' },
-    { question: 'The Battle of Plassey was fought in which year?', optionA: '1757', optionB: '1857', optionC: '1764', optionD: '1947', correctOption: 'A', explanation: 'The Battle of Plassey was fought in 1757 between British and Siraj-ud-Daulah.' },
-    { question: 'Who built the Taj Mahal?', optionA: 'Akbar', optionB: 'Jahangir', optionC: 'Shah Jahan', optionD: 'Aurangzeb', correctOption: 'C', explanation: 'Shah Jahan built the Taj Mahal in memory of his wife Mumtaz Mahal.' },
-    { question: 'The Indus Valley Civilization was discovered in which year?', optionA: '1921', optionB: '1931', optionC: '1941', optionD: '1951', correctOption: 'A', explanation: 'The Indus Valley Civilization was discovered in 1921.' },
-    { question: 'Who started the Quit India Movement?', optionA: 'Jawaharlal Nehru', optionB: 'Subhash Chandra Bose', optionC: 'Mahatma Gandhi', optionD: 'Sardar Patel', correctOption: 'C', explanation: 'Mahatma Gandhi launched the Quit India Movement in 1942.' },
-    { question: 'The Mughal Empire was founded by:', optionA: 'Akbar', optionB: 'Humayun', optionC: 'Babur', optionD: 'Shah Jahan', correctOption: 'C', explanation: 'Babur founded the Mughal Empire in 1526.' },
-    { question: 'Who was the first Indian woman to win a Nobel Prize?', optionA: 'Indira Gandhi', optionB: 'Mother Teresa', optionC: 'Sarojini Naidu', optionD: 'Kiran Bedi', correctOption: 'B', explanation: 'Mother Teresa won the Nobel Peace Prize in 1979.' },
-    { question: 'The Indian Constitution came into effect on:', optionA: '15 Aug 1947', optionB: '26 Jan 1950', optionC: '26 Nov 1949', optionD: '2 Oct 1950', correctOption: 'B', explanation: 'The Indian Constitution came into effect on 26 January 1950.' },
-    { question: 'Who was known as "Netaji"?', optionA: 'Mahatma Gandhi', optionB: 'Jawaharlal Nehru', optionC: 'Subhash Chandra Bose', optionD: 'Bhagat Singh', correctOption: 'C', explanation: 'Subhash Chandra Bose was affectionately called Netaji.' },
-    { question: 'The Jallianwala Bagh massacre occurred in which city?', optionA: 'Delhi', optionB: 'Mumbai', optionC: 'Kolkata', optionD: 'Amritsar', correctOption: 'D', explanation: 'The Jallianwala Bagh massacre took place in Amritsar on 13 April 1919.' },
+  // ===== ENGLISH =====
+  await createTest('English - Error Spotting & Grammar', 'Find errors in English sentences', categories[7].id, 'medium', 360, 'Practice Set', [
+    { question: 'Find the error: "She don\'t like coffee."', optionA: 'She', optionB: 'don\'t', optionC: 'like', optionD: 'coffee', correctOption: 'B', explanation: '"don\'t" should be "doesn\'t" because the subject is third-person singular.' },
+    { question: 'Choose the correctly spelled word:', optionA: 'Accomodate', optionB: 'Accomodate', optionC: 'Accommodate', optionD: 'Acommodate', correctOption: 'C', explanation: 'The correct spelling is "Accommodate" (double c, double m).' },
+    { question: '"He is _____ honest man." Fill in the blank:', optionA: 'a', optionB: 'an', optionC: 'the', optionD: 'no article', correctOption: 'B', explanation: '"an" is used before words beginning with a vowel sound. "Honest" starts with a vowel sound (silent h).' },
+    { question: 'The synonym of "Benevolent" is:', optionA: 'Cruel', optionB: 'Kind', optionC: 'Angry', optionD: 'Rich', correctOption: 'B', explanation: 'Benevolent means kind, generous, and well-meaning.' },
+    { question: '"She has been working since morning." The tense is:', optionA: 'Present Perfect', optionB: 'Present Perfect Continuous', optionC: 'Past Perfect', optionD: 'Past Continuous', correctOption: 'B', explanation: '"has been working" + "since" indicates an action started in the past and still continuing = Present Perfect Continuous.' },
+    { question: 'The antonym of "Ephemeral" is:', optionA: 'Permanent', optionB: 'Short-lived', optionC: 'Fragile', optionD: 'Beautiful', correctOption: 'A', explanation: 'Ephemeral means short-lived. Its antonym is Permanent (lasting forever).' },
+    { question: 'Choose the correct sentence:', optionA: 'Each of the boys have come', optionB: 'Each of the boys has come', optionC: 'Each of the boy has come', optionD: 'Each of boys has came', correctOption: 'B', explanation: '"Each" is singular, so it takes a singular verb "has".' },
+    { question: 'Which is the plural of "child"?', optionA: 'Childs', optionB: 'Childes', optionC: 'Children', optionD: 'Child\'s', correctOption: 'C', explanation: 'The plural of "child" is "children" (irregular plural).' },
+    { question: '"The angry mob set fire ___ the building." Fill in:', optionA: 'at', optionB: 'in', optionC: 'on', optionD: 'to', correctOption: 'D', explanation: 'The correct phrase is "set fire to something."' },
+    { question: 'The passive voice of "She writes a letter" is:', optionA: 'A letter is written by her', optionB: 'A letter was written by her', optionC: 'A letter is being written by her', optionD: 'A letter has been written by her', correctOption: 'A', explanation: 'Present simple active → present simple passive: "A letter is written by her."' },
   ]);
 
-  await createTest('World History', 'Major events that shaped the world', categories[3].id, 'hard', 600, [
-    { question: 'World War I began in which year?', optionA: '1912', optionB: '1914', optionC: '1916', optionD: '1918', correctOption: 'B', explanation: 'World War I began in 1914 after the assassination of Archduke Franz Ferdinand.' },
-    { question: 'The French Revolution started in:', optionA: '1776', optionB: '1789', optionC: '1799', optionD: '1804', correctOption: 'B', explanation: 'The French Revolution began in 1789 with the storming of the Bastille.' },
-    { question: 'Who was the first person to walk on the Moon?', optionA: 'Buzz Aldrin', optionB: 'Neil Armstrong', optionC: 'Yuri Gagarin', optionD: 'John Glenn', correctOption: 'B', explanation: 'Neil Armstrong became the first person to walk on the Moon on July 20, 1969.' },
-    { question: 'The Berlin Wall fell in which year?', optionA: '1987', optionB: '1988', optionC: '1989', optionD: '1990', correctOption: 'C', explanation: 'The Berlin Wall fell on November 9, 1989.' },
-    { question: 'The Renaissance began in which country?', optionA: 'France', optionB: 'England', optionC: 'Italy', optionD: 'Spain', correctOption: 'C', explanation: 'The Renaissance began in Italy in the 14th century.' },
-    { question: 'Who was the first President of the United States?', optionA: 'Thomas Jefferson', optionB: 'George Washington', optionC: 'Abraham Lincoln', optionD: 'John Adams', correctOption: 'B', explanation: 'George Washington was the first US President, serving from 1789 to 1797.' },
-    { question: 'The Industrial Revolution began in:', optionA: 'France', optionB: 'Germany', optionC: 'United States', optionD: 'England', correctOption: 'D', explanation: 'The Industrial Revolution began in England in the late 18th century.' },
-    { question: 'World War II ended in which year?', optionA: '1943', optionB: '1944', optionC: '1945', optionD: '1946', correctOption: 'C', explanation: 'World War II ended in 1945 with the surrender of Japan.' },
-    { question: 'Who invented the printing press?', optionA: 'Thomas Edison', optionB: 'Johannes Gutenberg', optionC: 'Leonardo da Vinci', optionD: 'Galileo Galilei', correctOption: 'B', explanation: 'Johannes Gutenberg invented the printing press around 1440.' },
-    { question: 'The United Nations was founded in:', optionA: '1943', optionB: '1944', optionC: '1945', optionD: '1946', correctOption: 'C', explanation: 'The UN was founded on October 24, 1945.' },
+  // ===== CURRENT AFFAIRS =====
+  await createTest('Current Affairs 2024', 'Latest events and news', categories[8].id, 'medium', 360, 'Monthly Update', [
+    { question: 'Which country hosted the G20 Summit in 2023?', optionA: 'Indonesia', optionB: 'India', optionC: 'Brazil', optionD: 'Japan', correctOption: 'B', explanation: 'India hosted the G20 Summit in September 2023 in New Delhi.' },
+    { question: 'Chandrayaan-3 successfully landed on the Moon\'s:', optionA: 'North Pole', optionB: 'South Pole', optionC: 'Equator', optionD: 'Far Side', correctOption: 'B', explanation: 'Chandrayaan-3 landed near the Moon\'s south pole on August 23, 2023.' },
+    { question: 'Who is the current Chief Minister of Uttar Pradesh (2024)?', optionA: 'Akhilesh Yadav', optionB: 'Yogi Adityanath', optionC: 'Mayawati', optionD: 'Mulayam Singh', correctOption: 'B', explanation: 'Yogi Adityanath is the current Chief Minister of Uttar Pradesh.' },
+    { question: 'The new name of Rajpath in New Delhi is:', optionA: 'Sardar Patel Marg', optionB: 'Kartavya Path', optionC: 'Shanti Path', optionD: 'Janpath', correctOption: 'B', explanation: 'Rajpath was renamed to Kartavya Path in September 2022.' },
+    { question: 'Which state became India\'s 28th state in 2000?', optionA: 'Jharkhand', optionB: 'Uttarakhand', optionC: 'Chhattisgarh', optionD: 'Telangana', correctOption: 'A', explanation: 'Jharkhand was carved out of Bihar and became India\'s 28th state on November 15, 2000.' },
+    { question: 'What is India\'s rank in terms of GDP (PPP) globally?', optionA: '2nd', optionB: '3rd', optionC: '4th', optionD: '5th', correctOption: 'B', explanation: 'India is the 3rd largest economy by GDP (PPP) after China and the USA.' },
+    { question: 'The Digital India Programme was launched in:', optionA: '2014', optionB: '2015', optionC: '2016', optionD: '2017', correctOption: 'B', explanation: 'Digital India was launched on July 1, 2015, by Prime Minister Narendra Modi.' },
+    { question: 'Which organization did India chair in 2024?', optionA: 'ASEAN', optionB: 'SCO', optionC: 'BRICS', optionD: 'SAARC', correctOption: 'B', explanation: 'India hosted the Shanghai Cooperation Organisation (SCO) summit in 2023-24.' },
+    { question: 'The Pradhan Mantri Jan Dhan Yojana was launched in:', optionA: '2013', optionB: '2014', optionC: '2015', optionD: '2016', correctOption: 'B', explanation: 'PMJDY was launched on August 28, 2014, to ensure financial inclusion.' },
+    { question: 'What is the theme of India\'s G20 Presidency?', optionA: 'One Earth, One Family', optionB: 'Vasudhaiva Kutumbakam', optionC: 'Unity in Diversity', optionD: 'Atma Nirbhar Bharat', correctOption: 'B', explanation: 'India\'s G20 theme was "Vasudhaiva Kutumbakam" - "One Earth, One Family, One Future".' },
   ]);
 
-  // ===== ENGLISH TESTS =====
-  await createTest('English Grammar', 'Test your grammar knowledge', categories[4].id, 'medium', 360, [
-    { question: 'Which is the correct sentence?', optionA: 'She don\'t like coffee', optionB: 'She doesn\'t likes coffee', optionC: 'She doesn\'t like coffee', optionD: 'She not like coffee', correctOption: 'C', explanation: '"She doesn\'t like coffee" uses the correct negative form with "doesn\'t" + base verb.' },
-    { question: 'What is the past tense of "run"?', optionA: 'Runned', optionB: 'Ran', optionC: 'Running', optionD: 'Runs', correctOption: 'B', explanation: 'The past tense of "run" is "ran" (irregular verb).' },
-    { question: 'Choose the correct preposition: "She is fond ___ reading"', optionA: 'in', optionB: 'of', optionC: 'at', optionD: 'for', correctOption: 'B', explanation: '"Fond of" is the correct prepositional phrase.' },
-    { question: 'Which is a proper noun?', optionA: 'city', optionB: 'river', optionC: 'London', optionD: 'mountain', correctOption: 'C', explanation: 'London is a proper noun as it names a specific place.' },
-    { question: 'What is the plural of "child"?', optionA: 'Childs', optionB: 'Childes', optionC: 'Children', optionD: 'Child\'s', correctOption: 'C', explanation: 'The plural of "child" is "children" (irregular plural).' },
-    { question: 'Identify the adjective: "The ___ girl sang beautifully"', optionA: 'sing', optionB: 'beautiful', optionC: 'beautifully', optionD: 'girl', correctOption: 'B', explanation: '"Beautiful" is an adjective describing the noun "girl".' },
-    { question: 'What is the synonym of "happy"?', optionA: 'Sad', optionB: 'Angry', optionC: 'Joyful', optionD: 'Tired', correctOption: 'C', explanation: '"Joyful" is a synonym of "happy".' },
-    { question: 'Which sentence is in passive voice?', optionA: 'The cat chased the mouse', optionB: 'The mouse was chased by the cat', optionC: 'The cat is chasing the mouse', optionD: 'The cat chases the mouse', correctOption: 'B', explanation: '"The mouse was chased by the cat" is in passive voice.' },
-    { question: 'What is an antonym of "brave"?', optionA: 'Strong', optionB: 'Cowardly', optionC: 'Smart', optionD: 'Kind', correctOption: 'B', explanation: '"Cowardly" is the opposite of "brave".' },
-    { question: '"I have been working" is in which tense?', optionA: 'Present Perfect', optionB: 'Present Perfect Continuous', optionC: 'Past Perfect', optionD: 'Future Perfect', correctOption: 'B', explanation: '"I have been working" uses the Present Perfect Continuous tense.' },
+  // ===== COMPUTER SCIENCE =====
+  await createTest('Computer Fundamentals', 'Basic computer science for competitive exams', categories[9].id, 'easy', 300, 'Practice Set', [
+    { question: '1 Gigabyte (GB) equals:', optionA: '1000 MB', optionB: '1024 MB', optionC: '1048 MB', optionD: '512 MB', correctOption: 'B', explanation: '1 GB = 1024 MB (in binary system used by computers).' },
+    { question: 'The full form of CPU is:', optionA: 'Central Processing Unit', optionB: 'Computer Personal Unit', optionC: 'Central Program Utility', optionD: 'Core Processing Unit', correctOption: 'A', explanation: 'CPU stands for Central Processing Unit - the brain of the computer.' },
+    { question: 'Which is the fastest memory in a computer?', optionA: 'Hard Disk', optionB: 'RAM', optionC: 'Cache Memory', optionD: 'ROM', correctOption: 'C', explanation: 'Cache memory is the fastest memory, located closest to the CPU.' },
+    { question: 'HTTP stands for:', optionA: 'HyperText Transfer Protocol', optionB: 'High Tech Transfer Protocol', optionC: 'HyperText Transmission Protocol', optionD: 'Home Tool Transfer Protocol', correctOption: 'A', explanation: 'HTTP stands for HyperText Transfer Protocol, used for web communication.' },
+    { question: 'The shortcut to copy text is:', optionA: 'Ctrl + V', optionB: 'Ctrl + C', optionC: 'Ctrl + X', optionD: 'Ctrl + Z', correctOption: 'B', explanation: 'Ctrl + C is the keyboard shortcut for copying text.' },
+    { question: 'Which of these is an output device?', optionA: 'Keyboard', optionB: 'Mouse', optionC: 'Scanner', optionD: 'Printer', correctOption: 'D', explanation: 'A printer produces output (printed pages), so it is an output device.' },
+    { question: 'What does URL stand for?', optionA: 'Uniform Resource Locator', optionB: 'Universal Reference Link', optionC: 'Unified Resource Language', optionD: 'Uniform Resource Language', correctOption: 'A', explanation: 'URL stands for Uniform Resource Locator - the web address of a resource.' },
+    { question: 'An operating system is:', optionA: 'Application software', optionB: 'System software', optionC: 'Utility software', optionD: 'Programming software', correctOption: 'B', explanation: 'An operating system (like Windows, Linux) is system software that manages hardware and software.' },
+    { question: 'The binary number 1010 equals decimal:', optionA: '8', optionB: '10', optionC: '12', optionD: '14', correctOption: 'B', explanation: '1010 in binary = 1×8 + 0×4 + 1×2 + 0×1 = 10 in decimal.' },
+    { question: 'A firewall is used for:', optionA: 'Data storage', optionB: 'Network security', optionC: 'Word processing', optionD: 'Email sending', correctOption: 'B', explanation: 'A firewall monitors and controls incoming and outgoing network traffic for security.' },
   ]);
 
-  await createTest('English Vocabulary', 'Expand your word power', categories[4].id, 'easy', 300, [
-    { question: 'What does "benevolent" mean?', optionA: 'Evil', optionB: 'Kind and generous', optionC: 'Angry', optionD: 'Confused', correctOption: 'B', explanation: 'Benevolent means well-meaning, kind, and generous.' },
-    { question: 'What is the meaning of "ubiquitous"?', optionA: 'Rare', optionB: 'Expensive', optionC: 'Present everywhere', optionD: 'Beautiful', correctOption: 'C', explanation: 'Ubiquitous means present, appearing, or found everywhere.' },
-    { question: '"Ephemeral" means:', optionA: 'Permanent', optionB: 'Short-lived', optionC: 'Ancient', optionD: 'Colorful', correctOption: 'B', explanation: 'Ephemeral means lasting for a very short time.' },
-    { question: 'What does "eloquent" mean?', optionA: 'Silent', optionB: 'Confused', optionC: 'Fluent and persuasive', optionD: 'Slow', correctOption: 'C', explanation: 'Eloquent means fluent or persuasive in speaking or writing.' },
-    { question: '"Candid" means:', optionA: 'Dishonest', optionB: 'Truthful and honest', optionC: 'Shy', optionD: 'Funny', correctOption: 'B', explanation: 'Candid means truthful, straightforward, and frank.' },
-    { question: 'What does "pragmatic" mean?', optionA: 'Idealistic', optionB: 'Practical', optionC: 'Lazy', optionD: 'Creative', correctOption: 'B', explanation: 'Pragmatic means dealing with things sensibly and realistically.' },
-    { question: '"Ambiguous" means:', optionA: 'Very clear', optionB: 'Open to more than one interpretation', optionC: 'Very old', optionD: 'Very new', correctOption: 'B', explanation: 'Ambiguous means having more than one possible meaning.' },
-    { question: 'What is the meaning of "resilient"?', optionA: 'Weak', optionB: 'Able to recover quickly', optionC: 'Rigid', optionD: 'Heavy', correctOption: 'B', explanation: 'Resilient means able to withstand or recover quickly from difficulties.' },
-    { question: '"Diligent" means:', optionA: 'Careless', optionB: 'Hardworking', optionC: 'Lazy', optionD: 'Clever', correctOption: 'B', explanation: 'Diligent means having or showing care and conscientiousness in one\'s work.' },
-    { question: 'What does "inevitable" mean?', optionA: 'Avoidable', optionB: 'Certain to happen', optionC: 'Impossible', optionD: 'Optional', correctOption: 'B', explanation: 'Inevitable means certain to happen; unavoidable.' },
-  ]);
-
-  // ===== COMPUTER SCIENCE TESTS =====
-  await createTest('Computer Basics', 'Fundamental computer science concepts', categories[5].id, 'easy', 300, [
-    { question: 'What does CPU stand for?', optionA: 'Central Processing Unit', optionB: 'Computer Personal Unit', optionC: 'Central Program Utility', optionD: 'Core Processing Unit', correctOption: 'A', explanation: 'CPU stands for Central Processing Unit - the brain of the computer.' },
-    { question: 'What is RAM?', optionA: 'Read Access Memory', optionB: 'Random Access Memory', optionC: 'Rapid Access Module', optionD: 'Read And Modify', correctOption: 'B', explanation: 'RAM stands for Random Access Memory - volatile memory used for temporary data storage.' },
-    { question: 'Which is an operating system?', optionA: 'Chrome', optionB: 'Windows', optionC: 'Photoshop', optionD: 'Word', correctOption: 'B', explanation: 'Windows is an operating system by Microsoft.' },
-    { question: 'What does HTML stand for?', optionA: 'Hyper Text Markup Language', optionB: 'High Tech Modern Language', optionC: 'Hyper Transfer Markup Language', optionD: 'Home Tool Markup Language', correctOption: 'A', explanation: 'HTML stands for Hyper Text Markup Language.' },
-    { question: '1 KB equals:', optionA: '100 bytes', optionB: '512 bytes', optionC: '1024 bytes', optionD: '2048 bytes', correctOption: 'C', explanation: '1 KB (Kilobyte) = 1024 bytes.' },
-    { question: 'What is a firewall in computing?', optionA: 'Physical wall', optionB: 'Network security system', optionC: 'A type of virus', optionD: 'A hardware component', correctOption: 'B', explanation: 'A firewall is a network security system that monitors and controls incoming and outgoing traffic.' },
-    { question: 'Which language is primarily used for web pages styling?', optionA: 'JavaScript', optionB: 'Python', optionC: 'CSS', optionD: 'Java', correctOption: 'C', explanation: 'CSS (Cascading Style Sheets) is used for styling web pages.' },
-    { question: 'What does URL stand for?', optionA: 'Uniform Resource Locator', optionB: 'Universal Reference Link', optionC: 'Unified Resource Language', optionD: 'Universal Resource Locator', correctOption: 'A', explanation: 'URL stands for Uniform Resource Locator.' },
-    { question: 'What is a bug in software?', optionA: 'A feature', optionB: 'An error or defect', optionC: 'A virus', optionD: 'A plugin', correctOption: 'B', explanation: 'A bug is an error, flaw, or defect in a software program.' },
-    { question: 'Which device is used for input?', optionA: 'Monitor', optionB: 'Printer', optionC: 'Keyboard', optionD: 'Speaker', correctOption: 'C', explanation: 'A keyboard is an input device used to enter data into the computer.' },
-  ]);
-
-  await createTest('Programming Concepts', 'Test your programming knowledge', categories[5].id, 'hard', 600, [
-    { question: 'What is a loop in programming?', optionA: 'A type of variable', optionB: 'Repeated execution of code', optionC: 'A function', optionD: 'A class', correctOption: 'B', explanation: 'A loop repeatedly executes a block of code until a condition is met.' },
-    { question: 'Which data structure uses FIFO?', optionA: 'Stack', optionB: 'Array', optionC: 'Queue', optionD: 'Tree', correctOption: 'C', explanation: 'Queue follows FIFO (First In, First Out) principle.' },
-    { question: 'What is OOP?', optionA: 'Open Output Processing', optionB: 'Object-Oriented Programming', optionC: 'Online Operating Protocol', optionD: 'Optimal Output Processing', correctOption: 'B', explanation: 'OOP stands for Object-Oriented Programming.' },
-    { question: 'Which sorting algorithm has the best average time complexity?', optionA: 'Bubble Sort', optionB: 'Merge Sort', optionC: 'Selection Sort', optionD: 'Insertion Sort', correctOption: 'B', explanation: 'Merge Sort has O(n log n) average time complexity, which is better than O(n²) of the others.' },
-    { question: 'What is recursion?', optionA: 'A type of loop', optionB: 'A function calling itself', optionC: 'A variable type', optionD: 'An error handling', correctOption: 'B', explanation: 'Recursion is when a function calls itself to solve a smaller instance of the same problem.' },
-    { question: 'What does API stand for?', optionA: 'Application Programming Interface', optionB: 'Applied Program Integration', optionC: 'Application Process Integration', optionD: 'Automated Programming Interface', correctOption: 'A', explanation: 'API stands for Application Programming Interface.' },
-    { question: 'Which symbol is used for comments in Python?', optionA: '//', optionB: '#', optionC: '/*', optionD: '--', correctOption: 'B', explanation: '# is used for single-line comments in Python.' },
-    { question: 'What is a database index?', optionA: 'A list of databases', optionB: 'A data structure for faster search', optionC: 'A backup of data', optionD: 'A type of query', correctOption: 'B', explanation: 'A database index is a data structure that improves the speed of data retrieval.' },
-    { question: 'What is the time complexity of binary search?', optionA: 'O(n)', optionB: 'O(n²)', optionC: 'O(log n)', optionD: 'O(1)', correctOption: 'C', explanation: 'Binary search has O(log n) time complexity.' },
-    { question: 'What does SQL stand for?', optionA: 'Structured Query Language', optionB: 'Simple Query Language', optionC: 'Sequential Query Logic', optionD: 'Standard Query Language', correctOption: 'A', explanation: 'SQL stands for Structured Query Language.' },
-  ]);
-
-  // ===== GEOGRAPHY TESTS =====
-  await createTest('World Geography', 'Explore our planet\'s geography', categories[6].id, 'medium', 480, [
-    { question: 'What is the largest continent?', optionA: 'Africa', optionB: 'North America', optionC: 'Asia', optionD: 'Europe', correctOption: 'C', explanation: 'Asia is the largest continent by both area and population.' },
-    { question: 'Which is the largest island in the world?', optionA: 'Madagascar', optionB: 'Borneo', optionC: 'Greenland', optionD: 'New Guinea', correctOption: 'C', explanation: 'Greenland is the largest island in the world.' },
-    { question: 'The Sahara Desert is located in:', optionA: 'Asia', optionB: 'Africa', optionC: 'Australia', optionD: 'South America', correctOption: 'B', explanation: 'The Sahara Desert is in Northern Africa.' },
-    { question: 'Which river flows through Paris?', optionA: 'Rhine', optionB: 'Danube', optionC: 'Seine', optionD: 'Thames', correctOption: 'C', explanation: 'The Seine River flows through Paris, France.' },
-    { question: 'What is the highest waterfall in the world?', optionA: 'Victoria Falls', optionB: 'Niagara Falls', optionC: 'Angel Falls', optionD: 'Iguazu Falls', correctOption: 'C', explanation: 'Angel Falls in Venezuela is the highest waterfall at 979 meters.' },
-    { question: 'Which country has the most natural lakes?', optionA: 'USA', optionB: 'Russia', optionC: 'Canada', optionD: 'Finland', correctOption: 'C', explanation: 'Canada has the most natural lakes in the world.' },
-    { question: 'The Great Barrier Reef is located in:', optionA: 'Brazil', optionB: 'Australia', optionC: 'Indonesia', optionD: 'Philippines', correctOption: 'B', explanation: 'The Great Barrier Reef is off the coast of Queensland, Australia.' },
-    { question: 'Which is the smallest continent?', optionA: 'Europe', optionB: 'Antarctica', optionC: 'South America', optionD: 'Australia', correctOption: 'D', explanation: 'Australia is the smallest continent.' },
-    { question: 'Mount Everest is located on the border of which two countries?', optionA: 'India & China', optionB: 'Nepal & China', optionC: 'Nepal & India', optionD: 'China & Pakistan', correctOption: 'B', explanation: 'Mount Everest is on the border of Nepal and China (Tibet).' },
-    { question: 'What is the deepest ocean trench?', optionA: 'Java Trench', optionB: 'Puerto Rico Trench', optionC: 'Mariana Trench', optionD: 'Tonga Trench', correctOption: 'C', explanation: 'The Mariana Trench is the deepest oceanic trench at about 11,034 meters.' },
-  ]);
-
-  // ===== CURRENT AFFAIRS TESTS =====
-  await createTest('Science & Technology News', 'Latest developments in science and tech', categories[7].id, 'medium', 480, [
-    { question: 'Which company developed the ChatGPT AI model?', optionA: 'Google', optionB: 'Meta', optionC: 'OpenAI', optionD: 'Microsoft', correctOption: 'C', explanation: 'ChatGPT was developed by OpenAI.' },
-    { question: 'What is the name of India\'s space agency?', optionA: 'NASA', optionB: 'ISRO', optionC: 'ESA', optionD: 'JAXA', correctOption: 'B', explanation: 'ISRO (Indian Space Research Organisation) is India\'s space agency.' },
-    { question: 'Which country launched the Artemis moon mission?', optionA: 'China', optionB: 'Russia', optionC: 'USA', optionD: 'India', correctOption: 'C', explanation: 'NASA\'s Artemis program is the USA\'s mission to return to the Moon.' },
-    { question: 'What is 5G technology?', optionA: '5th Generation wireless', optionB: '5 Gigabyte storage', optionC: '5th Generation processor', optionD: '5 Gigabit internet', correctOption: 'A', explanation: '5G is the 5th generation of cellular wireless technology.' },
-    { question: 'Which planet did ISRO\'s Mangalyaan orbit?', optionA: 'Venus', optionB: 'Moon', optionC: 'Mars', optionD: 'Jupiter', correctOption: 'C', explanation: 'ISRO\'s Mars Orbiter Mission (Mangalyaan) successfully orbited Mars.' },
-    { question: 'What is blockchain technology primarily known for?', optionA: 'Social media', optionB: 'Cryptocurrency', optionC: 'Gaming', optionD: 'Email', correctOption: 'B', explanation: 'Blockchain is the underlying technology behind cryptocurrencies like Bitcoin.' },
-    { question: 'Which country successfully landed on the far side of the Moon in 2024?', optionA: 'USA', optionB: 'India', optionC: 'China', optionD: 'Russia', correctOption: 'C', explanation: 'China\'s Chang\'e-6 mission landed on the far side of the Moon in 2024.' },
-    { question: 'What does AI stand for?', optionA: 'Automated Intelligence', optionB: 'Artificial Intelligence', optionC: 'Advanced Integration', optionD: 'Applied Information', correctOption: 'B', explanation: 'AI stands for Artificial Intelligence.' },
-    { question: 'Which Indian mission successfully landed on the Moon\'s south pole?', optionA: 'Chandrayaan-2', optionB: 'Chandrayaan-3', optionC: 'Mangalyaan', optionD: 'Aditya-L1', correctOption: 'B', explanation: 'Chandrayaan-3 successfully landed near the Moon\'s south pole on August 23, 2023.' },
-    { question: 'What is quantum computing?', optionA: 'Traditional computing', optionB: 'Computing using quantum mechanics', optionC: 'Cloud computing', optionD: 'Biological computing', correctOption: 'B', explanation: 'Quantum computing uses principles of quantum mechanics to process information.' },
-  ]);
-
-  await createTest('Sports & Awards', 'Test your knowledge of sports and achievements', categories[7].id, 'easy', 360, [
-    { question: 'How many players are there in a cricket team?', optionA: '9', optionB: '10', optionC: '11', optionD: '12', correctOption: 'C', explanation: 'A cricket team has 11 players.' },
-    { question: 'Which country has won the most FIFA World Cups?', optionA: 'Germany', optionB: 'Argentina', optionC: 'Brazil', optionD: 'Italy', correctOption: 'C', explanation: 'Brazil has won the most FIFA World Cups (5 times).' },
-    { question: 'The Olympics are held every:', optionA: '2 years', optionB: '3 years', optionC: '4 years', optionD: '5 years', correctOption: 'C', explanation: 'The Olympic Games are held every 4 years.' },
-    { question: 'Who is known as the "God of Cricket"?', optionA: 'Virat Kohli', optionB: 'Rahul Dravid', optionC: 'Sachin Tendulkar', optionD: 'MS Dhoni', correctOption: 'C', explanation: 'Sachin Tendulkar is often called the "God of Cricket" in India.' },
-    { question: 'Which sport uses a shuttlecock?', optionA: 'Tennis', optionB: 'Table Tennis', optionC: 'Badminton', optionD: 'Squash', correctOption: 'C', explanation: 'Badminton is played with a shuttlecock.' },
-    { question: 'The Bharat Ratna is India\'s:', optionA: 'Highest civilian award', optionB: 'Military award', optionC: 'Sports award', optionD: 'Science award', correctOption: 'A', explanation: 'Bharat Ratna is India\'s highest civilian award.' },
-    { question: 'How many players are in a football (soccer) team on the field?', optionA: '9', optionB: '10', optionC: '11', optionD: '12', correctOption: 'C', explanation: 'A football team has 11 players on the field.' },
-    { question: 'Which Indian cricketer has scored most international centuries?', optionA: 'Rohit Sharma', optionB: 'Virat Kohli', optionC: 'Sachin Tendulkar', optionD: 'Ricky Ponting', correctOption: 'C', explanation: 'Sachin Tendulkar has scored 100 international centuries.' },
-    { question: 'The Nobel Prize is awarded in how many categories?', optionA: '4', optionB: '5', optionC: '6', optionD: '7', correctOption: 'C', explanation: 'Nobel Prizes are awarded in 6 categories: Physics, Chemistry, Medicine, Literature, Peace, and Economics.' },
-    { question: 'Which country hosted the Cricket World Cup 2023?', optionA: 'England', optionB: 'Australia', optionC: 'India', optionD: 'South Africa', correctOption: 'C', explanation: 'India hosted the ICC Cricket World Cup 2023.' },
-  ]);
-
-  console.log('✅ Seeding completed successfully!');
-  console.log(`📊 Created ${categories.length} categories with multiple tests and questions.`);
+  console.log('✅ Seeding completed!');
+  console.log(`📊 ${categories.length} categories with government exam-style tests created.`);
 }
 
-seed()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await db.$disconnect();
-  });
+seed().catch((e) => { console.error('❌ Seed failed:', e); process.exit(1); }).finally(() => db.$disconnect());

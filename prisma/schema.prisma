@@ -7,12 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model AdminPassword {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Category {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
   icon      String   @default("BookOpen")
-  color     String   @default("#6366f1")
+  color     String   @default("#1e40af")
+  examType  String   @default("General")
   tests     Test[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -29,35 +38,42 @@ model Test {
   questions   Question[]
   testAttempts TestAttempt[]
   totalQuestions Int
+  examName    String   @default("Practice Test")
+  isActive    Boolean  @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 
 model Question {
-  id         String   @id @default(cuid())
-  testId     String
-  test       Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
-  question   String
-  optionA    String
-  optionB    String
-  optionC    String
-  optionD    String
+  id            String   @id @default(cuid())
+  testId        String
+  test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  question      String
+  questionImage String?
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
   correctOption String
-  explanation  String?
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  explanation   String?
+  order         Int      @default(0)
+  negativeMark  Float    @default(0)
+  section       String   @default("General")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Student {
   id             String        @id @default(cuid())
   name           String
   email          String?
+  phone          String?
   deviceId       String        @unique
   freeTestsUsed  Int           @default(0)
   isSubscribed   Boolean       @default(false)
   subscriptionAt DateTime?
   testAttempts   TestAttempt[]
+  payments       Payment[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }
@@ -72,8 +88,22 @@ model TestAttempt {
   totalQuestions Int
   correctAnswers Int
   timeTaken     Int
-  answers       String   // JSON string of answers
+  answers       String
   completed     Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  studentId      String
+  student        Student  @relation(fields: [studentId], references: [id])
+  razorpayOrderId    String?
+  razorpayPaymentId  String?
+  razorpaySignature  String?
+  amount         Int
+  status         String   @default("pending")
+  currency       String   @default("INR")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

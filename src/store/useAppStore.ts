@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// Generate a unique device ID
 function generateDeviceId(): string {
   if (typeof window !== 'undefined') {
     let id = localStorage.getItem('mcq_device_id');
@@ -14,7 +13,7 @@ function generateDeviceId(): string {
   return '';
 }
 
-export type AppView = 'home' | 'tests' | 'test-detail' | 'test-taking' | 'results';
+export type AppView = 'home' | 'tests' | 'test-taking' | 'results' | 'admin';
 
 interface TestQuestion {
   id: string;
@@ -26,6 +25,7 @@ interface TestQuestion {
   correctOption: string;
   explanation?: string | null;
   order: number;
+  section?: string;
 }
 
 interface TestInfo {
@@ -36,13 +36,8 @@ interface TestInfo {
   difficulty: string;
   timeLimit: number;
   totalQuestions: number;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-    icon: string;
-    color: string;
-  };
+  examName?: string;
+  category: { id: string; name: string; slug: string; icon: string; color: string; examType?: string };
   questions: TestQuestion[];
   _count?: { questions: number };
 }
@@ -53,6 +48,7 @@ interface CategoryInfo {
   slug: string;
   icon: string;
   color: string;
+  examType?: string;
   _count: { tests: number };
 }
 
@@ -60,25 +56,19 @@ interface AttemptResult {
   score: number;
   correctAnswers: number;
   totalQuestions: number;
-  answerDetails: {
-    questionId: string;
-    userAnswer: string | null;
-    correctOption: string;
-    isCorrect: boolean;
-  }[];
+  answerDetails: { questionId: string; userAnswer: string | null; correctOption: string; isCorrect: boolean }[];
   timeTaken: number;
-  test: {
-    title: string;
-    category: { name: string };
-  };
+  test: { title: string; category: { name: string } };
+}
+
+interface AdminData {
+  isLoggedIn: boolean;
+  stats: { totalStudents: number; totalTests: number; totalQuestions: number; totalAttempts: number; totalPayments: number };
 }
 
 interface AppState {
-  // Navigation
   currentView: AppView;
   setView: (view: AppView) => void;
-
-  // Device
   deviceId: string;
 
   // Student
@@ -116,37 +106,29 @@ interface AppState {
   lastResult: AttemptResult | null;
   setLastResult: (result: AttemptResult | null) => void;
 
-  // Subscription modal
+  // Subscription
   showSubscriptionModal: boolean;
   setShowSubscriptionModal: (show: boolean) => void;
+
+  // Admin
+  adminData: AdminData;
+  setAdminData: (data: Partial<AdminData>) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      // Navigation
       currentView: 'home',
       setView: (view) => set({ currentView: view }),
-
-      // Device
       deviceId: generateDeviceId(),
 
-      // Student
       freeTestsUsed: 0,
       freeTestsRemaining: 5,
       isSubscribed: false,
-      setStudentData: (data) =>
-        set({
-          freeTestsUsed: data.freeTestsUsed,
-          freeTestsRemaining: Math.max(0, 5 - data.freeTestsUsed),
-          isSubscribed: data.isSubscribed,
-        }),
+      setStudentData: (data) => set({ freeTestsUsed: data.freeTestsUsed, freeTestsRemaining: Math.max(0, 5 - data.freeTestsUsed), isSubscribed: data.isSubscribed }),
 
-      // Categories
       categories: [],
       setCategories: (cats) => set({ categories: cats }),
-
-      // Tests
       tests: [],
       setTests: (t) => set({ tests: t }),
       selectedCategory: null,
@@ -154,14 +136,11 @@ export const useAppStore = create<AppState>()(
       searchQuery: '',
       setSearchQuery: (q) => set({ searchQuery: q }),
 
-      // Current Test
       currentTest: null,
       setCurrentTest: (test) => set({ currentTest: test }),
 
-      // Test Taking
       answers: {},
-      setAnswer: (questionId, answer) =>
-        set((state) => ({ answers: { ...state.answers, [questionId]: answer } })),
+      setAnswer: (questionId, answer) => set((state) => ({ answers: { ...state.answers, [questionId]: answer } })),
       clearAnswers: () => set({ answers: {} }),
       timeRemaining: 0,
       setTimeRemaining: (time) => set({ timeRemaining: time }),
@@ -170,13 +149,14 @@ export const useAppStore = create<AppState>()(
       currentQuestionIndex: 0,
       setCurrentQuestionIndex: (index) => set({ currentQuestionIndex: index }),
 
-      // Results
       lastResult: null,
       setLastResult: (result) => set({ lastResult: result }),
 
-      // Subscription Modal
       showSubscriptionModal: false,
       setShowSubscriptionModal: (show) => set({ showSubscriptionModal: show }),
+
+      adminData: { isLoggedIn: false, stats: { totalStudents: 0, totalTests: 0, totalQuestions: 0, totalAttempts: 0, totalPayments: 0 } },
+      setAdminData: (data) => set((state) => ({ adminData: { ...state.adminData, ...data } })),
     }),
     {
       name: 'mcq-app-storage',

@@ -1,62 +1,29 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import {
-  Search,
-  Clock,
-  BookOpen,
-  ArrowLeft,
-  Play,
-  Filter,
-  X,
-  Sparkles,
-  Lock,
-  Zap,
-} from 'lucide-react';
+import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, Shield, GraduationCap } from 'lucide-react';
 
 export function TestListPage() {
-  const {
-    setView,
-    tests,
-    categories,
-    selectedCategory,
-    setSelectedCategory,
-    searchQuery,
-    setSearchQuery,
-    setCurrentTest,
-    setIsTestActive,
-    clearAnswers,
-    setCurrentQuestionIndex,
-    setTimeRemaining,
-    freeTestsRemaining,
-    isSubscribed,
-    setView: setAppView,
-  } = useAppStore();
+  const { setView, tests, categories, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery,
+    setCurrentTest, setIsTestActive, clearAnswers, setCurrentQuestionIndex, setTimeRemaining,
+    freeTestsRemaining, isSubscribed } = useAppStore();
 
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const filteredTests = useMemo(() => {
     let result = tests;
-    if (selectedCategory) {
-      result = result.filter((t) => t.categoryId === selectedCategory);
-    }
-    if (difficultyFilter) {
-      result = result.filter((t) => t.difficulty === difficultyFilter);
-    }
+    if (selectedCategory) result = result.filter((t) => t.categoryId === selectedCategory);
+    if (difficultyFilter) result = result.filter((t) => t.difficulty === difficultyFilter);
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.title.toLowerCase().includes(q) ||
-          t.description.toLowerCase().includes(q)
-      );
+      result = result.filter((t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
     }
     return result;
   }, [tests, selectedCategory, difficultyFilter, searchQuery]);
@@ -66,189 +33,93 @@ export function TestListPage() {
   async function handleStartTest(test: (typeof tests)[0]) {
     try {
       const res = await fetch(`/api/tests/${test.id}?testId=${test.id}`);
-      if (res.ok) {
-        const fullTest = await res.json();
-        setCurrentTest(fullTest);
-      } else {
-        setCurrentTest(test);
-      }
-    } catch {
-      setCurrentTest(test);
-    }
+      if (res.ok) setCurrentTest(await res.json());
+      else setCurrentTest(test);
+    } catch { setCurrentTest(test); }
     clearAnswers();
     setCurrentQuestionIndex(0);
     setTimeRemaining(test.timeLimit);
     setIsTestActive(true);
-    setAppView('test-taking');
+    useAppStore.getState().setView('test-taking');
   }
 
-  function handleStartTestClick(test: (typeof tests)[0]) {
-    if (!isSubscribed && freeTestsRemaining <= 0) {
-      useAppStore.getState().setShowSubscriptionModal(true);
-      return;
-    }
+  function handleClick(test: (typeof tests)[0]) {
+    if (!isSubscribed && freeTestsRemaining <= 0) { useAppStore.getState().setShowSubscriptionModal(true); return; }
     handleStartTest(test);
   }
 
-  const difficultyColors = {
-    easy: 'bg-green-100 text-green-700',
-    medium: 'bg-amber-100 text-amber-700',
-    hard: 'bg-red-100 text-red-700',
-  };
+  const diffColors = { easy: 'bg-green-100 text-green-700', medium: 'bg-amber-100 text-amber-700', hard: 'bg-red-100 text-red-700' };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setView('home')} className="shrink-0">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button variant="ghost" size="icon" onClick={() => setView('home')}><ArrowLeft className="w-5 h-5" /></Button>
           <div>
-            <h1 className="text-2xl font-bold">
-              {selectedCategoryName || 'All Tests'}
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {filteredTests.length} tests available
-              {!isSubscribed && (
-                <span className="ml-2">
-                  <Badge variant="secondary" className="text-xs">
-                    <Zap className="w-3 h-3 mr-1" />
-                    {freeTestsRemaining} free tests left
-                  </Badge>
-                </span>
-              )}
-            </p>
+            <h1 className="text-xl font-bold truncate">{selectedCategoryName || 'All Mock Tests'}</h1>
+            <p className="text-xs text-muted-foreground">{filteredTests.length} tests {!isSubscribed && <Badge variant="secondary" className="ml-1 text-[10px]"><Zap className="w-2.5 h-2.5 mr-0.5" />{freeTestsRemaining} free</Badge>}</p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowFilters(!showFilters)}
-          className="shrink-0"
-        >
-          <Filter className="w-4 h-4 mr-2" />
-          Filters
-        </Button>
-      </div>
-
-      {/* Search & Filters */}
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            placeholder="Search tests..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-11"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-            </button>
-          )}
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => { useAppStore.getState().setAdminData({ isLoggedIn: false }); useAppStore.getState().setView('admin'); }}>
+            <Shield className="w-3.5 h-3.5 mr-1" /> Admin
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}><Filter className="w-3.5 h-3.5 mr-1" /> Filters</Button>
         </div>
-
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="space-y-4"
-          >
-            {/* Category filters */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedCategory === null ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCategory(null)}
-              >
-                All Categories
-              </Button>
-              {categories.map((cat) => (
-                <Button
-                  key={cat.id}
-                  variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                >
-                  {cat.name}
-                  <span className="ml-1 text-xs opacity-70">({cat._count.tests})</span>
-                </Button>
-              ))}
-            </div>
-
-            {/* Difficulty filters */}
-            <div className="flex flex-wrap gap-2">
-              <span className="text-sm text-muted-foreground self-center mr-2">Difficulty:</span>
-              {['easy', 'medium', 'hard'].map((d) => (
-                <Button
-                  key={d}
-                  variant={difficultyFilter === d ? 'default' : 'outline'}
-                  size="sm"
-                  className={difficultyFilter === d ? difficultyColors[d as keyof typeof difficultyColors] : ''}
-                  onClick={() => setDifficultyFilter(difficultyFilter === d ? null : d)}
-                >
-                  {d.charAt(0).toUpperCase() + d.slice(1)}
-                </Button>
-              ))}
-            </div>
-          </motion.div>
-        )}
       </div>
 
-      {/* Test Cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input placeholder="Search tests..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 h-10" />
+        {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2"><X className="w-4 h-4 text-muted-foreground" /></button>}
+      </div>
+
+      {showFilters && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3">
+          <div className="flex flex-wrap gap-1.5">
+            <Button variant={selectedCategory === null ? 'default' : 'outline'} size="sm" className="text-xs h-7" onClick={() => setSelectedCategory(null)}>All</Button>
+            {categories.map((cat) => (
+              <Button key={cat.id} variant={selectedCategory === cat.id ? 'default' : 'outline'} size="sm" className="text-xs h-7" onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}>
+                {cat.name}<span className="ml-1 opacity-60">({cat._count.tests})</span>
+              </Button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <span className="text-xs text-muted-foreground mr-1">Level:</span>
+            {['easy', 'medium', 'hard'].map((d) => (
+              <Button key={d} variant={difficultyFilter === d ? 'default' : 'outline'} size="sm" className={`text-xs h-7 ${difficultyFilter === d ? diffColors[d as keyof typeof diffColors] : ''}`} onClick={() => setDifficultyFilter(difficultyFilter === d ? null : d)}>
+                {d.charAt(0).toUpperCase() + d.slice(1)}
+              </Button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Test Cards - Testbook Style */}
+      <div className="space-y-3">
         {filteredTests.map((test, i) => (
-          <motion.div
-            key={test.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: Math.min(i * 0.03, 0.3) }}
-          >
-            <Card className="h-full hover:shadow-lg transition-all duration-200 group border-0 shadow-sm">
-              <CardContent className="p-5 flex flex-col h-full">
-                <div className="flex items-start justify-between mb-3">
-                  <Badge
-                    variant="secondary"
-                    className={difficultyColors[test.difficulty as keyof typeof difficultyColors]}
-                  >
-                    {test.difficulty}
-                  </Badge>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    {Math.floor(test.timeLimit / 60)}min
+          <motion.div key={test.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.2) }}>
+            <Card className="hover:shadow-md transition-all border-0 shadow-sm">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <Badge variant="secondary" className="text-[10px]">{test.category?.examType || 'General'}</Badge>
+                      <Badge className={diffColors[test.difficulty as keyof typeof diffColors] + ' text-[10px]'}>{test.difficulty}</Badge>
+                      <span className="text-[10px] text-muted-foreground">{test.examName || 'Practice Test'}</span>
+                    </div>
+                    <h3 className="font-semibold text-sm md:text-base truncate">{test.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{test.description}</p>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{test.totalQuestions || test._count?.questions || 0} Qs</span>
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{Math.floor(test.timeLimit / 60)} min</span>
+                    </div>
                   </div>
-                </div>
-                <h3 className="font-semibold text-lg mb-2 group-hover:text-emerald-600 transition-colors leading-tight">
-                  {test.title}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-1">
-                  {test.description}
-                </p>
-                <div className="flex items-center justify-between mt-auto">
-                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <BookOpen className="w-4 h-4" />
-                    {test.totalQuestions || test._count?.questions || test.questions?.length} Questions
+                  <div className="shrink-0">
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
+                      {!isSubscribed && freeTestsRemaining <= 0 ? <><Lock className="w-4 h-4 mr-1" />Unlock</> : <><Play className="w-4 h-4 mr-1" />Start Test</>}
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => handleStartTestClick(test)}
-                  >
-                    {!isSubscribed && freeTestsRemaining <= 0 ? (
-                      <>
-                        <Lock className="w-4 h-4 mr-1" />
-                        Unlock
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-1" />
-                        Start
-                      </>
-                    )}
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -257,13 +128,10 @@ export function TestListPage() {
       </div>
 
       {filteredTests.length === 0 && (
-        <div className="text-center py-16">
-          <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold">No tests found</h3>
-          <p className="text-muted-foreground mt-2">Try changing your search or filters</p>
-          <Button variant="outline" className="mt-4" onClick={() => { setSelectedCategory(null); setDifficultyFilter(null); setSearchQuery(''); }}>
-            Clear Filters
-          </Button>
+        <div className="text-center py-12">
+          <Search className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <p className="font-medium">No tests found</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => { setSelectedCategory(null); setDifficultyFilter(null); setSearchQuery(''); }}>Clear Filters</Button>
         </div>
       )}
     </div>
