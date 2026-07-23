@@ -13,7 +13,7 @@ function generateDeviceId(): string {
   return '';
 }
 
-export type AppView = 'home' | 'tests' | 'test-taking' | 'results' | 'admin';
+export type AppView = 'home' | 'tests' | 'test-taking' | 'results' | 'admin' | 'my-attempts';
 
 interface UserInfo {
   id: string;
@@ -37,6 +37,8 @@ interface TestQuestion {
   explanation?: string | null;
   order: number;
   section?: string;
+  questionImage?: string | null;
+  negativeMark?: number;
 }
 
 interface TestInfo {
@@ -48,6 +50,7 @@ interface TestInfo {
   timeLimit: number;
   totalQuestions: number;
   examName?: string;
+  isActive: boolean;
   category: { id: string; name: string; slug: string; icon: string; color: string; examType?: string };
   questions: TestQuestion[];
   _count?: { questions: number };
@@ -70,6 +73,19 @@ interface AttemptResult {
   answerDetails: { questionId: string; userAnswer: string | null; correctOption: string; isCorrect: boolean }[];
   timeTaken: number;
   test: { title: string; category: { name: string } };
+  ranking?: { rank: number; total: number };
+}
+
+interface AttemptHistory {
+  id: string;
+  testId: string;
+  test: { id: string; title: string; category: { name: string; color: string } };
+  score: number;
+  correctAnswers: number;
+  totalQuestions: number;
+  timeTaken: number;
+  createdAt: string;
+  completed: boolean;
 }
 
 interface AdminData {
@@ -123,6 +139,10 @@ interface AppState {
   lastResult: AttemptResult | null;
   setLastResult: (result: AttemptResult | null) => void;
 
+  // Attempt History
+  attemptHistory: AttemptHistory[];
+  setAttemptHistory: (history: AttemptHistory[]) => void;
+
   // Subscription
   showSubscriptionModal: boolean;
   setShowSubscriptionModal: (show: boolean) => void;
@@ -130,6 +150,10 @@ interface AppState {
   // Auth Modal
   showAuthModal: 'login' | 'signup' | null;
   setShowAuthModal: (show: 'login' | 'signup' | null) => void;
+
+  // Pending test (to start after login)
+  pendingTestId: string | null;
+  setPendingTestId: (id: string | null) => void;
 
   // Admin
   adminData: AdminData;
@@ -159,6 +183,7 @@ export const useAppStore = create<AppState>()(
         freeTestsUsed: 0,
         freeTestsRemaining: 5,
         isSubscribed: false,
+        attemptHistory: [],
       }),
 
       // Student
@@ -196,11 +221,17 @@ export const useAppStore = create<AppState>()(
       lastResult: null,
       setLastResult: (result) => set({ lastResult: result }),
 
+      attemptHistory: [],
+      setAttemptHistory: (history) => set({ attemptHistory: history }),
+
       showSubscriptionModal: false,
       setShowSubscriptionModal: (show) => set({ showSubscriptionModal: show }),
 
       showAuthModal: null,
       setShowAuthModal: (show) => set({ showAuthModal: show }),
+
+      pendingTestId: null,
+      setPendingTestId: (id) => set({ pendingTestId: id }),
 
       adminData: { isLoggedIn: false, stats: { totalStudents: 0, totalTests: 0, totalQuestions: 0, totalAttempts: 0, totalPayments: 0 } },
       setAdminData: (data) => set((state) => ({ adminData: { ...state.adminData, ...data } })),

@@ -29,10 +29,14 @@ export async function POST(request: Request) {
 
     // Link deviceId if provided (for continuity)
     if (deviceId && !student.deviceId) {
-      await db.student.update({
-        where: { id: student.id },
-        data: { deviceId },
-      });
+      try {
+        await db.student.update({
+          where: { id: student.id },
+          data: { deviceId },
+        });
+      } catch {
+        // deviceId already taken by another student, ignore
+      }
     }
 
     return NextResponse.json({

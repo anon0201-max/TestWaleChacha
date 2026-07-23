@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   ArrowLeft, LogOut, Plus, Trash2, BarChart3, BookOpen, Users, CreditCard,
   Save, Shield, FileText, Settings, Edit2, Eye, EyeOff, Copy, CheckCircle2,
   ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
-  HelpCircle, Pencil,
+  HelpCircle, Pencil, Camera, FileUp, Upload, Loader2,
 } from 'lucide-react';
 
 // ==================== ADMIN LOGIN ====================
@@ -621,6 +622,16 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   const [savedCount, setSavedCount] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  // Import states
+  const [extractingImage, setExtractingImage] = useState(false);
+  const [importingAnswers, setImportingAnswers] = useState(false);
+  const [importingExplanations, setImportingExplanations] = useState(false);
+
+  // File input refs
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const answersInputRef = useRef<HTMLInputElement>(null);
+  const explanationsInputRef = useRef<HTMLInputElement>(null);
+
   function addQuestion() {
     setQuestions([...questions, emptyQuestion()]);
   }
@@ -682,6 +693,95 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     setQuestions([emptyQuestion()]);
     setCreatedTestId('');
     setSavedCount(0);
+  }
+
+  async function handleImageExtract(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExtractingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch('/api/admin/extract-question', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success && data.question) {
+        const newQ: QuestionForm = {
+          question: data.question.question || '',
+          optionA: data.question.optionA || '',
+          optionB: data.question.optionB || '',
+          optionC: data.question.optionC || '',
+          optionD: data.question.optionD || '',
+          correctOption: data.question.correctOption || 'A',
+          explanation: data.question.explanation || '',
+          section: data.question.section || 'General',
+          negativeMark: data.question.negativeMark || '0',
+        };
+        setQuestions([...questions, newQ]);
+        toast.success('Question extracted from image successfully!');
+      } else {
+        toast.error(data.error || 'Failed to extract question from image');
+      }
+    } catch {
+      toast.error('Failed to extract question. Please try again.');
+    } finally {
+      setExtractingImage(false);
+      e.target.value = '';
+    }
+  }
+
+  async function handleImportAnswers(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportingAnswers(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('testId', createdTestId);
+      const res = await fetch('/api/admin/import-answers', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Updated ${data.updated} correct answers successfully!`);
+      } else {
+        toast.error(data.error || 'Failed to import answers');
+      }
+    } catch {
+      toast.error('Failed to import answers. Please try again.');
+    } finally {
+      setImportingAnswers(false);
+      e.target.value = '';
+    }
+  }
+
+  async function handleImportExplanations(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportingExplanations(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('testId', createdTestId);
+      const res = await fetch('/api/admin/import-explanations', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Updated ${data.updated} explanations successfully!`);
+      } else {
+        toast.error(data.error || 'Failed to import explanations');
+      }
+    } catch {
+      toast.error('Failed to import explanations. Please try again.');
+    } finally {
+      setImportingExplanations(false);
+      e.target.value = '';
+    }
   }
 
   return (
@@ -769,6 +869,75 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
             </div>
             <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
               <Plus className="w-3.5 h-3.5" /> Add Question
+            </Button>
+          </div>
+
+          {/* Hidden file inputs */}
+          <input
+            type="file"
+            ref={imageInputRef}
+            accept="image/*"
+            onChange={handleImageExtract}
+            className="hidden"
+          />
+          <input
+            type="file"
+            ref={answersInputRef}
+            accept=".txt,.csv"
+            onChange={handleImportAnswers}
+            className="hidden"
+          />
+          <input
+            type="file"
+            ref={explanationsInputRef}
+            accept=".txt"
+            onChange={handleImportExplanations}
+            className="hidden"
+          />
+
+          {/* Import Actions Bar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={extractingImage}
+              className="gap-1.5 text-xs"
+            >
+              {extractingImage ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Camera className="w-3.5 h-3.5" />
+              )}
+              {extractingImage ? 'Extracting...' : 'Upload Question Image'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => answersInputRef.current?.click()}
+              disabled={importingAnswers}
+              className="gap-1.5 text-xs"
+            >
+              {importingAnswers ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <FileUp className="w-3.5 h-3.5" />
+              )}
+              {importingAnswers ? 'Importing...' : 'Import Correct Answers'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => explanationsInputRef.current?.click()}
+              disabled={importingExplanations}
+              className="gap-1.5 text-xs"
+            >
+              {importingExplanations ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Upload className="w-3.5 h-3.5" />
+              )}
+              {importingExplanations ? 'Importing...' : 'Import Explanations'}
             </Button>
           </div>
 

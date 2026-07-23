@@ -115,6 +115,32 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const deviceId = searchParams.get('deviceId');
     const studentId = searchParams.get('studentId');
+    const rankings = searchParams.get('rankings');
+    const testId = searchParams.get('testId');
+
+    // Ranking endpoint: /api/attempts?rankings=true&testId=xxx
+    if (rankings === 'true' && testId) {
+      const attempts = await db.testAttempt.findMany({
+        where: { testId, completed: true },
+        include: {
+          student: { select: { name: true } },
+        },
+        orderBy: [
+          { score: 'desc' },
+          { timeTaken: 'asc' },
+        ],
+      });
+
+      const rankingsData = attempts.map((attempt, index) => ({
+        studentName: attempt.student.name,
+        score: attempt.score,
+        timeTaken: attempt.timeTaken,
+        rank: index + 1,
+        createdAt: attempt.createdAt.toISOString(),
+      }));
+
+      return NextResponse.json({ rankings: rankingsData, total: rankingsData.length });
+    }
 
     const whereClause: Record<string, unknown> = { completed: true };
 

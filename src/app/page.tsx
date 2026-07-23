@@ -7,6 +7,7 @@ import { HomePage } from '@/components/mcq/HomePage';
 import { TestListPage } from '@/components/mcq/TestListPage';
 import { TestTakingPage } from '@/components/mcq/TestTakingPage';
 import { ResultsPage } from '@/components/mcq/ResultsPage';
+import { MyAttemptsPage } from '@/components/mcq/MyAttemptsPage';
 import { AdminPanel } from '@/components/mcq/AdminPanel';
 import { SubscriptionModal } from '@/components/mcq/SubscriptionModal';
 import { AuthModal } from '@/components/mcq/AuthModal';
@@ -76,6 +77,7 @@ function AppContent() {
             {currentView === 'home' && <HomePage />}
             {currentView === 'tests' && <TestListPage />}
             {currentView === 'results' && <ResultsPage />}
+            {currentView === 'my-attempts' && <MyAttemptsPage />}
           </div>
         )}
       </main>

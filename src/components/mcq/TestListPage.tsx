@@ -13,7 +13,7 @@ export function TestListPage() {
   const {
     setView, tests, categories, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery,
     setCurrentTest, setIsTestActive, clearAnswers, setCurrentQuestionIndex, setTimeRemaining,
-    freeTestsRemaining, isSubscribed, user,
+    freeTestsRemaining, isSubscribed, user, isLoggedIn, setShowAuthModal, setPendingTestId,
   } = useAppStore();
 
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
@@ -46,6 +46,13 @@ export function TestListPage() {
   }
 
   function handleClick(test: (typeof tests)[0]) {
+    // Login gate: if not logged in, show auth modal and track pending test
+    if (!isLoggedIn) {
+      setPendingTestId(test.id);
+      setShowAuthModal('signup');
+      return;
+    }
+    // Subscription check for logged-in users
     if (!isSubscribed && freeTestsRemaining <= 0) {
       useAppStore.getState().setShowSubscriptionModal(true);
       return;
@@ -64,7 +71,7 @@ export function TestListPage() {
             <h1 className="text-xl font-bold truncate">{selectedCategoryName || 'All Mock Tests'}</h1>
             <p className="text-xs text-muted-foreground">
               {filteredTests.length} tests
-              {!isSubscribed && (
+              {isLoggedIn && !isSubscribed && (
                 <Badge variant="secondary" className="ml-1 text-[10px]">
                   <Zap className="w-2.5 h-2.5 mr-0.5" />{freeTestsRemaining} free
                 </Badge>
@@ -108,7 +115,15 @@ export function TestListPage() {
       <div className="space-y-3">
         {filteredTests.map((test, i) => (
           <motion.div key={test.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.2) }}>
-            <Card className="hover:shadow-md transition-all border-0 shadow-sm">
+            <Card className="hover:shadow-md transition-all border-0 shadow-sm relative">
+              {/* Lock overlay for non-logged-in users */}
+              {!isLoggedIn && (
+                <div className="absolute top-3 right-3 z-10">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                    <Lock className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              )}
               <CardContent className="p-4 md:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex-1 min-w-0">
@@ -125,9 +140,19 @@ export function TestListPage() {
                     </div>
                   </div>
                   <div className="shrink-0">
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
-                      {!isSubscribed && freeTestsRemaining <= 0 ? <><Lock className="w-4 h-4 mr-1" />Unlock</> : <><Play className="w-4 h-4 mr-1" />Start Test</>}
-                    </Button>
+                    {!isLoggedIn ? (
+                      <Button size="sm" className="bg-gray-500 hover:bg-gray-600 w-full sm:w-auto" onClick={() => handleClick(test)}>
+                        <Lock className="w-4 h-4 mr-1" />Login to attempt
+                      </Button>
+                    ) : !isSubscribed && freeTestsRemaining <= 0 ? (
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
+                        <Lock className="w-4 h-4 mr-1" />Unlock
+                      </Button>
+                    ) : (
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
+                        <Play className="w-4 h-4 mr-1" />Start Test
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

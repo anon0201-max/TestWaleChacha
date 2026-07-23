@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import {
-  GraduationCap, Trophy, Zap, ArrowRight, BookOpen, Shield, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle,
+  GraduationCap, Trophy, Zap, ArrowRight, BookOpen, Shield, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle, History,
 } from 'lucide-react';
 
 const examTypes = ['SSC', 'UPSC', 'Banking', 'Railways', 'General'];
@@ -109,11 +109,12 @@ export function HomePage() {
       {/* Features */}
       <section>
         <h2 className="text-xl font-bold mb-4">Why Choose QuizMaster?</h2>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { icon: BarChart3, title: 'Real Exam Interface', desc: 'Question palette, mark for review, timer — exactly like SSC/UPSC online exam.' },
             { icon: Trophy, title: 'Detailed Solutions', desc: 'Every question has explanations. Learn from your mistakes.' },
             { icon: Clock, title: 'Performance Tracking', desc: 'Track your attempts, scores, and improvement over time.' },
+            { icon: History, title: 'Personal Dashboard', desc: 'Track all your test attempts, scores, and rankings in one place.' },
           ].map((item, i) => (
             <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.1 }}>
               <Card className="h-full border-0 shadow-sm">

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Zap, GraduationCap, LogIn, User, LogOut, UserCircle } from 'lucide-react';
+import { Crown, Zap, GraduationCap, LogIn, LogOut, UserCircle, History } from 'lucide-react';
 
 export function AppHeader() {
   const {
@@ -35,15 +35,23 @@ export function AppHeader() {
           <span className="hidden sm:inline">QuizMaster</span>
         </button>
 
-        <nav className="flex items-center gap-2 relative z-10">
-          {/* Show on home page */}
+        <nav className="flex items-center gap-1 sm:gap-2 relative z-10">
+          {/* Mock Tests - show on home page */}
           {currentView === 'home' && (
             <Button variant="ghost" size="sm" className="text-sm" onClick={() => setView('tests')}>Mock Tests</Button>
           )}
 
-          {/* Show on non-test-taking pages */}
+          {/* Home button - show on other pages */}
           {currentView !== 'home' && currentView !== 'test-taking' && currentView !== 'admin' && (
             <Button variant="ghost" size="sm" className="text-sm" onClick={() => setView('home')}>Home</Button>
+          )}
+
+          {/* My Tests - logged in users */}
+          {isLoggedIn && currentView !== 'test-taking' && currentView !== 'admin' && currentView !== 'my-attempts' && (
+            <Button variant="ghost" size="sm" className="text-xs sm:text-sm gap-1" onClick={() => setView('my-attempts')}>
+              <History className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">My Tests</span>
+            </Button>
           )}
 
           {/* Admin back button */}
@@ -51,11 +59,10 @@ export function AppHeader() {
             <Button variant="ghost" size="sm" className="text-sm" onClick={() => setView('home')}>← Back to Site</Button>
           )}
 
-          {/* Subscription / Login Status - only when not in test-taking mode */}
+          {/* Subscription / Login Status */}
           {currentView !== 'test-taking' && (
             <>
               {isLoggedIn && user ? (
-                /* Logged in user */
                 <div className="relative" ref={profileRef}>
                   <button
                     onClick={() => setShowProfile(!showProfile)}
@@ -67,7 +74,6 @@ export function AppHeader() {
                     <span className="hidden sm:inline text-sm font-medium max-w-[100px] truncate">{user.name}</span>
                   </button>
 
-                  {/* Profile Dropdown */}
                   {showProfile && (
                     <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-lg border p-2 z-50">
                       <div className="px-3 py-2 border-b mb-1">
@@ -89,55 +95,40 @@ export function AppHeader() {
                         </div>
                       </div>
                       <div className="border-t mt-1 pt-1">
+                        <button
+                          onClick={() => { setShowProfile(false); setView('my-attempts'); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-50 text-gray-700"
+                        >
+                          <History className="w-4 h-4" /> My Test History
+                        </button>
                         {!isSubscribed && (
                           <button
-                            onClick={() => {
-                              setShowProfile(false);
-                              useAppStore.getState().setShowSubscriptionModal(true);
-                            }}
+                            onClick={() => { setShowProfile(false); useAppStore.getState().setShowSubscriptionModal(true); }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-blue-50 text-blue-700 font-medium"
                           >
-                            <Crown className="w-4 h-4" />
-                            Upgrade to Pro — ₹100
+                            <Crown className="w-4 h-4" /> Upgrade to Pro — ₹100
                           </button>
                         )}
                         <button
-                          onClick={() => {
-                            setShowProfile(false);
-                            logout();
-                          }}
+                          onClick={() => { setShowProfile(false); logout(); }}
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-red-50 text-red-600"
                         >
-                          <LogOut className="w-4 h-4" />
-                          Logout
+                          <LogOut className="w-4 h-4" /> Logout
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                /* Not logged in */
                 <>
                   {!isSubscribed && (
-                    <Badge variant="secondary" className="gap-1 text-xs"><Zap className="w-3 h-3" />{freeTestsRemaining} free</Badge>
+                    <Badge variant="secondary" className="gap-1 text-xs hidden sm:flex"><Zap className="w-3 h-3" />{freeTestsRemaining} free</Badge>
                   )}
-                  {isSubscribed && (
-                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 gap-1 text-xs"><Crown className="w-3 h-3" />PRO</Badge>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs"
-                    onClick={() => setShowAuthModal('login')}
-                  >
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => setShowAuthModal('login')}>
                     <LogIn className="w-3.5 h-3.5 mr-1" />
                     <span className="hidden sm:inline">Login</span>
                   </Button>
-                  <Button
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-xs"
-                    onClick={() => setShowAuthModal('signup')}
-                  >
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs" onClick={() => setShowAuthModal('signup')}>
                     <UserCircle className="w-3.5 h-3.5 mr-1" />
                     <span className="hidden sm:inline">Sign Up</span>
                   </Button>
