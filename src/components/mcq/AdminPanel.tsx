@@ -707,7 +707,23 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
         body: formData,
       });
       const data = await res.json();
-      if (data.success && data.question) {
+      if (data.success && data.questions && data.questions.length > 0) {
+        // Handle multiple questions from image
+        const newQuestions: QuestionForm[] = data.questions.map((q: any) => ({
+          question: q.question || '',
+          optionA: q.optionA || '',
+          optionB: q.optionB || '',
+          optionC: q.optionC || '',
+          optionD: q.optionD || '',
+          correctOption: q.correctOption || 'A',
+          explanation: q.explanation || '',
+          section: q.section || 'General',
+          negativeMark: q.negativeMark || '0',
+        }));
+        setQuestions([...questions, ...newQuestions]);
+        toast.success(`✅ ${data.questions.length} questions extracted from image!`);
+      } else if (data.success && data.question) {
+        // Fallback: single question
         const newQ: QuestionForm = {
           question: data.question.question || '',
           optionA: data.question.optionA || '',
@@ -720,12 +736,12 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           negativeMark: data.question.negativeMark || '0',
         };
         setQuestions([...questions, newQ]);
-        toast.success('Question extracted from image successfully!');
+        toast.success('1 question extracted from image!');
       } else {
-        toast.error(data.error || 'Failed to extract question from image');
+        toast.error(data.error || 'Failed to extract questions from image');
       }
     } catch {
-      toast.error('Failed to extract question. Please try again.');
+      toast.error('Failed to extract questions. Please try again.');
     } finally {
       setExtractingImage(false);
       e.target.value = '';
@@ -909,7 +925,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               ) : (
                 <Camera className="w-3.5 h-3.5" />
               )}
-              {extractingImage ? 'Extracting...' : 'Upload Question Image'}
+              {extractingImage ? 'Extracting All Questions...' : '📸 Upload Image (All Ques)'}
             </Button>
             <Button
               variant="outline"

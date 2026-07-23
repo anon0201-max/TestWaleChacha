@@ -170,3 +170,22 @@ Stage Summary:
 - VLM image extraction now works correctly (~5 second response)
 - Footer redesigned with dark professional theme, CTA banner, better links
 - API tested and verified with actual user-uploaded image
+
+---
+Task ID: 8
+Agent: Main Agent
+Task: Fix VLM to extract ALL questions from image (was extracting only 1)
+
+Work Log:
+- Updated /api/admin/extract-question API: prompt changed from single question to multi-question extraction
+- API now asks VLM to extract EVERY question in the image and return a JSON array
+- Added robust JSON parsing: handles array, wrapped object, individual objects
+- Updated AdminPanel handleImageExtract: handles data.questions[] array, adds all to question list
+- Changed button text to "📸 Upload Image (All Ques)" for clarity
+- Tested with user's actual 34-question image: ALL 34 questions extracted successfully in ~41 seconds
+- Lint clean, no server errors
+
+Stage Summary:
+- VLM now extracts ALL questions from image (tested: 34/34 questions from single image)
+- AdminPanel adds all extracted questions at once with toast showing count
+- Button label updated to indicate multi-question extraction
