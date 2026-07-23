@@ -1,10 +1,10 @@
 'use client';
 
-import { GraduationCap, Heart, Crown } from 'lucide-react';
+import { GraduationCap, Heart, Crown, UserCircle } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 
 export function AppFooter() {
-  const { isSubscribed } = useAppStore();
+  const { isSubscribed, isLoggedIn, setShowSubscriptionModal, setShowAuthModal } = useAppStore();
 
   return (
     <footer className="border-t bg-white mt-auto">
@@ -16,11 +16,15 @@ export function AppFooter() {
           </div>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span>SSC | UPSC | Banking | Railways</span>
-            {!isSubscribed && (
-              <button onClick={() => useAppStore.getState().setShowSubscriptionModal(true)} className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium">
+            {!isLoggedIn ? (
+              <button onClick={() => setShowAuthModal('signup')} className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium">
+                <UserCircle className="w-3 h-3" /> Sign Up Free
+              </button>
+            ) : !isSubscribed ? (
+              <button onClick={() => setShowSubscriptionModal(true)} className="flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium">
                 <Crown className="w-3 h-3" /> ₹100 Unlimited
               </button>
-            )}
+            ) : null}
           </div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> in India

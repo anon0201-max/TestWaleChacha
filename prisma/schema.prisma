@@ -66,9 +66,10 @@ model Question {
 model Student {
   id             String        @id @default(cuid())
   name           String
-  email          String?
+  email          String?       @unique
+  passwordHash   String?
   phone          String?
-  deviceId       String        @unique
+  deviceId       String?       @unique
   freeTestsUsed  Int           @default(0)
   isSubscribed   Boolean       @default(false)
   subscriptionAt DateTime?

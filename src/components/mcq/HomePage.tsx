@@ -6,13 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import {
-  GraduationCap, Trophy, Zap, ArrowRight, BookOpen, Shield, Crown, Star, BarChart3, Users, Clock, Lock,
+  GraduationCap, Trophy, Zap, ArrowRight, BookOpen, Shield, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle,
 } from 'lucide-react';
 
 const examTypes = ['SSC', 'UPSC', 'Banking', 'Railways', 'General'];
 
 export function HomePage() {
-  const { setView, categories, freeTestsRemaining, isSubscribed, setView: setAppView } = useAppStore();
+  const { setView, categories, freeTestsRemaining, isSubscribed, isLoggedIn, setShowSubscriptionModal, setShowAuthModal } = useAppStore();
 
   return (
     <div className="space-y-8">
@@ -39,13 +39,19 @@ export function HomePage() {
               <Button size="lg" className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 h-12" onClick={() => setView('tests')}>
                 Start Free Test <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-              {isSubscribed ? (
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
-                  <Crown className="w-5 h-5 mr-2 text-amber-400" /> PRO Member
-                </Button>
+              {isLoggedIn ? (
+                isSubscribed ? (
+                  <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                    <Crown className="w-5 h-5 mr-2 text-amber-400" /> PRO Member
+                  </Button>
+                ) : (
+                  <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" onClick={() => setShowSubscriptionModal(true)}>
+                    <Lock className="w-4 h-4 mr-2" /> Unlock All — ₹100
+                  </Button>
+                )
               ) : (
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" onClick={() => useAppStore.getState().setShowSubscriptionModal(true)}>
-                  <Lock className="w-4 h-4 mr-2" /> Unlock All — ₹100
+                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" onClick={() => setShowAuthModal('signup')}>
+                  <UserCircle className="w-5 h-5 mr-2" /> Sign Up Free
                 </Button>
               )}
             </div>
@@ -130,11 +136,21 @@ export function HomePage() {
           <Crown className="w-12 h-12 text-amber-500 mx-auto mb-3" />
           <h2 className="text-2xl font-bold mb-2">Get Unlimited Access — ₹100</h2>
           <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-            {freeTestsRemaining} free tests remaining. Unlock all {categories.reduce((s, c) => s + c._count.tests, 0)}+ tests with detailed solutions.
+            {isLoggedIn
+              ? `${freeTestsRemaining} free tests remaining. Unlock all ${categories.reduce((s, c) => s + c._count.tests, 0)}+ tests with detailed solutions.`
+              : `Sign up free to get 5 mock tests, then unlock unlimited access for just ₹100.`
+            }
           </p>
-          <Button size="lg" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8" onClick={() => useAppStore.getState().setShowSubscriptionModal(true)}>
-            Subscribe Now <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
+          <div className="flex flex-wrap justify-center gap-3">
+            {!isLoggedIn && (
+              <Button size="lg" variant="outline" className="font-semibold px-8" onClick={() => setShowAuthModal('signup')}>
+                Sign Up Free
+              </Button>
+            )}
+            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8" onClick={() => setShowSubscriptionModal(true)}>
+              Subscribe Now — ₹100 <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
         </section>
       )}
     </div>

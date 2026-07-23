@@ -12,12 +12,11 @@ import {
 } from 'lucide-react';
 
 export function SubscriptionModal() {
-  const { showSubscriptionModal, setShowSubscriptionModal, deviceId } = useAppStore();
+  const { showSubscriptionModal, setShowSubscriptionModal, deviceId, user, setUser, setStudentData } = useAppStore();
   const [step, setStep] = useState<'form' | 'payment' | 'processing' | 'success'>('form');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [payMethod, setPayMethod] = useState('upi');
+
+  const studentId = user?.id || null;
 
   if (!showSubscriptionModal) return null;
 
@@ -31,26 +30,46 @@ export function SubscriptionModal() {
     try {
       // Create order
       const orderRes = await fetch('/api/payment/create-order', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: 100, deviceId }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 100, deviceId: deviceId || undefined, studentId }),
       });
       const orderData = await orderRes.json();
 
       // Verify payment (simulated)
       const verifyRes = await fetch('/api/payment/verify', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ razorpayOrderId: orderData.id, razorpayPaymentId: 'pay_' + Date.now(), razorpaySignature: 'sig', deviceId, amount: 10000 }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpayOrderId: orderData.id,
+          razorpayPaymentId: 'pay_' + Date.now(),
+          razorpaySignature: 'sig_' + Date.now(),
+          deviceId: studentId ? undefined : deviceId,
+          studentId,
+          amount: 10000,
+        }),
       });
-      if (verifyRes.ok) {
-        useAppStore.getState().setStudentData({ freeTestsUsed: 0, isSubscribed: true });
-        // Update student name if provided
-        if (name) {
-          await fetch('/api/student', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deviceId, name }) });
+      const verifyData = await verifyRes.json();
+
+      if (verifyRes.ok && verifyData.success) {
+        // Update local state
+        if (verifyData.student) {
+          setUser(verifyData.student);
+        } else {
+          setStudentData({ freeTestsUsed: 0, isSubscribed: true });
         }
         setStep('success');
+      } else {
+        setStep('form');
+        alert('Payment failed. Please try again.');
       }
-    } catch { setStep('form'); }
+    } catch {
+      setStep('form');
+      alert('Payment error. Please try again.');
+    }
   }
+
+  const userName = user?.name || 'Student';
 
   return (
     <AnimatePresence>
@@ -63,7 +82,7 @@ export function SubscriptionModal() {
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }}>
                 <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto mb-4" />
               </motion.div>
-              <h2 className="text-2xl font-bold mb-2">Payment Successful! 🎉</h2>
+              <h2 className="text-2xl font-bold mb-2">Payment Successful!</h2>
               <p className="text-muted-foreground mb-1">₹100 paid successfully</p>
               <p className="text-sm text-muted-foreground mb-6">Unlimited mock tests unlocked for all categories.</p>
               <Button className="w-full bg-blue-600 hover:bg-blue-700 h-12 font-semibold" onClick={handleClose}>
@@ -87,7 +106,7 @@ export function SubscriptionModal() {
               </div>
               <div className="p-5 space-y-4">
                 <div className="bg-blue-50 rounded-xl p-3 flex items-center justify-between">
-                  <div><p className="text-sm font-medium">QuizMaster Pro - Unlimited</p><p className="text-xs text-muted-foreground">One-time payment</p></div>
+                  <div><p className="text-sm font-medium">QuizMaster Pro - Unlimited</p><p className="text-xs text-muted-foreground">{user?.email || 'One-time payment'}</p></div>
                   <p className="font-bold">₹100</p>
                 </div>
                 <div>
@@ -140,7 +159,7 @@ export function SubscriptionModal() {
                 <div className="space-y-2.5">
                   {[
                     { icon: BookOpen, text: 'Unlimited mock test attempts' },
-                    { icon: Zap, text: `All ${10} exam categories` },
+                    { icon: Zap, text: 'All 10+ exam categories' },
                     { icon: Star, text: '100+ questions with solutions' },
                     { icon: Shield, text: 'Real exam-like interface' },
                   ].map((f) => (
@@ -150,11 +169,18 @@ export function SubscriptionModal() {
                     </div>
                   ))}
                 </div>
-                <div className="space-y-2">
-                  <div><Label className="text-xs">Your Name (Optional)</Label><Input placeholder="Enter your name" value={name} onChange={(e) => setName(e.target.value)} /></div>
-                  <div><Label className="text-xs">Phone Number</Label><Input placeholder="+91 XXXXX XXXXX" value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
-                  <div><Label className="text-xs">Email (Optional)</Label><Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-                </div>
+                {user?.email && (
+                  <div className="bg-gray-50 rounded-xl p-3 text-sm">
+                    <p className="text-xs text-muted-foreground">Account</p>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                )}
+                {!user && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-700">
+                    <strong>Note:</strong> Please login/signup first for better tracking and to link your subscription.
+                  </div>
+                )}
                 <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold" onClick={() => setStep('payment')}>
                   Proceed to Pay ₹100 <ArrowRight className="w-4 h-4 ml-2 hidden sm:inline" />
                 </Button>

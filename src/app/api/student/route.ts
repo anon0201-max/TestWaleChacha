@@ -5,17 +5,18 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const deviceId = searchParams.get('deviceId');
+    const studentId = searchParams.get('studentId');
 
-    if (!deviceId) {
-      return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
+    let student = null;
+
+    if (studentId) {
+      student = await db.student.findUnique({ where: { id: studentId } });
+    } else if (deviceId) {
+      student = await db.student.findUnique({ where: { deviceId } });
     }
 
-    let student = await db.student.findUnique({
-      where: { deviceId },
-    });
-
-    // Auto-create if doesn't exist
-    if (!student) {
+    // Auto-create guest student if deviceId provided and no existing record
+    if (!student && deviceId) {
       student = await db.student.create({
         data: {
           name: 'Guest Student',
@@ -25,13 +26,20 @@ export async function GET(request: Request) {
       });
     }
 
+    if (!student) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
+
     return NextResponse.json({
       id: student.id,
+      name: student.name,
+      email: student.email,
       freeTestsUsed: student.freeTestsUsed,
       freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
       isSubscribed: student.isSubscribed,
     });
-  } catch {
+  } catch (error) {
+    console.error('Student fetch error:', error);
     return NextResponse.json({ error: 'Failed to fetch student' }, { status: 500 });
   }
 }
@@ -39,23 +47,25 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { deviceId, name } = body;
+    const { deviceId, studentId, name, email, phone } = body;
 
-    if (!deviceId) {
-      return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
-    }
+    const whereClause: Record<string, string> = {};
+    if (studentId) whereClause.id = studentId;
+    else if (deviceId) whereClause.deviceId = deviceId;
+    else return NextResponse.json({ error: 'studentId or deviceId required' }, { status: 400 });
 
     const student = await db.student.upsert({
-      where: { deviceId },
-      update: { ...(name ? { name } : {}) },
+      where: whereClause as { id?: string; deviceId?: string },
+      update: { ...(name ? { name } : {}), ...(email ? { email } : {}), ...(phone ? { phone } : {}) },
       create: {
         name: name || 'Guest Student',
-        deviceId,
+        deviceId: deviceId || undefined,
       },
     });
 
     return NextResponse.json(student);
-  } catch {
+  } catch (error) {
+    console.error('Student update error:', error);
     return NextResponse.json({ error: 'Failed to update student' }, { status: 500 });
   }
 }

@@ -15,6 +15,17 @@ function generateDeviceId(): string {
 
 export type AppView = 'home' | 'tests' | 'test-taking' | 'results' | 'admin';
 
+interface UserInfo {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  freeTestsUsed: number;
+  freeTestsRemaining: number;
+  isSubscribed: boolean;
+  subscriptionAt?: string | null;
+}
+
 interface TestQuestion {
   id: string;
   question: string;
@@ -71,7 +82,13 @@ interface AppState {
   setView: (view: AppView) => void;
   deviceId: string;
 
-  // Student
+  // Auth
+  user: UserInfo | null;
+  isLoggedIn: boolean;
+  setUser: (user: UserInfo | null) => void;
+  logout: () => void;
+
+  // Student (fallback for guests)
   freeTestsUsed: number;
   freeTestsRemaining: number;
   isSubscribed: boolean;
@@ -110,6 +127,10 @@ interface AppState {
   showSubscriptionModal: boolean;
   setShowSubscriptionModal: (show: boolean) => void;
 
+  // Auth Modal
+  showAuthModal: 'login' | 'signup' | null;
+  setShowAuthModal: (show: 'login' | 'signup' | null) => void;
+
   // Admin
   adminData: AdminData;
   setAdminData: (data: Partial<AdminData>) => void;
@@ -122,10 +143,33 @@ export const useAppStore = create<AppState>()(
       setView: (view) => set({ currentView: view }),
       deviceId: generateDeviceId(),
 
+      // Auth
+      user: null,
+      isLoggedIn: false,
+      setUser: (user) => set({
+        user,
+        isLoggedIn: !!user,
+        freeTestsUsed: user?.freeTestsUsed ?? 0,
+        freeTestsRemaining: user?.freeTestsRemaining ?? 5,
+        isSubscribed: user?.isSubscribed ?? false,
+      }),
+      logout: () => set({
+        user: null,
+        isLoggedIn: false,
+        freeTestsUsed: 0,
+        freeTestsRemaining: 5,
+        isSubscribed: false,
+      }),
+
+      // Student
       freeTestsUsed: 0,
       freeTestsRemaining: 5,
       isSubscribed: false,
-      setStudentData: (data) => set({ freeTestsUsed: data.freeTestsUsed, freeTestsRemaining: Math.max(0, 5 - data.freeTestsUsed), isSubscribed: data.isSubscribed }),
+      setStudentData: (data) => set({
+        freeTestsUsed: data.freeTestsUsed,
+        freeTestsRemaining: Math.max(0, 5 - data.freeTestsUsed),
+        isSubscribed: data.isSubscribed,
+      }),
 
       categories: [],
       setCategories: (cats) => set({ categories: cats }),
@@ -155,6 +199,9 @@ export const useAppStore = create<AppState>()(
       showSubscriptionModal: false,
       setShowSubscriptionModal: (show) => set({ showSubscriptionModal: show }),
 
+      showAuthModal: null,
+      setShowAuthModal: (show) => set({ showAuthModal: show }),
+
       adminData: { isLoggedIn: false, stats: { totalStudents: 0, totalTests: 0, totalQuestions: 0, totalAttempts: 0, totalPayments: 0 } },
       setAdminData: (data) => set((state) => ({ adminData: { ...state.adminData, ...data } })),
     }),
@@ -162,6 +209,8 @@ export const useAppStore = create<AppState>()(
       name: 'mcq-app-storage',
       partialize: (state) => ({
         deviceId: state.deviceId,
+        user: state.user,
+        isLoggedIn: state.isLoggedIn,
         freeTestsUsed: state.freeTestsUsed,
         freeTestsRemaining: state.freeTestsRemaining,
         isSubscribed: state.isSubscribed,

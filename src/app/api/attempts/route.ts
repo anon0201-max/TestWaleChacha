@@ -4,25 +4,29 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { deviceId, testId, answers, timeTaken } = body;
+    const { deviceId, studentId, testId, answers, timeTaken } = body;
 
-    if (!deviceId || !testId || !answers || !timeTaken) {
+    if (!testId || !answers || !timeTaken) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Get or create student
-    let student = await db.student.findUnique({
-      where: { deviceId },
-    });
+    let student;
+    if (studentId) {
+      student = await db.student.findUnique({ where: { id: studentId } });
+    } else if (deviceId) {
+      student = await db.student.findUnique({ where: { deviceId } });
+    }
 
     if (!student) {
-      student = await db.student.create({
-        data: {
-          name: 'Guest Student',
-          deviceId,
-          freeTestsUsed: 0,
-        },
-      });
+      // Create guest student
+      if (deviceId) {
+        student = await db.student.create({
+          data: { name: 'Guest Student', deviceId, freeTestsUsed: 0 },
+        });
+      } else {
+        return NextResponse.json({ error: 'Student identification required' }, { status: 400 });
+      }
     }
 
     // Check if can take test (free tests limit or subscribed)
@@ -57,7 +61,7 @@ export async function POST(request: Request) {
       };
     });
 
-    const score = Math.round((correctAnswers / test.questions.length) * 100);
+    const score = test.questions.length > 0 ? Math.round((correctAnswers / test.questions.length) * 100) : 0;
 
     // Save attempt
     const attempt = await db.testAttempt.create({
@@ -80,6 +84,9 @@ export async function POST(request: Request) {
         where: { id: student.id },
         data: { freeTestsUsed: { increment: 1 } },
       });
+      // Get updated student data
+      const updatedStudent = await db.student.findUnique({ where: { id: student.id } });
+      student = updatedStudent || student;
     }
 
     return NextResponse.json({
@@ -88,8 +95,17 @@ export async function POST(request: Request) {
       score,
       correctAnswers,
       totalQuestions: test.questions.length,
+      updatedStudent: {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        freeTestsUsed: student.freeTestsUsed,
+        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
+        isSubscribed: student.isSubscribed,
+      },
     });
-  } catch {
+  } catch (error) {
+    console.error('Submit attempt error:', error);
     return NextResponse.json({ error: 'Failed to submit test' }, { status: 500 });
   }
 }
@@ -98,16 +114,20 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const deviceId = searchParams.get('deviceId');
+    const studentId = searchParams.get('studentId');
 
-    if (!deviceId) {
-      return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
+    const whereClause: Record<string, unknown> = { completed: true };
+
+    if (studentId) {
+      whereClause.studentId = studentId;
+    } else if (deviceId) {
+      whereClause.student = { deviceId };
+    } else {
+      return NextResponse.json({ error: 'deviceId or studentId is required' }, { status: 400 });
     }
 
     const attempts = await db.testAttempt.findMany({
-      where: {
-        student: { deviceId },
-        completed: true,
-      },
+      where: whereClause,
       include: {
         test: { include: { category: true } },
       },
@@ -116,7 +136,8 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(attempts);
-  } catch {
+  } catch (error) {
+    console.error('Fetch attempts error:', error);
     return NextResponse.json({ error: 'Failed to fetch attempts' }, { status: 500 });
   }
 }

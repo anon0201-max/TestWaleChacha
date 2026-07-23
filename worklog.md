@@ -34,3 +34,34 @@ Stage Summary:
 - Razorpay payment simulation (₹100 for unlimited)
 - Navy blue/white professional design
 - All lint checks pass
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Add Login/Signup, Hide Admin, Fix Subscription
+
+Work Log:
+- Updated Prisma schema: added email (unique nullable), passwordHash fields to Student model; made deviceId nullable
+- Created auth API routes: /api/auth/signup (with guest→registered upgrade), /api/auth/login, /api/auth/me
+- Fixed subscription API (/api/subscribe, /api/payment/verify) to work with both studentId and deviceId
+- Fixed attempts API (/api/attempts) to support studentId for authenticated users
+- Fixed student API (/api/student) to support both studentId and deviceId lookups
+- Updated Zustand store: added user, isLoggedIn, logout, showAuthModal states; persists auth across reloads
+- Built AuthModal component: Login/Signup tabs, name/email/password/phone fields, password visibility toggle, loading states, error handling
+- Updated AppHeader: shows Login/Sign Up buttons when not logged in; shows user avatar + profile dropdown when logged in; hidden admin completely
+- Updated HomePage: login-aware CTAs, shows Sign Up Free for guests, Unlock All for logged-in non-subscribed users
+- Updated TestListPage: removed admin button, auth-aware
+- Updated TestTakingPage: uses studentId for submissions, updates user state from server response after test submit
+- Updated SubscriptionModal: fixed disabled pay button, shows user account info, works with studentId
+- Updated AppFooter: Sign Up Free link for guests, upgrade link for logged-in users
+- Updated page.tsx: Suspense boundary, useSearchParams for admin routing (?admin=true), auth refresh on load
+- Fixed deviceId unique constraint bug in signup (upgrades existing guest students instead of failing)
+- Admin hidden from all student-facing UI; accessible via ?admin=true query parameter
+
+Stage Summary:
+- Complete login/signup system with email/password authentication
+- Guest students automatically upgraded to registered accounts on signup
+- Subscription flow fixed and working end-to-end (verified via curl: signup → login → payment → subscribe)
+- Admin panel hidden from students, accessible via ?admin=true
+- All lint checks pass
+- Browser verified: signup works, user profile shown, admin hidden

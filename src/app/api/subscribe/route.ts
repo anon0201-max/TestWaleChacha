@@ -4,22 +4,28 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { deviceId } = body;
+    const { studentId, deviceId } = body;
 
-    if (!deviceId) {
-      return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
+    if (!studentId && !deviceId) {
+      return NextResponse.json({ error: 'studentId or deviceId is required' }, { status: 400 });
     }
 
-    // Simulate subscription activation
-    const student = await db.student.upsert({
-      where: { deviceId },
-      update: {
-        isSubscribed: true,
-        subscriptionAt: new Date(),
-      },
-      create: {
-        name: 'Pro Student',
-        deviceId,
+    // Find student
+    let student;
+    if (studentId) {
+      student = await db.student.findUnique({ where: { id: studentId } });
+    } else if (deviceId) {
+      student = await db.student.findUnique({ where: { deviceId } });
+    }
+
+    if (!student) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    }
+
+    // Activate subscription
+    const updated = await db.student.update({
+      where: { id: student.id },
+      data: {
         isSubscribed: true,
         subscriptionAt: new Date(),
       },
@@ -28,9 +34,19 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       isSubscribed: true,
+      student: {
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        freeTestsUsed: updated.freeTestsUsed,
+        freeTestsRemaining: Math.max(0, 5 - updated.freeTestsUsed),
+        isSubscribed: updated.isSubscribed,
+        subscriptionAt: updated.subscriptionAt,
+      },
       message: 'Subscription activated successfully! Unlimited tests unlocked.',
     });
-  } catch {
+  } catch (error) {
+    console.error('Subscribe error:', error);
     return NextResponse.json({ error: 'Failed to subscribe' }, { status: 500 });
   }
 }

@@ -42,10 +42,13 @@ export function TestTakingPage() {
     currentQuestionIndex,
     setCurrentQuestionIndex,
     deviceId,
+    user,
     setView,
     setLastResult,
     clearAnswers,
     setShowSubscriptionModal,
+    setUser,
+    setStudentData,
   } = useAppStore();
 
   const [markedForReview, setMarkedForReview] = useState<Set<string>>(new Set());
@@ -54,17 +57,19 @@ export function TestTakingPage() {
   const [visited, setVisited] = useState<Set<string>>(new Set());
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
   const [showInstructions, setShowInstructions] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const questions = currentTest?.questions || [];
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
+  const studentId = user?.id || null;
 
   // Visit current question when navigating
   if (currentQuestion && isTestActive && !visited.has(currentQuestion.id)) {
     setVisited((prev) => new Set(prev).add(currentQuestion.id));
   }
 
-  // Derive question statuses from state (no setState in effects!)
+  // Derive question statuses from state
   function getStatus(qid: string): QuestionStatus {
     const isVisited = visited.has(qid);
     const isAnswered = qid in answers;
@@ -76,7 +81,6 @@ export function TestTakingPage() {
     return 'not-answered';
   }
 
-  // Update status when answer changes
   function handleSelectAnswer(questionId: string, option: string) {
     setAnswer(questionId, option);
   }
@@ -105,14 +109,23 @@ export function TestTakingPage() {
   }
 
   const handleSubmitTest = useCallback(async () => {
-    if (!currentTest || !deviceId) return;
+    if (!currentTest || submitting) return;
+    setSubmitting(true);
     setIsTestActive(false);
     const timeTaken = currentTest.timeLimit - timeRemaining;
     try {
+      const body: Record<string, unknown> = {
+        testId: currentTest.id,
+        answers,
+        timeTaken,
+      };
+      if (studentId) body.studentId = studentId;
+      else if (deviceId) body.deviceId = deviceId;
+
       const res = await fetch('/api/attempts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId, testId: currentTest.id, answers, timeTaken }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.error === 'FREE_LIMIT_REACHED') {
@@ -120,10 +133,20 @@ export function TestTakingPage() {
         setView('home');
         return;
       }
+      // Update student data from response
+      if (data.updatedStudent) {
+        setUser(data.updatedStudent);
+      } else {
+        setStudentData({ freeTestsUsed: (data.attempt?.student?.freeTestsUsed ?? 0), isSubscribed: useAppStore.getState().isSubscribed });
+      }
       setLastResult(data);
       setView('results');
-    } catch { setView('home'); }
-  }, [currentTest, deviceId, answers, timeRemaining, setLastResult, setIsTestActive, setView, setShowSubscriptionModal]);
+    } catch {
+      setView('home');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [currentTest, studentId, deviceId, answers, timeRemaining, submitting, setLastResult, setIsTestActive, setView, setShowSubscriptionModal, setUser, setStudentData]);
 
   // Timer
   useEffect(() => {
@@ -182,6 +205,7 @@ export function TestTakingPage() {
               <div className="flex justify-between"><span>Total Questions:</span><span className="font-semibold">{totalQuestions}</span></div>
               <div className="flex justify-between"><span>Time Duration:</span><span className="font-semibold">{formatTime(currentTest.timeLimit)}</span></div>
               <div className="flex justify-between"><span>Difficulty:</span><Badge variant="secondary">{currentTest.difficulty}</Badge></div>
+              {user && <div className="flex justify-between"><span>Candidate:</span><span className="font-semibold">{user.name}</span></div>}
             </div>
             <h3 className="font-semibold text-base mb-3">Instructions:</h3>
             <ul className="space-y-2 text-sm text-muted-foreground mb-6 list-disc pl-5">
@@ -233,7 +257,7 @@ export function TestTakingPage() {
           </div>
           <button className="flex items-center gap-1.5 bg-blue-800 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-xs transition-colors">
             <User className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Candidate</span>
+            <span className="hidden sm:inline">{user?.name || 'Candidate'}</span>
           </button>
         </div>
       </div>
@@ -295,7 +319,7 @@ export function TestTakingPage() {
                   })}
                 </div>
 
-                {/* Action Buttons - Testbook Style */}
+                {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" onClick={handleClearResponse} disabled={!answers[currentQuestion.id]}>
                     <RotateCcw className="w-3.5 h-3.5 mr-1" /> Clear Response
@@ -316,7 +340,7 @@ export function TestTakingPage() {
           </AnimatePresence>
         </div>
 
-        {/* RIGHT: Question Palette - Testbook Style */}
+        {/* RIGHT: Question Palette */}
         <div className="hidden md:flex flex-col w-72 border-l bg-gray-50 shrink-0">
           <div className="p-3 border-b bg-white">
             <h3 className="font-semibold text-sm text-blue-900">Question Palette</h3>
@@ -373,14 +397,14 @@ export function TestTakingPage() {
                 <p className="text-gray-500">Not Visited</p>
               </div>
             </div>
-            <Button className="w-full bg-red-600 hover:bg-red-700 h-10 font-semibold" onClick={() => setShowConfirmSubmit(true)}>
+            <Button className="w-full bg-red-600 hover:bg-red-700 h-10 font-semibold" onClick={() => setShowConfirmSubmit(true)} disabled={submitting}>
               <Send className="w-4 h-4 mr-1.5" /> Submit Test
             </Button>
           </div>
         </div>
       </div>
 
-      {/* MOBILE: Bottom bar with palette toggle and submit */}
+      {/* MOBILE: Bottom bar */}
       <div className="md:hidden border-t bg-white p-2 shrink-0">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setShowProfilePanel(!showProfilePanel)}>
@@ -392,7 +416,7 @@ export function TestTakingPage() {
           <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs" onClick={handleSaveAndNext}>
             Save &amp; Next
           </Button>
-          <Button size="sm" className="flex-1 bg-red-600 hover:bg-red-700 text-xs" onClick={() => setShowConfirmSubmit(true)}>
+          <Button size="sm" className="flex-1 bg-red-600 hover:bg-red-700 text-xs" onClick={() => setShowConfirmSubmit(true)} disabled={submitting}>
             Submit
           </Button>
         </div>
@@ -445,11 +469,13 @@ export function TestTakingPage() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Marked for Review:</span><span className="font-semibold text-purple-700">{markedCount}</span></div>
               </div>
               {totalQuestions - answeredCount > 0 && (
-                <p className="text-sm text-amber-600 text-center mb-4 font-medium">⚠️ {totalQuestions - answeredCount} questions are unanswered!</p>
+                <p className="text-sm text-amber-600 text-center mb-4 font-medium">{totalQuestions - answeredCount} questions are unanswered!</p>
               )}
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1" onClick={() => setShowConfirmSubmit(false)}>Go Back</Button>
-                <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={() => { setShowConfirmSubmit(false); handleSubmitTest(); }}>Submit Now</Button>
+                <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={() => { setShowConfirmSubmit(false); handleSubmitTest(); }} disabled={submitting}>
+                  {submitting ? 'Submitting...' : 'Submit Now'}
+                </Button>
               </div>
             </motion.div>
           </motion.div>

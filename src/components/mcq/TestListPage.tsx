@@ -7,12 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, Shield, GraduationCap } from 'lucide-react';
+import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap } from 'lucide-react';
 
 export function TestListPage() {
-  const { setView, tests, categories, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery,
+  const {
+    setView, tests, categories, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery,
     setCurrentTest, setIsTestActive, clearAnswers, setCurrentQuestionIndex, setTimeRemaining,
-    freeTestsRemaining, isSubscribed } = useAppStore();
+    freeTestsRemaining, isSubscribed, user,
+  } = useAppStore();
 
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -44,7 +46,10 @@ export function TestListPage() {
   }
 
   function handleClick(test: (typeof tests)[0]) {
-    if (!isSubscribed && freeTestsRemaining <= 0) { useAppStore.getState().setShowSubscriptionModal(true); return; }
+    if (!isSubscribed && freeTestsRemaining <= 0) {
+      useAppStore.getState().setShowSubscriptionModal(true);
+      return;
+    }
     handleStartTest(test);
   }
 
@@ -57,13 +62,17 @@ export function TestListPage() {
           <Button variant="ghost" size="icon" onClick={() => setView('home')}><ArrowLeft className="w-5 h-5" /></Button>
           <div>
             <h1 className="text-xl font-bold truncate">{selectedCategoryName || 'All Mock Tests'}</h1>
-            <p className="text-xs text-muted-foreground">{filteredTests.length} tests {!isSubscribed && <Badge variant="secondary" className="ml-1 text-[10px]"><Zap className="w-2.5 h-2.5 mr-0.5" />{freeTestsRemaining} free</Badge>}</p>
+            <p className="text-xs text-muted-foreground">
+              {filteredTests.length} tests
+              {!isSubscribed && (
+                <Badge variant="secondary" className="ml-1 text-[10px]">
+                  <Zap className="w-2.5 h-2.5 mr-0.5" />{freeTestsRemaining} free
+                </Badge>
+              )}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => { useAppStore.getState().setAdminData({ isLoggedIn: false }); useAppStore.getState().setView('admin'); }}>
-            <Shield className="w-3.5 h-3.5 mr-1" /> Admin
-          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}><Filter className="w-3.5 h-3.5 mr-1" /> Filters</Button>
         </div>
       </div>
