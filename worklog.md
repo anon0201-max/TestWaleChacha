@@ -149,3 +149,24 @@ Stage Summary:
 - "My Tests" button in header for logged-in users
 - Login API bug fix: deviceId linking no longer crashes on unique constraint
 - All lint checks pass, browser verified
+
+---
+Task ID: 7
+Agent: Main Agent
+Task: Fix VLM image question import (spinning forever), update footer
+
+Work Log:
+- Diagnosed issue: /api/admin/extract-question was using incorrect z-ai-web-dev-sdk VLM parameters (model: 'glm-4v-flash' which is invalid, system role message which isn't supported, missing thinking parameter)
+- Fixed extract-question API route: removed model param, moved system instruction into user prompt, added thinking: { type: 'disabled' }, added detailed logging
+- Verified fix: curl test with user's uploaded image returned successful JSON extraction in ~5 seconds
+- Completely rewrote AppFooter.tsx with professional dark theme footer:
+  - Green gradient CTA banner at top ("Ready to crack your exam?")
+  - 4-column dark footer (Brand with exam tags, Popular Exams, Quick Links with My Tests, Why QuizMaster with feature emojis)
+  - Contact bar (email, phone, address)
+  - Bottom bar with copyright, Admin link, Made with ❤️ in India, Back to Top button
+- All lint checks pass, no server errors
+
+Stage Summary:
+- VLM image extraction now works correctly (~5 second response)
+- Footer redesigned with dark professional theme, CTA banner, better links
+- API tested and verified with actual user-uploaded image
