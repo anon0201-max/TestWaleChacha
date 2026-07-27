@@ -628,6 +628,8 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   const [extractElapsed, setExtractElapsed] = useState(0);
   const [importingAnswers, setImportingAnswers] = useState(false);
   const [importingExplanations, setImportingExplanations] = useState(false);
+  // VISIBLE fill status banner — shows user exactly what's happening with the fill
+  const [fillStatus, setFillStatus] = useState<{ msg: string; type: 'info' | 'success' | 'error' } | null>(null);
 
   // Count dialog state — asks user "kitne questions hain?" BEFORE picking image
   const [showCountDialog, setShowCountDialog] = useState(false);
@@ -639,6 +641,15 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const answersInputRef = useRef<HTMLInputElement>(null);
   const explanationsInputRef = useRef<HTMLInputElement>(null);
+
+  // DEBUG: Log every time questions state changes (helps verify fill is working)
+  useEffect(() => {
+    const filledCount = questions.filter(q => q.question.trim() !== '').length;
+    console.log(`📊 questions state changed — total: ${questions.length}, filled: ${filledCount}, empty: ${questions.length - filledCount}`);
+    if (questions.length > 0 && questions[0].question.trim()) {
+      console.log(`📊 Box[0] now contains: "${questions[0].question.substring(0, 50)}..."`);
+    }
+  }, [questions]);
 
   function addQuestion() {
     setQuestions([...questions, emptyQuestion()]);
@@ -740,26 +751,64 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     }, 100);
   }
 
-  // Fill existing empty boxes with extracted data (matched by index), append overflow
+  // Fill existing empty boxes with extracted data — finds first empty box dynamically.
+  // Uses a DIRECT state replacement approach for maximum reliability.
   function fillQuestionsFromExtract(extracted: QuestionForm[]): number {
-    const startIdx = fillStartIndexRef.current;
+    if (!extracted || extracted.length === 0) {
+      console.warn('⚠️ fillQuestionsFromExtract: no questions to fill');
+      setFillStatus({ msg: '⚠️ No questions received from VLM to fill.', type: 'error' });
+      return 0;
+    }
+    console.log(`🔧 fillQuestionsFromExtract: START — filling ${extracted.length} questions`);
+    console.log(`🔧 First extracted question:`, extracted[0]?.question?.substring(0, 60));
+    setFillStatus({ msg: `🔧 Filling ${extracted.length} questions into boxes...`, type: 'info' });
+
     let filledCount = 0;
     setQuestions(prev => {
+      console.log(`🔧 setQuestions updater — prev count: ${prev.length}`);
       const next = [...prev];
-      for (let k = 0; k < extracted.length; k++) {
-        const targetIdx = startIdx + k;
-        if (targetIdx < next.length) {
-          // Fill the existing empty box at targetIdx
-          next[targetIdx] = { ...next[targetIdx], ...extracted[k] };
-          filledCount++;
-        } else {
-          // Overflow — append the rest
-          next.push(extracted[k]);
-          filledCount++;
+
+      // Find first empty box and fill sequentially from there
+      let startIdx = -1;
+      for (let i = 0; i < next.length; i++) {
+        if (!next[i].question.trim()) {
+          startIdx = i;
+          break;
         }
       }
+      console.log(`🔧 First empty box at index: ${startIdx}`);
+
+      if (startIdx === -1) {
+        // No empty boxes — append all
+        console.log(`🔧 No empty boxes — appending ${extracted.length}`);
+        for (const ex of extracted) {
+          next.push(ex);
+          filledCount++;
+        }
+      } else {
+        for (let k = 0; k < extracted.length; k++) {
+          const targetIdx = startIdx + k;
+          if (targetIdx < next.length) {
+            next[targetIdx] = { ...next[targetIdx], ...extracted[k] };
+          } else {
+            next.push(extracted[k]);
+          }
+          filledCount++;
+        }
+        console.log(`🔧 Filled boxes ${startIdx}–${startIdx + extracted.length - 1}`);
+      }
+
+      console.log(`🔧 AFTER fill — total: ${next.length}, Box[0]:`, next[0]?.question?.substring(0, 60));
       return next;
     });
+
+    // Show success status (slight delay so it appears after state update)
+    setTimeout(() => {
+      setFillStatus({ msg: `✅ ${extracted.length} questions filled into boxes!`, type: 'success' });
+      // Auto-clear after 8 seconds
+      setTimeout(() => setFillStatus(null), 8000);
+    }, 100);
+
     return filledCount;
   }
 
@@ -793,6 +842,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
 
         try {
           console.log(`📤 Uploading image ${i + 1}/${fileList.length}: ${file.name}`);
+          setFillStatus({ msg: `📤 Uploading image to VLM... (this can take 1-3 minutes)`, type: 'info' });
           const res = await fetch('/api/admin/extract-question', {
             method: 'POST',
             body: formData,
@@ -801,10 +851,19 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           clearTimeout(timeoutId);
 
           console.log(`📡 Response status: ${res.status}`);
+          if (!res.ok) {
+            const errText = await res.text().catch(() => 'Unknown error');
+            console.error(`❌ HTTP ${res.status}:`, errText.substring(0, 200));
+            setFillStatus({ msg: `❌ VLM error (HTTP ${res.status}): ${errText.substring(0, 100)}`, type: 'error' });
+            toast.error(`Image ${i + 1}: VLM returned HTTP ${res.status}`);
+            hasError = true;
+            continue;
+          }
           const data = await res.json();
           console.log(`📋 Extraction result:`, { success: data.success, count: data.count, hasQuestions: !!data.questions, error: data.error });
 
           if (data.success && data.questions && data.questions.length > 0) {
+            console.log(`🎉 VLM returned ${data.questions.length} questions — mapping to QuestionForm...`);
             const newQuestions: QuestionForm[] = data.questions.map((q: any) => ({
               question: q.question || '',
               optionA: q.optionA || '',
@@ -816,13 +875,12 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               section: q.section || 'General',
               negativeMark: q.negativeMark || '0',
             }));
+            console.log(`🎉 Mapped ${newQuestions.length} questions. First:`, newQuestions[0]);
 
-            // FILL existing empty boxes (created when user entered count) with extracted data
+            // FILL existing empty boxes with extracted data
             const filled = fillQuestionsFromExtract(newQuestions);
-            // Advance the fill start index for the next image in the loop
-            fillStartIndexRef.current = fillStartIndexRef.current + newQuestions.length;
             totalExtracted += newQuestions.length;
-            console.log(`✅ Filled ${filled} boxes with extracted data (total extracted so far: ${totalExtracted})`);
+            console.log(`✅ Fill complete — ${filled} boxes filled (total extracted so far: ${totalExtracted})`);
             toast.success(`Image ${i + 1}: ${newQuestions.length} questions extracted & filled!`);
           } else if (data.success && data.question) {
             // Fallback: single question
@@ -838,13 +896,13 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               negativeMark: data.question.negativeMark || '0',
             };
             const filled = fillQuestionsFromExtract([newQ]);
-            fillStartIndexRef.current = fillStartIndexRef.current + 1;
             totalExtracted += 1;
-            console.log(`✅ Filled 1 box with extracted data`);
+            console.log(`✅ Fill complete — ${filled} boxes filled`);
             toast.success(`Image ${i + 1}: 1 question extracted & filled!`);
           } else {
             hasError = true;
             console.error(`❌ Extraction failed for image ${i + 1}:`, data.error);
+            setFillStatus({ msg: `❌ ${data.error || 'Failed to extract questions'}`, type: 'error' });
             toast.error(`Image ${i + 1}: ${data.error || 'Failed to extract'}`);
           }
         } catch (err: any) {
@@ -852,8 +910,10 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           hasError = true;
           console.error(`❌ Fetch error for image ${i + 1}:`, err);
           if (err?.name === 'AbortError') {
+            setFillStatus({ msg: '❌ Timed out (5 min). Try a smaller image.', type: 'error' });
             toast.error(`Image ${i + 1}: Timed out (5 min). Try a smaller image.`);
           } else {
+            setFillStatus({ msg: `❌ ${err?.message || 'Failed to extract'}`, type: 'error' });
             toast.error(`Image ${i + 1}: ${err?.message || 'Failed to extract'}`);
           }
         }
@@ -1017,7 +1077,6 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
             type="file"
             ref={imageInputRef}
             accept="image/*"
-            multiple
             onChange={handleImageExtract}
             className="hidden"
           />
@@ -1038,6 +1097,19 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
 
           {/* Import Actions Bar */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* VISIBLE FILL STATUS BANNER — shows user exactly what's happening */}
+            {fillStatus && (
+              <div className={`w-full p-3 rounded-lg border flex items-center gap-2 text-sm font-medium ${
+                fillStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+                fillStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+                'bg-blue-50 border-blue-200 text-blue-800'
+              }`}>
+                {fillStatus.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
+                 fillStatus.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
+                 <Loader2 className="w-4 h-4 shrink-0 animate-spin" />}
+                <span>{fillStatus.msg}</span>
+              </div>
+            )}
             <Button
               variant="outline"
               size="sm"
