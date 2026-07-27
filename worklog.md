@@ -229,3 +229,23 @@ Stage Summary:
 - Multi-image upload now supported (select multiple page images at once)
 - Progress bar + status text shows live progress so user knows it's working
 - Single image with 34 questions takes ~45-50 seconds to extract
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Debug "not adding questions" - user uploaded wrong image
+
+Work Log:
+- Checked user's uploaded file: pasted_image_1785139941208.png
+- VLM analysis revealed: image is a SCREENSHOT of QuizMaster admin panel (showing empty Add Questions form), NOT a real question paper
+- VLM was extracting placeholder text ("Type your question here...", "Option A", "Option B") as fake questions
+- Added placeholder detection in extract-question API: filters out questions containing placeholder patterns like "type your question", "option a", "why is this the correct answer", etc.
+- Now returns clear error: "No real questions found in image. Please upload an actual question paper / question image (not a screenshot of the app interface)"
+- Tested: software screenshot → rejected with clear error ✅
+- Tested: real question paper image → extracted all 34 questions ✅
+- Lint clean
+
+Stage Summary:
+- API now detects and rejects non-question images (screenshots, placeholders)
+- Clear error message guides user to upload actual question paper
+- Real question paper still works: 34/34 questions extracted

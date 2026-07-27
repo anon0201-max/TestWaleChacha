@@ -141,12 +141,42 @@ IMPORTANT RULES:
       };
     });
 
-    console.log(`✅ Extracted ${normalizedQuestions.length} questions from image`);
+    // FILTER OUT placeholder/empty questions (when user uploads screenshot of app, not real question paper)
+    const PLACEHOLDER_PATTERNS = [
+      'type your question',
+      'option a',
+      'option b',
+      'option c',
+      'option d',
+      'why is this the correct answer',
+      'brief description',
+      'test title',
+    ];
+
+    const realQuestions = normalizedQuestions.filter((q: any) => {
+      const allText = `${q.question} ${q.optionA} ${q.optionB} ${q.optionC} ${q.optionD}`.toLowerCase();
+      // Check if question text is just placeholder
+      const isPlaceholder = PLACEHOLDER_PATTERNS.some(p => allText.includes(p));
+      // Check if question has actual content (more than 15 chars and not just placeholder)
+      const hasRealContent = q.question && q.question.trim().length > 15 && !isPlaceholder;
+      return hasRealContent;
+    });
+
+    if (realQuestions.length === 0) {
+      console.log('⚠️ No real questions found - likely a screenshot of app or non-question image');
+      return NextResponse.json({
+        success: false,
+        error: 'No real questions found in image. Please upload an actual question paper / question image (not a screenshot of the app interface). Make sure the image contains clear MCQ questions with options.',
+        detectedCount: normalizedQuestions.length,
+      }, { status: 400 });
+    }
+
+    console.log(`✅ Extracted ${realQuestions.length} real questions from image (filtered out ${normalizedQuestions.length - realQuestions.length} placeholders)`);
 
     return NextResponse.json({
       success: true,
-      questions: normalizedQuestions,
-      count: normalizedQuestions.length,
+      questions: realQuestions,
+      count: realQuestions.length,
     });
   } catch (error) {
     console.error('❌ Error extracting questions from image:', error);
