@@ -204,7 +204,7 @@ export function AdminPanel() {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <AdminDashboardContent />
+            <AdminDashboardContent onNavigate={setActiveTab} />
           </TabsContent>
           <TabsContent value="categories">
             <AdminCategoriesTab onRefresh={fetchCategories} />
@@ -222,7 +222,7 @@ export function AdminPanel() {
 }
 
 // ==================== DASHBOARD ====================
-function AdminDashboardContent() {
+function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => void }) {
   const { tests, categories } = useAppStore();
 
   return (
@@ -267,10 +267,10 @@ function AdminDashboardContent() {
               <span className="text-xs font-medium text-muted-foreground">Quick Actions</span>
             </div>
             <div className="space-y-2">
-              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-2 h-8" onClick={() => {}}>
+              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-2 h-8" onClick={() => onNavigate('create-test')}>
                 <Plus className="w-3.5 h-3.5" /> Add New Test
               </Button>
-              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-2 h-8" onClick={() => {}}>
+              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-2 h-8" onClick={() => onNavigate('categories')}>
                 <Plus className="w-3.5 h-3.5" /> Add Category
               </Button>
             </div>
