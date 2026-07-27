@@ -624,6 +624,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
 
   // Import states
   const [extractingImage, setExtractingImage] = useState(false);
+  const [extractElapsed, setExtractElapsed] = useState(0);
   const [importingAnswers, setImportingAnswers] = useState(false);
   const [importingExplanations, setImportingExplanations] = useState(false);
 
@@ -699,13 +700,29 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setExtractingImage(true);
+    setExtractElapsed(0);
+
+    // Start a timer to show elapsed seconds
+    const startTime = Date.now();
+    const timerInterval = setInterval(() => {
+      setExtractElapsed(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
     try {
       const formData = new FormData();
       formData.append('image', file);
+
+      // Use AbortController with 3-minute timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 180000);
+
       const res = await fetch('/api/admin/extract-question', {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
+
       const data = await res.json();
       if (data.success && data.questions && data.questions.length > 0) {
         // Handle multiple questions from image
@@ -740,10 +757,16 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
       } else {
         toast.error(data.error || 'Failed to extract questions from image');
       }
-    } catch {
-      toast.error('Failed to extract questions. Please try again.');
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        toast.error('Request timed out (3 min). Try a smaller image or fewer questions.');
+      } else {
+        toast.error('Failed to extract questions. Please try again.');
+      }
     } finally {
+      clearInterval(timerInterval);
       setExtractingImage(false);
+      setExtractElapsed(0);
       e.target.value = '';
     }
   }
@@ -925,8 +948,13 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               ) : (
                 <Camera className="w-3.5 h-3.5" />
               )}
-              {extractingImage ? 'Extracting All Questions...' : '📸 Upload Image (All Ques)'}
+              {extractingImage ? `Extracting... (${extractElapsed}s)` : '📸 Upload Image (All Ques)'}
             </Button>
+            {extractingImage && (
+              <span className="text-xs text-amber-600 font-medium animate-pulse">
+                ⏳ VLM processing image — please wait (can take 30-60s for large images)
+              </span>
+            )}
             <Button
               variant="outline"
               size="sm"

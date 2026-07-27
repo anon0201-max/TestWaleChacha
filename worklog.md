@@ -189,3 +189,23 @@ Stage Summary:
 - VLM now extracts ALL questions from image (tested: 34/34 questions from single image)
 - AdminPanel adds all extracted questions at once with toast showing count
 - Button label updated to indicate multi-question extraction
+
+---
+Task ID: 9
+Agent: Main Agent
+Task: Fix image upload showing no data (user reported no questions appearing)
+
+Work Log:
+- Added `export const maxDuration = 300` and `export const runtime = 'nodejs'` to extract-question API route (prevents Next.js from killing long VLM requests)
+- Added elapsed time counter in AdminPanel — button now shows "Extracting... (10s)" with live timer
+- Added amber pulsing message: "⏳ VLM processing image — please wait (can take 30-60s for large images)"
+- Added AbortController with 3-minute timeout for the fetch request
+- Added proper error handling for AbortError (timeout) vs other errors
+- Browser verified end-to-end: uploaded 34-question image → all 34 questions extracted in 46s → saved successfully → "Test Created Successfully!" message shown
+- Lint clean, no server errors
+
+Stage Summary:
+- Image upload now works end-to-end: 34/34 questions extracted from single image
+- Progress timer shows elapsed seconds so user knows it's working (not stuck)
+- maxDuration=300 prevents Next.js from timing out the VLM request
+- "Test Created Successfully!" confirmation after saving all extracted questions

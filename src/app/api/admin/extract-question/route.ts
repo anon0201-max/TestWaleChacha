@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Allow up to 5 minutes for VLM processing (large images take 30-60 seconds)
+export const maxDuration = 300;
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
