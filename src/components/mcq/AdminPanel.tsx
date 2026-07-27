@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -628,6 +629,12 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   const [importingAnswers, setImportingAnswers] = useState(false);
   const [importingExplanations, setImportingExplanations] = useState(false);
 
+  // Count dialog state — asks user "kitne questions hain?" BEFORE picking image
+  const [showCountDialog, setShowCountDialog] = useState(false);
+  const [questionCount, setQuestionCount] = useState('');
+  // Index from which to START filling extracted data into existing empty boxes
+  const fillStartIndexRef = useRef<number>(0);
+
   // File input refs
   const imageInputRef = useRef<HTMLInputElement>(null);
   const answersInputRef = useRef<HTMLInputElement>(null);
@@ -696,6 +703,66 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     setSavedCount(0);
   }
 
+  // ====== NEW FLOW: Ask count FIRST, create empty boxes, THEN extract & fill ======
+  function openCountDialog() {
+    if (extractingImage) return;
+    setQuestionCount('');
+    setShowCountDialog(true);
+  }
+
+  function confirmCountAndPickImage() {
+    const n = parseInt(questionCount, 10);
+    if (!n || n < 1 || n > 200) {
+      toast.error('Please enter a valid number between 1 and 200');
+      return;
+    }
+
+    // 1) Remove ALL completely-empty questions (untouched default boxes)
+    //    so the count the user enters matches exactly what they see.
+    setQuestions(prev => {
+      let cleaned = prev.filter(q => {
+        const isEmpty = !q.question.trim() && !q.optionA.trim() && !q.optionB.trim() && !q.optionC.trim() && !q.optionD.trim() && !q.explanation.trim();
+        return !isEmpty;
+      });
+      // 2) Record the fill start index (where extracted data should go)
+      fillStartIndexRef.current = cleaned.length;
+      // 3) Add N new empty boxes INSTANTLY — user sees them right away
+      const newBoxes: QuestionForm[] = Array.from({ length: n }, () => emptyQuestion());
+      return [...cleaned, ...newBoxes];
+    });
+
+    setShowCountDialog(false);
+    toast.success(`✅ ${n} empty question boxes created! Ab image select karein...`);
+
+    // 4) Now open the file picker
+    setTimeout(() => {
+      imageInputRef.current?.click();
+    }, 100);
+  }
+
+  // Fill existing empty boxes with extracted data (matched by index), append overflow
+  function fillQuestionsFromExtract(extracted: QuestionForm[]): number {
+    const startIdx = fillStartIndexRef.current;
+    let filledCount = 0;
+    setQuestions(prev => {
+      const next = [...prev];
+      for (let k = 0; k < extracted.length; k++) {
+        const targetIdx = startIdx + k;
+        if (targetIdx < next.length) {
+          // Fill the existing empty box at targetIdx
+          next[targetIdx] = { ...next[targetIdx], ...extracted[k] };
+          filledCount++;
+        } else {
+          // Overflow — append the rest
+          next.push(extracted[k]);
+          filledCount++;
+        }
+      }
+      return next;
+    });
+    return filledCount;
+  }
+
   async function handleImageExtract(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -750,12 +817,13 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               negativeMark: q.negativeMark || '0',
             }));
 
-            // CRITICAL FIX: Use functional state update to avoid stale closure
-            // After 2-3 minutes of waiting, the `questions` variable in closure is stale
-            setQuestions(prev => [...prev, ...newQuestions]);
+            // FILL existing empty boxes (created when user entered count) with extracted data
+            const filled = fillQuestionsFromExtract(newQuestions);
+            // Advance the fill start index for the next image in the loop
+            fillStartIndexRef.current = fillStartIndexRef.current + newQuestions.length;
             totalExtracted += newQuestions.length;
-            console.log(`✅ Added ${newQuestions.length} questions to form (total so far: ${totalExtracted})`);
-            toast.success(`Image ${i + 1}: ${newQuestions.length} questions extracted!`);
+            console.log(`✅ Filled ${filled} boxes with extracted data (total extracted so far: ${totalExtracted})`);
+            toast.success(`Image ${i + 1}: ${newQuestions.length} questions extracted & filled!`);
           } else if (data.success && data.question) {
             // Fallback: single question
             const newQ: QuestionForm = {
@@ -769,11 +837,11 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               section: data.question.section || 'General',
               negativeMark: data.question.negativeMark || '0',
             };
-            // CRITICAL FIX: functional state update
-            setQuestions(prev => [...prev, newQ]);
+            const filled = fillQuestionsFromExtract([newQ]);
+            fillStartIndexRef.current = fillStartIndexRef.current + 1;
             totalExtracted += 1;
-            console.log(`✅ Added 1 question to form`);
-            toast.success(`Image ${i + 1}: 1 question extracted!`);
+            console.log(`✅ Filled 1 box with extracted data`);
+            toast.success(`Image ${i + 1}: 1 question extracted & filled!`);
           } else {
             hasError = true;
             console.error(`❌ Extraction failed for image ${i + 1}:`, data.error);
@@ -792,9 +860,9 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
       }
 
       if (totalExtracted > 0) {
-        toast.success(`🎉 Total: ${totalExtracted} questions extracted from ${fileList.length} image${fileList.length > 1 ? 's' : ''}!`);
+        toast.success(`🎉 Total: ${totalExtracted} questions extracted from ${fileList.length} image${fileList.length > 1 ? 's' : ''} & filled into boxes!`);
       } else if (!hasError) {
-        toast.error('No questions could be extracted from the image(s).');
+        toast.error('No questions could be extracted from the image(s). Empty boxes remain for manual entry.');
       }
     } finally {
       clearInterval(timerInterval);
@@ -973,7 +1041,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => imageInputRef.current?.click()}
+              onClick={openCountDialog}
               disabled={extractingImage}
               className="gap-1.5 text-xs"
             >
@@ -982,12 +1050,12 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               ) : (
                 <Camera className="w-3.5 h-3.5" />
               )}
-              {extractingImage ? `Extracting ALL Questions... (${extractElapsed}s)` : '📸 Upload Image (Auto Extract All)'}
+              {extractingImage ? `Extracting & Filling... (${extractElapsed}s)` : '📸 Upload Image (Auto Extract All)'}
             </Button>
             {extractingImage && (
               <div className="w-full mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-xs text-amber-700 font-medium animate-pulse mb-2">
-                  ⏳ VLM processing image — please wait (can take 30-60 seconds for large images with many questions)
+                  ⏳ VLM image se questions padh raha hai aur boxes me fill kar raha hai... (30-90 seconds)
                 </p>
                 <div className="w-full bg-amber-200 rounded-full h-1.5 overflow-hidden">
                   <div
@@ -996,10 +1064,10 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
                   />
                 </div>
                 <p className="text-[10px] text-amber-600 mt-1">
-                  {extractElapsed < 30 ? 'Starting VLM analysis...' :
-                   extractElapsed < 60 ? 'Reading questions from image...' :
-                   extractElapsed < 90 ? 'Almost there, parsing questions...' :
-                   'Finalizing extraction...'}
+                  {extractElapsed < 30 ? 'VLM image analyze kar raha hai...' :
+                   extractElapsed < 60 ? 'Questions padh rahe hain...' :
+                   extractElapsed < 90 ? 'Boxes me data fill ho raha hai...' :
+                   'Almost done, finalizing...'}
                 </p>
               </div>
             )}
@@ -1166,6 +1234,81 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           </div>
         </motion.div>
       )}
+
+      {/* ===== Count Dialog: asks "kitne questions hain?" BEFORE picking image ===== */}
+      <Dialog open={showCountDialog} onOpenChange={setShowCountDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="w-5 h-5 text-blue-600" />
+              Image me kitne questions hain?
+            </DialogTitle>
+            <DialogDescription>
+              Image ya PDF me jitne questions hain, wo number yahan likhein.
+              <br />
+              <strong className="text-gray-700">Example:</strong> agar 34 questions hain to <strong>34</strong> likhein.
+              <br /><br />
+              <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block">
+                ℹ️ Pehle {questionCount && parseInt(questionCount) > 0 ? parseInt(questionCount) : 'N'} empty boxes banenge, FIR image select hogi, FIR VLM data auto-fill karega.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label htmlFor="qcount" className="text-xs font-medium mb-1.5 block">
+              Kitne questions add karne hain? (1 se 200)
+            </Label>
+            <Input
+              id="qcount"
+              type="number"
+              min={1}
+              max={200}
+              autoFocus
+              value={questionCount}
+              onChange={(e) => setQuestionCount(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  confirmCountAndPickImage();
+                }
+              }}
+              placeholder="e.g., 34"
+              className="h-12 text-lg font-semibold text-center"
+            />
+            {/* Quick presets */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              {[10, 25, 34, 50, 75, 100].map(preset => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setQuestionCount(String(preset))}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                    questionCount === String(preset)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <DialogClose asChild>
+              <Button variant="outline" className="gap-1.5">
+                <X className="w-4 h-4" /> Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              className="bg-blue-700 hover:bg-blue-800 gap-1.5"
+              onClick={confirmCountAndPickImage}
+              disabled={!questionCount || parseInt(questionCount) < 1}
+            >
+              <Camera className="w-4 h-4" />
+              Create Boxes &amp; Select Image
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
