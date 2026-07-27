@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap } from 'lucide-react';
+import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, RotateCcw } from 'lucide-react';
 
 export function TestListPage() {
   const {
@@ -18,6 +18,7 @@ export function TestListPage() {
 
   const [difficultyFilter, setDifficultyFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [attemptedTestIds, setAttemptedTestIds] = useState<Set<string>>(new Set());
 
   const filteredTests = useMemo(() => {
     let result = tests;
@@ -31,6 +32,22 @@ export function TestListPage() {
   }, [tests, selectedCategory, difficultyFilter, searchQuery]);
 
   const selectedCategoryName = categories.find((c) => c.id === selectedCategory)?.name;
+
+  // Fetch user's attempted test IDs
+  useEffect(() => {
+    if (!isLoggedIn || !user?.id) return;
+    let cancelled = false;
+    fetch(`/api/attempts?studentId=${user.id}`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (!cancelled) {
+          const ids = new Set((data || []).map((a: { testId: string }) => a.testId));
+          setAttemptedTestIds(ids);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [isLoggedIn, user?.id]);
 
   async function handleStartTest(test: (typeof tests)[0]) {
     try {
@@ -148,6 +165,12 @@ export function TestListPage() {
                       <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
                         <Lock className="w-4 h-4 mr-1" />Unlock
                       </Button>
+                    ) : attemptedTestIds.has(test.id) ? (
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 flex-1" onClick={() => handleClick(test)}>
+                          <RotateCcw className="w-4 h-4 mr-1" />Re-attempt
+                        </Button>
+                      </div>
                     ) : (
                       <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
                         <Play className="w-4 h-4 mr-1" />Start Test

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Zap, LogIn, LogOut, UserCircle, History, Receipt, CheckCircle2 } from 'lucide-react';
 import { Logo } from './Logo';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface PaymentInfo {
   id: string;
@@ -86,6 +87,7 @@ export function AppHeader() {
           {/* Subscription / Login Status */}
           {currentView !== 'test-taking' && (
             <>
+              <ThemeToggle />
               {isLoggedIn && user ? (
                 <div className="relative" ref={profileRef}>
                   <button

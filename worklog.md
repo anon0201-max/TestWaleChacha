@@ -354,3 +354,61 @@ Stage Summary:
 - Logo component created at /src/components/mcq/Logo.tsx (gradient badge + text, 3 sizes, 2 variants)
 - Files modified: AuthModal.tsx, AppHeader.tsx, HomePage.tsx, AppFooter.tsx, SubscriptionModal.tsx, layout.tsx
 - Files created: Logo.tsx
+
+---
+Task ID: 5
+Agent: general-purpose
+Task: Create admin reset password API route
+
+Work Log:
+- Created /home/z/my-project/src/app/api/admin/reset-password/route.ts
+- POST endpoint accepting currentPassword + newPassword
+- Validates current password against stored admin password (username: "admin")
+- Returns 401 if current password is incorrect
+- Returns 400 if new password is less than 4 characters
+- Updates admin password via Prisma and returns success response
+
+Stage Summary:
+- Admin can now reset password via POST /api/admin/reset-password
+
+---
+Task ID: 6
+Agent: general-purpose
+Task: Create student reset password API route
+
+Work Log:
+- Created /home/z/my-project/src/app/api/auth/reset-password/route.ts
+- POST endpoint accepting email + newPassword
+- Validates email exists in Student table, hashes and updates password
+- Returns 404 if email not found, 400 if password < 6 chars
+- Uses same hashPassword function (sha256 + _quizmaster_salt) as login/signup
+
+Stage Summary:
+- Student password reset API is now available at POST /api/auth/reset-password
+---
+Task ID: 1
+Agent: main
+Task: Add back button to test instructions, re-attempt, theme toggle, admin password reset, forgot password
+
+Work Log:
+- Added back button to TestTakingPage instructions modal (ChevronLeft + "Back" button)
+- Added Re-attempt functionality to TestListPage - fetches user's past attempts, shows "Re-attempt" button (green outline) for already attempted tests
+- Created multi-color theme toggle system:
+  - Added themeColor state to Zustand store with persistence
+  - Created ThemeToggle component with 8 color options (Blue, Emerald, Purple, Rose, Orange, Teal, Cyan, Amber)
+  - Added CSS custom properties system in globals.css for all 8 themes
+  - Updated HomePage hero section and pricing button to use theme CSS variables
+  - Updated AuthModal header to use theme gradient
+- Added admin password reset:
+  - Created /api/admin/reset-password API route (POST: currentPassword + newPassword)
+  - Added Settings tab to AdminPanel with password reset form (current, new, confirm)
+- Added forgot password:
+  - Created /api/auth/reset-password API route (POST: email + newPassword)
+  - Added "Forgot Password?" link below email field in login mode
+  - Added full forgot password flow in AuthModal (email, new password, confirm)
+
+Stage Summary:
+- 5 features implemented: back button, re-attempt, theme toggle, admin password reset, forgot password
+- All features verified via browser testing
+- Lint passes with no errors
+- Dev server running without errors

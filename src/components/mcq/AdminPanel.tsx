@@ -209,6 +209,9 @@ export function AdminPanel() {
             <TabsTrigger value="payments" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
               <Wallet className="w-3.5 h-3.5" /> Payments
             </TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+              <Settings className="w-3.5 h-3.5" /> Settings
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -228,6 +231,9 @@ export function AdminPanel() {
           </TabsContent>
           <TabsContent value="payments">
             <AdminPaymentsTab />
+          </TabsContent>
+          <TabsContent value="settings">
+            <AdminSettingsTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -1634,6 +1640,111 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ==================== SETTINGS TAB ====================
+function AdminSettingsTab() {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  async function handleResetPassword() {
+    setMessage(null);
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setMessage({ type: 'error', text: 'All fields are required' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: 'error', text: 'New password and confirm password do not match' });
+      return;
+    }
+    if (newPassword.length < 4) {
+      setMessage({ type: 'error', text: 'New password must be at least 4 characters' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage({ type: 'success', text: 'Password updated successfully! Use new password next time you login.' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to reset password' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Server error. Please try again.' });
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-5">
+          <h3 className="text-sm font-semibold mb-1 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-600" /> Reset Admin Password
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">Change your admin login password. Current credentials are required.</p>
+
+          {message && (
+            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+              className={`mb-4 p-3 rounded-xl text-sm flex items-center gap-2 border ${
+                message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+              }`}>
+              {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+              {message.text}
+            </motion.div>
+          )}
+
+          <div className="space-y-3 max-w-md">
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Current Password</Label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                className="h-11"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 4 chars)"
+                className="h-11"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="h-11"
+                onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
+              />
+            </div>
+            <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={handleResetPassword} disabled={loading || !currentPassword || !newPassword || !confirmPassword}>
+              {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : <><Save className="w-4 h-4 mr-2" />Update Password</>}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

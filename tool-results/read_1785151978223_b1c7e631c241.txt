@@ -1,0 +1,1743 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react';
+     4→import { useAppStore } from '@/store/useAppStore';
+     5→import { Button } from '@/components/ui/button';
+     6→import { Input } from '@/components/ui/input';
+     7→import { Label } from '@/components/ui/label';
+     8→import { Card, CardContent } from '@/components/ui/card';
+     9→import { Badge } from '@/components/ui/badge';
+    10→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    11→import { Textarea } from '@/components/ui/textarea';
+    12→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+    13→import { motion, AnimatePresence } from 'framer-motion';
+    14→import { toast } from 'sonner';
+    15→import {
+    16→  ArrowLeft, LogOut, Plus, Trash2, BarChart3, BookOpen, Users, CreditCard,
+    17→  Save, Shield, FileText, Settings, Edit2, Eye, EyeOff, Copy, CheckCircle2,
+    18→  Crown, ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
+    19→  HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
+    20→} from 'lucide-react';
+    21→
+    22→// ==================== ADMIN LOGIN ====================
+    23→function AdminLogin() {
+    24→  const { setAdminData } = useAppStore();
+    25→  const [username, setUsername] = useState('');
+    26→  const [password, setPassword] = useState('');
+    27→  const [error, setError] = useState('');
+    28→  const [loading, setLoading] = useState(false);
+    29→  const [showPassword, setShowPassword] = useState(false);
+    30→
+    31→  async function handleLogin() {
+    32→    setLoading(true);
+    33→    setError('');
+    34→    try {
+    35→      const res = await fetch('/api/admin/login', {
+    36→        method: 'POST',
+    37→        headers: { 'Content-Type': 'application/json' },
+    38→        body: JSON.stringify({ username, password }),
+    39→      });
+    40→      const data = await res.json();
+    41→      if (data.success) {
+    42→        setAdminData({ isLoggedIn: true });
+    43→      } else {
+    44→        setError(data.error || 'Login failed');
+    45→      }
+    46→    } catch { setError('Server error'); }
+    47→    setLoading(false);
+    48→  }
+    49→
+    50→  return (
+    51→    <div className="min-h-[70vh] flex items-center justify-center">
+    52→      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    53→        <Card className="w-full max-w-sm shadow-xl border-0">
+    54→          <CardContent className="p-6">
+    55→            <div className="text-center mb-6">
+    56→              <div className="w-16 h-16 rounded-2xl bg-blue-700 flex items-center justify-center mx-auto mb-4">
+    57→                <Shield className="w-8 h-8 text-white" />
+    58→              </div>
+    59→              <h2 className="text-xl font-bold text-gray-900">Admin Login</h2>
+    60→              <p className="text-xs text-muted-foreground mt-1">Enter credentials to manage tests & questions</p>
+    61→            </div>
+    62→            <div className="space-y-4">
+    63→              <div>
+    64→                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Username</Label>
+    65→                <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin" className="h-11" />
+    66→              </div>
+    67→              <div>
+    68→                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Password</Label>
+    69→                <div className="relative">
+    70→                  <Input
+    71→                    type={showPassword ? 'text' : 'password'}
+    72→                    value={password}
+    73→                    onChange={(e) => setPassword(e.target.value)}
+    74→                    placeholder="••••••••"
+    75→                    className="h-11 pr-10"
+    76→                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+    77→                  />
+    78→                  <button
+    79→                    type="button"
+    80→                    onClick={() => setShowPassword(!showPassword)}
+    81→                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+    82→                  >
+    83→                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+    84→                  </button>
+    85→                </div>
+    86→              </div>
+    87→              {error && (
+    88→                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 flex items-center gap-2">
+    89→                  <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
+    90→                </motion.div>
+    91→              )}
+    92→              <Button className="w-full bg-blue-700 hover:bg-blue-800 h-11 font-semibold" onClick={handleLogin} disabled={loading || !username || !password}>
+    93→                {loading ? 'Logging in...' : 'Login to Admin Panel'}
+    94→              </Button>
+    95→            </div>
+    96→          </CardContent>
+    97→        </Card>
+    98→      </motion.div>
+    99→    </div>
+   100→  );
+   101→}
+   102→
+   103→// ==================== ADMIN PANEL ====================
+   104→export function AdminPanel() {
+   105→  const { setView, setAdminData, adminData, categories, setCategories, tests, setTests } = useAppStore();
+   106→  const [activeTab, setActiveTab] = useState('dashboard');
+   107→
+   108→  const fetchStats = useCallback(async () => {
+   109→    try {
+   110→      const res = await fetch('/api/admin/stats');
+   111→      if (res.ok) {
+   112→        const data = await res.json();
+   113→        setAdminData({ stats: data });
+   114→      }
+   115→    } catch {}
+   116→  }, [setAdminData]);
+   117→
+   118→  const fetchCategories = useCallback(async () => {
+   119→    try {
+   120→      const res = await fetch('/api/admin/categories');
+   121→      if (res.ok) setCategories(await res.json());
+   122→    } catch {}
+   123→  }, [setCategories]);
+   124→
+   125→  const fetchTests = useCallback(async () => {
+   126→    try {
+   127→      const res = await fetch('/api/admin/tests');
+   128→      if (res.ok) setTests(await res.json());
+   129→    } catch {}
+   130→  }, [setTests]);
+   131→
+   132→  useEffect(() => {
+   133→    if (adminData.isLoggedIn) {
+   134→      fetchStats();
+   135→      fetchCategories();
+   136→      fetchTests();
+   137→    }
+   138→  }, [adminData.isLoggedIn, fetchStats, fetchCategories, fetchTests]);
+   139→
+   140→  if (!adminData.isLoggedIn) return <AdminLogin />;
+   141→
+   142→  const stats = adminData.stats;
+   143→
+   144→  return (
+   145→    <div className="min-h-[80vh] bg-gray-50">
+   146→      {/* Admin Header */}
+   147→      <div className="bg-white border-b sticky top-14 z-20">
+   148→        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+   149→          <div className="flex items-center gap-3">
+   150→            <Button variant="ghost" size="icon" onClick={() => setView('home')} className="h-9 w-9">
+   151→              <ArrowLeft className="w-4 h-4" />
+   152→            </Button>
+   153→            <div className="flex items-center gap-2">
+   154→              <Shield className="w-5 h-5 text-blue-700" />
+   155→              <div>
+   156→                <h1 className="text-base font-bold text-gray-900">Admin Panel</h1>
+   157→                <p className="text-[11px] text-muted-foreground -mt-0.5">Manage tests, questions & categories</p>
+   158→              </div>
+   159→            </div>
+   160→          </div>
+   161→          <Button variant="outline" size="sm" onClick={() => setAdminData({ isLoggedIn: false })} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+   162→            <LogOut className="w-3.5 h-3.5 mr-1.5" /> Logout
+   163→          </Button>
+   164→        </div>
+   165→      </div>
+   166→
+   167→      {/* Admin Content */}
+   168→      <div className="max-w-7xl mx-auto px-4 py-5">
+   169→        {/* Stats Cards */}
+   170→        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+   171→          {[
+   172→            { icon: Users, label: 'Total Users', value: stats.totalStudents, color: 'bg-blue-50 text-blue-700', iconBg: 'bg-blue-100' },
+   173→            { icon: BadgeCheck, label: 'Paid Users', value: stats.totalPaidStudents, color: 'bg-emerald-50 text-emerald-700', iconBg: 'bg-emerald-100' },
+   174→            { icon: BadgeX, label: 'Free Users', value: stats.totalFreeStudents, color: 'bg-gray-50 text-gray-600', iconBg: 'bg-gray-100' },
+   175→            { icon: FileText, label: 'Tests', value: stats.totalTests, color: 'bg-indigo-50 text-indigo-700', iconBg: 'bg-indigo-100' },
+   176→            { icon: HelpCircle, label: 'Questions', value: stats.totalQuestions, color: 'bg-amber-50 text-amber-700', iconBg: 'bg-amber-100' },
+   177→            { icon: CreditCard, label: 'Payments', value: stats.totalPayments, color: 'bg-purple-50 text-purple-700', iconBg: 'bg-purple-100' },
+   178→          ].map((item) => (
+   179→            <Card key={item.label} className="border-0 shadow-sm">
+   180→              <CardContent className="p-4 flex items-center gap-3">
+   181→                <div className={`p-2 rounded-xl ${item.iconBg}`}><item.icon className={`w-5 h-5 ${item.color.split(' ')[1]}`} /></div>
+   182→                <div>
+   183→                  <p className="text-2xl font-bold text-gray-900">{item.value}</p>
+   184→                  <p className="text-[11px] text-muted-foreground">{item.label}</p>
+   185→                </div>
+   186→              </CardContent>
+   187→            </Card>
+   188→          ))}
+   189→        </div>
+   190→
+   191→        {/* Tabs */}
+   192→        <Tabs value={activeTab} onValueChange={setActiveTab}>
+   193→          <TabsList className="bg-white border mb-5 h-auto p-1 w-full sm:w-auto">
+   194→            <TabsTrigger value="dashboard" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+   195→              <LayoutGrid className="w-3.5 h-3.5" /> Dashboard
+   196→            </TabsTrigger>
+   197→            <TabsTrigger value="categories" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+   198→              <BookOpen className="w-3.5 h-3.5" /> Categories
+   199→            </TabsTrigger>
+   200→            <TabsTrigger value="tests" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+   201→              <FileText className="w-3.5 h-3.5" /> Tests
+   202→            </TabsTrigger>
+   203→            <TabsTrigger value="create-test" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+   204→              <Plus className="w-3.5 h-3.5" /> Create Test
+   205→            </TabsTrigger>
+   206→            <TabsTrigger value="users" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+   207→              <Users className="w-3.5 h-3.5" /> Users
+   208→            </TabsTrigger>
+   209→            <TabsTrigger value="payments" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+   210→              <Wallet className="w-3.5 h-3.5" /> Payments
+   211→            </TabsTrigger>
+   212→          </TabsList>
+   213→
+   214→          <TabsContent value="dashboard">
+   215→            <AdminDashboardContent onNavigate={setActiveTab} />
+   216→          </TabsContent>
+   217→          <TabsContent value="categories">
+   218→            <AdminCategoriesTab onRefresh={fetchCategories} />
+   219→          </TabsContent>
+   220→          <TabsContent value="tests">
+   221→            <AdminTestsTab onRefresh={fetchTests} />
+   222→          </TabsContent>
+   223→          <TabsContent value="create-test">
+   224→            <AdminCreateTestTab onCreated={fetchTests} />
+   225→          </TabsContent>
+   226→          <TabsContent value="users">
+   227→            <AdminUsersTab onRefresh={fetchStats} />
+   228→          </TabsContent>
+   229→          <TabsContent value="payments">
+   230→            <AdminPaymentsTab />
+   231→          </TabsContent>
+   232→        </Tabs>
+   233→      </div>
+   234→    </div>
+   235→  );
+   236→}
+   237→
+   238→// ==================== DASHBOARD ====================
+   239→function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => void }) {
+   240→  const { tests, categories } = useAppStore();
+   241→
+   242→  return (
+   243→    <div className="space-y-5">
+   244→      {/* Quick Stats */}
+   245→      <div className="grid sm:grid-cols-3 gap-3">
+   246→        <Card className="border-0 shadow-sm">
+   247→          <CardContent className="p-4">
+   248→            <div className="flex items-center justify-between mb-2">
+   249→              <span className="text-xs font-medium text-muted-foreground">Categories</span>
+   250→              <Badge variant="secondary" className="text-[10px]">{categories.length}</Badge>
+   251→            </div>
+   252→            <div className="flex flex-wrap gap-1.5">
+   253→              {categories.slice(0, 6).map((cat) => (
+   254→                <Badge key={cat.id} className="text-[10px] font-normal" style={{ backgroundColor: cat.color + '20', color: cat.color, border: 'none' }}>
+   255→                  {cat.name}
+   256→                </Badge>
+   257→              ))}
+   258→              {categories.length > 6 && <Badge variant="secondary" className="text-[10px]">+{categories.length - 6}</Badge>}
+   259→            </div>
+   260→          </CardContent>
+   261→        </Card>
+   262→        <Card className="border-0 shadow-sm">
+   263→          <CardContent className="p-4">
+   264→            <div className="flex items-center justify-between mb-2">
+   265→              <span className="text-xs font-medium text-muted-foreground">Active Tests</span>
+   266→              <Badge variant="secondary" className="text-[10px]">{tests.filter(t => t.isActive).length}</Badge>
+   267→            </div>
+   268→            <div className="space-y-1.5">
+   269→              {tests.slice(0, 4).map((t) => (
+   270→                <div key={t.id} className="flex items-center justify-between text-xs">
+   271→                  <span className="truncate max-w-[150px]">{t.title}</span>
+   272→                  <span className="text-muted-foreground">{t.totalQuestions}Q</span>
+   273→                </div>
+   274→              ))}
+   275→            </div>
+   276→          </CardContent>
+   277→        </Card>
+   278→        <Card className="border-0 shadow-sm">
+   279→          <CardContent className="p-4">
+   280→            <div className="flex items-center justify-between mb-2">
+   281→              <span className="text-xs font-medium text-muted-foreground">Quick Actions</span>
+   282→            </div>
+   283→            <div className="space-y-2">
+   284→              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-2 h-8" onClick={() => onNavigate('create-test')}>
+   285→                <Plus className="w-3.5 h-3.5" /> Add New Test
+   286→              </Button>
+   287→              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-2 h-8" onClick={() => onNavigate('categories')}>
+   288→                <Plus className="w-3.5 h-3.5" /> Add Category
+   289→              </Button>
+   290→            </div>
+   291→          </CardContent>
+   292→        </Card>
+   293→      </div>
+   294→
+   295→      {/* Recent Tests */}
+   296→      <Card className="border-0 shadow-sm">
+   297→        <CardContent className="p-4">
+   298→          <h3 className="text-sm font-semibold mb-3">All Tests</h3>
+   299→          <div className="space-y-2">
+   300→            {tests.length === 0 ? (
+   301→              <p className="text-sm text-muted-foreground text-center py-6">No tests yet. Create your first test!</p>
+   302→            ) : (
+   303→              tests.map((test) => (
+   304→                <div key={test.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+   305→                  <div className="flex items-center gap-3">
+   306→                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">
+   307→                      {test.category?.name?.charAt(0) || '?'}
+   308→                    </div>
+   309→                    <div>
+   310→                      <p className="text-sm font-medium">{test.title}</p>
+   311→                      <p className="text-[11px] text-muted-foreground">{test.category?.name} · {test.totalQuestions} questions · {test.difficulty}</p>
+   312→                    </div>
+   313→                  </div>
+   314→                  <Badge variant={test.isActive ? 'default' : 'secondary'} className="text-[10px]">
+   315→                    {test.isActive ? 'Active' : 'Inactive'}
+   316→                  </Badge>
+   317→                </div>
+   318→              ))
+   319→            )}
+   320→          </div>
+   321→        </CardContent>
+   322→      </Card>
+   323→    </div>
+   324→  );
+   325→}
+   326→
+   327→// ==================== CATEGORIES TAB ====================
+   328→function AdminCategoriesTab({ onRefresh }: { onRefresh: () => void }) {
+   329→  const { categories, setCategories } = useAppStore();
+   330→  const [newName, setNewName] = useState('');
+   331→  const [newSlug, setNewSlug] = useState('');
+   332→  const [newExamType, setNewExamType] = useState('General');
+   333→  const [adding, setAdding] = useState(false);
+   334→
+   335→  async function handleAdd() {
+   336→    if (!newName || !newSlug) return;
+   337→    setAdding(true);
+   338→    await fetch('/api/admin/categories', {
+   339→      method: 'POST',
+   340→      headers: { 'Content-Type': 'application/json' },
+   341→      body: JSON.stringify({ name: newName, slug: newSlug, examType: newExamType }),
+   342→    });
+   343→    setNewName(''); setNewSlug('');
+   344→    setAdding(false);
+   345→    onRefresh();
+   346→  }
+   347→
+   348→  async function handleDelete(id: string) {
+   349→    if (!confirm('Delete this category and ALL its tests & questions? This cannot be undone.')) return;
+   350→    await fetch('/api/admin/categories', {
+   351→      method: 'DELETE',
+   352→      headers: { 'Content-Type': 'application/json' },
+   353→      body: JSON.stringify({ id }),
+   354→    });
+   355→    onRefresh();
+   356→  }
+   357→
+   358→  return (
+   359→    <div className="space-y-4">
+   360→      {/* Add Category */}
+   361→      <Card className="border-0 shadow-sm">
+   362→        <CardContent className="p-5">
+   363→          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Plus className="w-4 h-4 text-blue-600" /> Add New Category</h3>
+   364→          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+   365→            <div className="sm:col-span-2">
+   366→              <Label className="text-xs">Category Name</Label>
+   367→              <Input
+   368→                placeholder="e.g., SSC CGL"
+   369→                value={newName}
+   370→                onChange={(e) => { setNewName(e.target.value); setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')); }}
+   371→                className="h-10"
+   372→              />
+   373→            </div>
+   374→            <div>
+   375→              <Label className="text-xs">URL Slug</Label>
+   376→              <Input placeholder="ssc-cgl" value={newSlug} onChange={(e) => setNewSlug(e.target.value)} className="h-10" />
+   377→            </div>
+   378→            <div>
+   379→              <Label className="text-xs">Exam Type</Label>
+   380→              <select className="w-full border rounded-md px-3 py-2 text-sm h-10 bg-white" value={newExamType} onChange={(e) => setNewExamType(e.target.value)}>
+   381→                {['General', 'SSC', 'UPSC', 'Banking', 'Railways', 'State', 'Defence'].map(t => <option key={t}>{t}</option>)}
+   382→              </select>
+   383→            </div>
+   384→          </div>
+   385→          <Button size="sm" className="bg-blue-700 hover:bg-blue-800 mt-3" onClick={handleAdd} disabled={!newName || !newSlug || adding}>
+   386→            {adding ? 'Adding...' : <><Plus className="w-3.5 h-3.5 mr-1" /> Add Category</>}
+   387→          </Button>
+   388→        </CardContent>
+   389→      </Card>
+   390→
+   391→      {/* Categories List */}
+   392→      <Card className="border-0 shadow-sm">
+   393→        <CardContent className="p-5">
+   394→          <h3 className="text-sm font-semibold mb-3">All Categories ({categories.length})</h3>
+   395→          <div className="space-y-2">
+   396→            {categories.map((cat) => (
+   397→              <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
+   398→                <div className="flex items-center gap-3">
+   399→                  <div className="w-2 h-10 rounded-full" style={{ backgroundColor: cat.color }} />
+   400→                  <div>
+   401→                    <p className="text-sm font-medium">{cat.name}</p>
+   402→                    <div className="flex items-center gap-2 mt-0.5">
+   403→                      <Badge variant="secondary" className="text-[10px]">{cat.examType}</Badge>
+   404→                      <span className="text-[10px] text-muted-foreground">{cat._count.tests} tests</span>
+   405→                      <span className="text-[10px] text-muted-foreground">/{cat.slug}</span>
+   406→                    </div>
+   407→                  </div>
+   408→                </div>
+   409→                <Button
+   410→                  variant="ghost"
+   411→                  size="icon"
+   412→                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+   413→                  onClick={() => handleDelete(cat.id)}
+   414→                >
+   415→                  <Trash2 className="w-4 h-4" />
+   416→                </Button>
+   417→              </div>
+   418→            ))}
+   419→            {categories.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">No categories yet</p>}
+   420→          </div>
+   421→        </CardContent>
+   422→      </Card>
+   423→    </div>
+   424→  );
+   425→}
+   426→
+   427→// ==================== TESTS TAB ====================
+   428→function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
+   429→  const { tests } = useAppStore();
+   430→  const [expandedTestId, setExpandedTestId] = useState<string | null>(null);
+   431→  const [testQuestions, setTestQuestions] = useState<Record<string, unknown[]>>({});
+   432→  const [loadingQ, setLoadingQ] = useState<string | null>(null);
+   433→
+   434→  async function fetchQuestions(testId: string) {
+   435→    if (testQuestions[testId]) {
+   436→      setExpandedTestId(expandedTestId === testId ? null : testId);
+   437→      return;
+   438→    }
+   439→    setLoadingQ(testId);
+   440→    try {
+   441→      const res = await fetch(`/api/tests/${testId}`);
+   442→      if (res.ok) {
+   443→        const data = await res.json();
+   444→        setTestQuestions(prev => ({ ...prev, [testId]: data.questions || [] }));
+   445→        setExpandedTestId(testId);
+   446→      }
+   447→    } catch {}
+   448→    setLoadingQ(null);
+   449→  }
+   450→
+   451→  async function handleDeleteTest(id: string) {
+   452→    if (!confirm('Delete this test and ALL its questions? This cannot be undone.')) return;
+   453→    await fetch('/api/admin/tests', {
+   454→      method: 'DELETE',
+   455→      headers: { 'Content-Type': 'application/json' },
+   456→      body: JSON.stringify({ id }),
+   457→    });
+   458→    onRefresh();
+   459→  }
+   460→
+   461→  async function handleDeleteQuestion(questionId: string, testId: string) {
+   462→    if (!confirm('Delete this question?')) return;
+   463→    await fetch('/api/admin/tests/questions', {
+   464→      method: 'DELETE',
+   465→      headers: { 'Content-Type': 'application/json' },
+   466→      body: JSON.stringify({ questionId }),
+   467→    });
+   468→    // Refetch
+   469→    const res = await fetch(`/api/tests/${testId}`);
+   470→    if (res.ok) {
+   471→      const data = await res.json();
+   472→      setTestQuestions(prev => ({ ...prev, [testId]: data.questions || [] }));
+   473→    }
+   474→    onRefresh();
+   475→  }
+   476→
+   477→  return (
+   478→    <div className="space-y-3">
+   479→      <div className="flex items-center justify-between">
+   480→        <h3 className="text-sm font-semibold">All Tests ({tests.length})</h3>
+   481→        <Badge variant="secondary" className="text-[10px]">{tests.reduce((s, t) => s + t.totalQuestions, 0)} total questions</Badge>
+   482→      </div>
+   483→
+   484→      {tests.length === 0 ? (
+   485→        <Card className="border-0 shadow-sm">
+   486→          <CardContent className="p-10 text-center">
+   487→            <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+   488→            <p className="text-sm text-muted-foreground">No tests yet. Go to &quot;Create Test&quot; tab to add your first test.</p>
+   489→          </CardContent>
+   490→        </Card>
+   491→      ) : (
+   492→        tests.map((test) => (
+   493→          <Card key={test.id} className="border-0 shadow-sm overflow-hidden">
+   494→            {/* Test Header */}
+   495→            <div
+   496→              className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+   497→              onClick={() => fetchQuestions(test.id)}
+   498→            >
+   499→              <div className="flex items-center gap-3 flex-1 min-w-0">
+   500→                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: test.category?.color || '#1e40af' }}>
+   501→                  {test.category?.name?.charAt(0) || 'T'}
+   502→                </div>
+   503→                <div className="min-w-0">
+   504→                  <p className="text-sm font-medium truncate">{test.title}</p>
+   505→                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+   506→                    <Badge variant="secondary" className="text-[10px]">{test.category?.name}</Badge>
+   507→                    <span className="text-[10px] text-muted-foreground">{test.totalQuestions} questions</span>
+   508→                    <span className="text-[10px] text-muted-foreground">{test.difficulty}</span>
+   509→                    <span className="text-[10px] text-muted-foreground">{Math.floor(test.timeLimit / 60)}min</span>
+   510→                  </div>
+   511→                </div>
+   512→              </div>
+   513→              <div className="flex items-center gap-2 shrink-0 ml-2">
+   514→                {loadingQ === test.id ? (
+   515→                  <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+   516→                ) : (
+   517→                  <>
+   518→                    <Button
+   519→                      variant="ghost"
+   520→                      size="icon"
+   521→                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+   522→                      onClick={(e) => { e.stopPropagation(); handleDeleteTest(test.id); }}
+   523→                    >
+   524→                      <Trash2 className="w-4 h-4" />
+   525→                    </Button>
+   526→                    {expandedTestId === test.id ? (
+   527→                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+   528→                    ) : (
+   529→                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+   530→                    )}
+   531→                  </>
+   532→                )}
+   533→              </div>
+   534→            </div>
+   535→
+   536→            {/* Questions List */}
+   537→            <AnimatePresence>
+   538→              {expandedTestId === test.id && (
+   539→                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+   540→                  <div className="border-t bg-gray-50 p-4 space-y-2">
+   541→                    <div className="flex items-center justify-between mb-2">
+   542→                      <h4 className="text-xs font-semibold text-muted-foreground">
+   543→                        Questions ({(testQuestions[test.id] || []).length})
+   544→                      </h4>
+   545→                    </div>
+   546→                    {(testQuestions[test.id] || []).length === 0 ? (
+   547→                      <p className="text-xs text-muted-foreground text-center py-4">No questions in this test</p>
+   548→                    ) : (
+   549→                      (testQuestions[test.id] as Array<Record<string, unknown>>).map((q, i) => (
+   550→                        <div key={String(q.id)} className="bg-white rounded-lg p-3 border text-xs group">
+   551→                          <div className="flex items-start justify-between gap-2">
+   552→                            <div className="flex-1 min-w-0">
+   553→                              <div className="flex items-center gap-2 mb-1">
+   554→                                <span className="font-bold text-blue-700 shrink-0">Q{i + 1}.</span>
+   555→                                <span className="text-gray-700">{String(q.question).substring(0, 100)}{String(q.question).length > 100 ? '...' : ''}</span>
+   556→                              </div>
+   557→                              <div className="grid grid-cols-2 gap-1 ml-5 text-muted-foreground">
+   558→                                <div className={String(q.correctOption) === 'A' ? 'text-green-700 font-medium' : ''}>
+   559→                                  A. {String(q.optionA)}
+   560→                                </div>
+   561→                                <div className={String(q.correctOption) === 'B' ? 'text-green-700 font-medium' : ''}>
+   562→                                  B. {String(q.optionB)}
+   563→                                </div>
+   564→                                <div className={String(q.correctOption) === 'C' ? 'text-green-700 font-medium' : ''}>
+   565→                                  C. {String(q.optionC)}
+   566→                                </div>
+   567→                                <div className={String(q.correctOption) === 'D' ? 'text-green-700 font-medium' : ''}>
+   568→                                  D. {String(q.optionD)}
+   569→                                </div>
+   570→                              </div>
+   571→                            </div>
+   572→                            <Button
+   573→                              variant="ghost"
+   574→                              size="icon"
+   575→                              className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+   576→                              onClick={() => handleDeleteQuestion(String(q.id), test.id)}
+   577→                            >
+   578→                              <Trash2 className="w-3.5 h-3.5" />
+   579→                            </Button>
+   580→                          </div>
+   581→                        </div>
+   582→                      ))
+   583→                    )}
+   584→                  </div>
+   585→                </motion.div>
+   586→              )}
+   587→            </AnimatePresence>
+   588→          </Card>
+   589→        ))
+   590→      )}
+   591→    </div>
+   592→  );
+   593→}
+   594→
+   595→// ==================== CREATE TEST TAB ====================
+   596→interface QuestionForm {
+   597→  question: string;
+   598→  optionA: string;
+   599→  optionB: string;
+   600→  optionC: string;
+   601→  optionD: string;
+   602→  correctOption: string;
+   603→  explanation: string;
+   604→  section: string;
+   605→  negativeMark: string;
+   606→}
+   607→
+   608→const emptyQuestion = (): QuestionForm => ({
+   609→  question: '',
+   610→  optionA: '',
+   611→  optionB: '',
+   612→  optionC: '',
+   613→  optionD: '',
+   614→  correctOption: 'A',
+   615→  explanation: '',
+   616→  section: 'General',
+   617→  negativeMark: '0',
+   618→});
+   619→
+   620→function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
+   621→  const { categories } = useAppStore();
+   622→  const [step, setStep] = useState<1 | 2 | 3>(1);
+   623→
+   624→  // Step 1: Test details
+   625→  const [title, setTitle] = useState('');
+   626→  const [desc, setDesc] = useState('');
+   627→  const [catId, setCatId] = useState('');
+   628→  const [diff, setDiff] = useState('medium');
+   629→  const [time, setTime] = useState('600');
+   630→  const [examName, setExamName] = useState('');
+   631→
+   632→  // Step 2: Questions
+   633→  const [questions, setQuestions] = useState<QuestionForm[]>([emptyQuestion()]);
+   634→  const [createdTestId, setCreatedTestId] = useState('');
+   635→
+   636→  // Step 3: Done
+   637→  const [savedCount, setSavedCount] = useState(0);
+   638→  const [saving, setSaving] = useState(false);
+   639→
+   640→  // Import states
+   641→  const [extractingImage, setExtractingImage] = useState(false);
+   642→  const [extractElapsed, setExtractElapsed] = useState(0);
+   643→  const [importingAnswers, setImportingAnswers] = useState(false);
+   644→  const [importingExplanations, setImportingExplanations] = useState(false);
+   645→  // VISIBLE fill status banner — shows user exactly what's happening with the fill
+   646→  const [fillStatus, setFillStatus] = useState<{ msg: string; type: 'info' | 'success' | 'error' } | null>(null);
+   647→
+   648→  // Count dialog state — asks user "kitne questions hain?" BEFORE picking image
+   649→  const [showCountDialog, setShowCountDialog] = useState(false);
+   650→  const [questionCount, setQuestionCount] = useState('');
+   651→  // Index from which to START filling extracted data into existing empty boxes
+   652→  const fillStartIndexRef = useRef<number>(0);
+   653→
+   654→  // File input refs
+   655→  const imageInputRef = useRef<HTMLInputElement>(null);
+   656→  const answersInputRef = useRef<HTMLInputElement>(null);
+   657→  const explanationsInputRef = useRef<HTMLInputElement>(null);
+   658→
+   659→  // DEBUG: Log every time questions state changes (helps verify fill is working)
+   660→  useEffect(() => {
+   661→    const filledCount = questions.filter(q => q.question.trim() !== '').length;
+   662→    console.log(`📊 questions state changed — total: ${questions.length}, filled: ${filledCount}, empty: ${questions.length - filledCount}`);
+   663→    if (questions.length > 0 && questions[0].question.trim()) {
+   664→      console.log(`📊 Box[0] now contains: "${questions[0].question.substring(0, 50)}..."`);
+   665→    }
+   666→  }, [questions]);
+   667→
+   668→  function addQuestion() {
+   669→    setQuestions([...questions, emptyQuestion()]);
+   670→  }
+   671→
+   672→  function updateQ(i: number, field: keyof QuestionForm, value: string) {
+   673→    const updated = [...questions];
+   674→    updated[i] = { ...updated[i], [field]: value };
+   675→    setQuestions(updated);
+   676→  }
+   677→
+   678→  function removeQ(i: number) {
+   679→    if (questions.length <= 1) return;
+   680→    setQuestions(questions.filter((_, idx) => idx !== i));
+   681→  }
+   682→
+   683→  function duplicateQ(i: number) {
+   684→    const updated = [...questions];
+   685→    updated.splice(i + 1, 0, { ...questions[i] });
+   686→    setQuestions(updated);
+   687→  }
+   688→
+   689→  async function createTest() {
+   690→    if (!title || !catId) return;
+   691→    const res = await fetch('/api/admin/tests', {
+   692→      method: 'POST',
+   693→      headers: { 'Content-Type': 'application/json' },
+   694→      body: JSON.stringify({ title, description: desc, categoryId: catId, difficulty: diff, timeLimit: parseInt(time), examName: examName || 'Practice Test' }),
+   695→    });
+   696→    const data = await res.json();
+   697→    setCreatedTestId(data.id);
+   698→    setStep(2);
+   699→  }
+   700→
+   701→  async function saveQuestions() {
+   702→    const valid = questions.filter(q => q.question.trim() && q.optionA.trim() && q.optionB.trim() && q.optionC.trim() && q.optionD.trim());
+   703→    if (valid.length === 0) return;
+   704→    setSaving(true);
+   705→    const res = await fetch('/api/admin/tests/questions', {
+   706→      method: 'POST',
+   707→      headers: { 'Content-Type': 'application/json' },
+   708→      body: JSON.stringify({ testId: createdTestId, questions: valid }),
+   709→    });
+   710→    if (res.ok) {
+   711→      const data = await res.json();
+   712→      setSavedCount(data.created || valid.length);
+   713→      setStep(3);
+   714→    }
+   715→    setSaving(false);
+   716→  }
+   717→
+   718→  function resetAll() {
+   719→    setStep(1);
+   720→    setTitle('');
+   721→    setDesc('');
+   722→    setCatId('');
+   723→    setDiff('medium');
+   724→    setTime('600');
+   725→    setExamName('');
+   726→    setQuestions([emptyQuestion()]);
+   727→    setCreatedTestId('');
+   728→    setSavedCount(0);
+   729→  }
+   730→
+   731→  // ====== NEW FLOW: Ask count FIRST, create empty boxes, THEN extract & fill ======
+   732→  function openCountDialog() {
+   733→    if (extractingImage) return;
+   734→    setQuestionCount('');
+   735→    setShowCountDialog(true);
+   736→  }
+   737→
+   738→  function confirmCountAndPickImage() {
+   739→    const n = parseInt(questionCount, 10);
+   740→    if (!n || n < 1 || n > 200) {
+   741→      toast.error('Please enter a valid number between 1 and 200');
+   742→      return;
+   743→    }
+   744→
+   745→    // 1) Remove ALL completely-empty questions (untouched default boxes)
+   746→    //    so the count the user enters matches exactly what they see.
+   747→    setQuestions(prev => {
+   748→      let cleaned = prev.filter(q => {
+   749→        const isEmpty = !q.question.trim() && !q.optionA.trim() && !q.optionB.trim() && !q.optionC.trim() && !q.optionD.trim() && !q.explanation.trim();
+   750→        return !isEmpty;
+   751→      });
+   752→      // 2) Record the fill start index (where extracted data should go)
+   753→      fillStartIndexRef.current = cleaned.length;
+   754→      // 3) Add N new empty boxes INSTANTLY — user sees them right away
+   755→      const newBoxes: QuestionForm[] = Array.from({ length: n }, () => emptyQuestion());
+   756→      return [...cleaned, ...newBoxes];
+   757→    });
+   758→
+   759→    setShowCountDialog(false);
+   760→    toast.success(`✅ ${n} empty question boxes created! Ab image select karein...`);
+   761→
+   762→    // 4) Now open the file picker
+   763→    setTimeout(() => {
+   764→      imageInputRef.current?.click();
+   765→    }, 100);
+   766→  }
+   767→
+   768→  // Fill existing empty boxes with extracted data — finds first empty box dynamically.
+   769→  // Uses a DIRECT state replacement approach for maximum reliability.
+   770→  function fillQuestionsFromExtract(extracted: QuestionForm[]): number {
+   771→    if (!extracted || extracted.length === 0) {
+   772→      console.warn('⚠️ fillQuestionsFromExtract: no questions to fill');
+   773→      setFillStatus({ msg: '⚠️ No questions received from VLM to fill.', type: 'error' });
+   774→      return 0;
+   775→    }
+   776→    console.log(`🔧 fillQuestionsFromExtract: START — filling ${extracted.length} questions`);
+   777→    console.log(`🔧 First extracted question:`, extracted[0]?.question?.substring(0, 60));
+   778→    setFillStatus({ msg: `🔧 Filling ${extracted.length} questions into boxes...`, type: 'info' });
+   779→
+   780→    let filledCount = 0;
+   781→    setQuestions(prev => {
+   782→      console.log(`🔧 setQuestions updater — prev count: ${prev.length}`);
+   783→      const next = [...prev];
+   784→
+   785→      // Find first empty box and fill sequentially from there
+   786→      let startIdx = -1;
+   787→      for (let i = 0; i < next.length; i++) {
+   788→        if (!next[i].question.trim()) {
+   789→          startIdx = i;
+   790→          break;
+   791→        }
+   792→      }
+   793→      console.log(`🔧 First empty box at index: ${startIdx}`);
+   794→
+   795→      if (startIdx === -1) {
+   796→        // No empty boxes — append all
+   797→        console.log(`🔧 No empty boxes — appending ${extracted.length}`);
+   798→        for (const ex of extracted) {
+   799→          next.push(ex);
+   800→          filledCount++;
+   801→        }
+   802→      } else {
+   803→        for (let k = 0; k < extracted.length; k++) {
+   804→          const targetIdx = startIdx + k;
+   805→          if (targetIdx < next.length) {
+   806→            next[targetIdx] = { ...next[targetIdx], ...extracted[k] };
+   807→          } else {
+   808→            next.push(extracted[k]);
+   809→          }
+   810→          filledCount++;
+   811→        }
+   812→        console.log(`🔧 Filled boxes ${startIdx}–${startIdx + extracted.length - 1}`);
+   813→      }
+   814→
+   815→      console.log(`🔧 AFTER fill — total: ${next.length}, Box[0]:`, next[0]?.question?.substring(0, 60));
+   816→      return next;
+   817→    });
+   818→
+   819→    // Show success status (slight delay so it appears after state update)
+   820→    setTimeout(() => {
+   821→      setFillStatus({ msg: `✅ ${extracted.length} questions filled into boxes!`, type: 'success' });
+   822→      // Auto-clear after 8 seconds
+   823→      setTimeout(() => setFillStatus(null), 8000);
+   824→    }, 100);
+   825→
+   826→    return filledCount;
+   827→  }
+   828→
+   829→  async function handleImageExtract(e: React.ChangeEvent<HTMLInputElement>) {
+   830→    const files = e.target.files;
+   831→    if (!files || files.length === 0) return;
+   832→
+   833→    const fileList = Array.from(files);
+   834→    setExtractingImage(true);
+   835→    setExtractElapsed(0);
+   836→
+   837→    // Start a timer to show elapsed seconds
+   838→    const startTime = Date.now();
+   839→    const timerInterval = setInterval(() => {
+   840→      setExtractElapsed(Math.floor((Date.now() - startTime) / 1000));
+   841→    }, 1000);
+   842→
+   843→    try {
+   844→      let totalExtracted = 0;
+   845→      let hasError = false;
+   846→
+   847→      // Process each image file sequentially
+   848→      for (let i = 0; i < fileList.length; i++) {
+   849→        const file = fileList[i];
+   850→        const formData = new FormData();
+   851→        formData.append('image', file);
+   852→
+   853→        // Use AbortController with 5-minute timeout per file (VLM can take 2-3 min for large images)
+   854→        const controller = new AbortController();
+   855→        const timeoutId = setTimeout(() => controller.abort(), 300000);
+   856→
+   857→        try {
+   858→          console.log(`📤 Uploading image ${i + 1}/${fileList.length}: ${file.name}`);
+   859→          setFillStatus({ msg: `📤 Uploading image to VLM... (this can take 1-3 minutes)`, type: 'info' });
+   860→          const res = await fetch('/api/admin/extract-question', {
+   861→            method: 'POST',
+   862→            body: formData,
+   863→            signal: controller.signal,
+   864→          });
+   865→          clearTimeout(timeoutId);
+   866→
+   867→          console.log(`📡 Response status: ${res.status}`);
+   868→          if (!res.ok) {
+   869→            const errText = await res.text().catch(() => 'Unknown error');
+   870→            console.error(`❌ HTTP ${res.status}:`, errText.substring(0, 200));
+   871→            setFillStatus({ msg: `❌ VLM error (HTTP ${res.status}): ${errText.substring(0, 100)}`, type: 'error' });
+   872→            toast.error(`Image ${i + 1}: VLM returned HTTP ${res.status}`);
+   873→            hasError = true;
+   874→            continue;
+   875→          }
+   876→          const data = await res.json();
+   877→          console.log(`📋 Extraction result:`, { success: data.success, count: data.count, hasQuestions: !!data.questions, error: data.error });
+   878→
+   879→          if (data.success && data.questions && data.questions.length > 0) {
+   880→            console.log(`🎉 VLM returned ${data.questions.length} questions — mapping to QuestionForm...`);
+   881→            const newQuestions: QuestionForm[] = data.questions.map((q: any) => ({
+   882→              question: q.question || '',
+   883→              optionA: q.optionA || '',
+   884→              optionB: q.optionB || '',
+   885→              optionC: q.optionC || '',
+   886→              optionD: q.optionD || '',
+   887→              correctOption: q.correctOption || 'A',
+   888→              explanation: q.explanation || '',
+   889→              section: q.section || 'General',
+   890→              negativeMark: q.negativeMark || '0',
+   891→            }));
+   892→            console.log(`🎉 Mapped ${newQuestions.length} questions. First:`, newQuestions[0]);
+   893→
+   894→            // FILL existing empty boxes with extracted data
+   895→            const filled = fillQuestionsFromExtract(newQuestions);
+   896→            totalExtracted += newQuestions.length;
+   897→            console.log(`✅ Fill complete — ${filled} boxes filled (total extracted so far: ${totalExtracted})`);
+   898→            toast.success(`Image ${i + 1}: ${newQuestions.length} questions extracted & filled!`);
+   899→          } else if (data.success && data.question) {
+   900→            // Fallback: single question
+   901→            const newQ: QuestionForm = {
+   902→              question: data.question.question || '',
+   903→              optionA: data.question.optionA || '',
+   904→              optionB: data.question.optionB || '',
+   905→              optionC: data.question.optionC || '',
+   906→              optionD: data.question.optionD || '',
+   907→              correctOption: data.question.correctOption || 'A',
+   908→              explanation: data.question.explanation || '',
+   909→              section: data.question.section || 'General',
+   910→              negativeMark: data.question.negativeMark || '0',
+   911→            };
+   912→            const filled = fillQuestionsFromExtract([newQ]);
+   913→            totalExtracted += 1;
+   914→            console.log(`✅ Fill complete — ${filled} boxes filled`);
+   915→            toast.success(`Image ${i + 1}: 1 question extracted & filled!`);
+   916→          } else {
+   917→            hasError = true;
+   918→            console.error(`❌ Extraction failed for image ${i + 1}:`, data.error);
+   919→            setFillStatus({ msg: `❌ ${data.error || 'Failed to extract questions'}`, type: 'error' });
+   920→            toast.error(`Image ${i + 1}: ${data.error || 'Failed to extract'}`);
+   921→          }
+   922→        } catch (err: any) {
+   923→          clearTimeout(timeoutId);
+   924→          hasError = true;
+   925→          console.error(`❌ Fetch error for image ${i + 1}:`, err);
+   926→          if (err?.name === 'AbortError') {
+   927→            setFillStatus({ msg: '❌ Timed out (5 min). Try a smaller image.', type: 'error' });
+   928→            toast.error(`Image ${i + 1}: Timed out (5 min). Try a smaller image.`);
+   929→          } else {
+   930→            setFillStatus({ msg: `❌ ${err?.message || 'Failed to extract'}`, type: 'error' });
+   931→            toast.error(`Image ${i + 1}: ${err?.message || 'Failed to extract'}`);
+   932→          }
+   933→        }
+   934→      }
+   935→
+   936→      if (totalExtracted > 0) {
+   937→        toast.success(`🎉 Total: ${totalExtracted} questions extracted from ${fileList.length} image${fileList.length > 1 ? 's' : ''} & filled into boxes!`);
+   938→      } else if (!hasError) {
+   939→        toast.error('No questions could be extracted from the image(s). Empty boxes remain for manual entry.');
+   940→      }
+   941→    } finally {
+   942→      clearInterval(timerInterval);
+   943→      setExtractingImage(false);
+   944→      setExtractElapsed(0);
+   945→      e.target.value = '';
+   946→    }
+   947→  }
+   948→
+   949→  async function handleImportAnswers(e: React.ChangeEvent<HTMLInputElement>) {
+   950→    const file = e.target.files?.[0];
+   951→    if (!file) return;
+   952→    setImportingAnswers(true);
+   953→    try {
+   954→      const formData = new FormData();
+   955→      formData.append('file', file);
+   956→      formData.append('testId', createdTestId);
+   957→      const res = await fetch('/api/admin/import-answers', {
+   958→        method: 'POST',
+   959→        body: formData,
+   960→      });
+   961→      const data = await res.json();
+   962→      if (data.success) {
+   963→        toast.success(`Updated ${data.updated} correct answers successfully!`);
+   964→      } else {
+   965→        toast.error(data.error || 'Failed to import answers');
+   966→      }
+   967→    } catch {
+   968→      toast.error('Failed to import answers. Please try again.');
+   969→    } finally {
+   970→      setImportingAnswers(false);
+   971→      e.target.value = '';
+   972→    }
+   973→  }
+   974→
+   975→  async function handleImportExplanations(e: React.ChangeEvent<HTMLInputElement>) {
+   976→    const file = e.target.files?.[0];
+   977→    if (!file) return;
+   978→    setImportingExplanations(true);
+   979→    try {
+   980→      const formData = new FormData();
+   981→      formData.append('file', file);
+   982→      formData.append('testId', createdTestId);
+   983→      const res = await fetch('/api/admin/import-explanations', {
+   984→        method: 'POST',
+   985→        body: formData,
+   986→      });
+   987→      const data = await res.json();
+   988→      if (data.success) {
+   989→        toast.success(`Updated ${data.updated} explanations successfully!`);
+   990→      } else {
+   991→        toast.error(data.error || 'Failed to import explanations');
+   992→      }
+   993→    } catch {
+   994→      toast.error('Failed to import explanations. Please try again.');
+   995→    } finally {
+   996→      setImportingExplanations(false);
+   997→      e.target.value = '';
+   998→    }
+   999→  }
+  1000→
+  1001→  return (
+  1002→    <div className="space-y-5">
+  1003→      {/* Step Indicator */}
+  1004→      <div className="flex items-center gap-2 mb-2">
+  1005→        {[
+  1006→          { n: 1, label: 'Test Details' },
+  1007→          { n: 2, label: 'Add Questions' },
+  1008→          { n: 3, label: 'Done' },
+  1009→        ].map((s) => (
+  1010→          <div key={s.n} className="flex items-center gap-2">
+  1011→            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+  1012→              step > s.n ? 'bg-green-600 text-white' : step === s.n ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
+  1013→            }`}>
+  1014→              {step > s.n ? <CheckCircle2 className="w-4 h-4" /> : s.n}
+  1015→            </div>
+  1016→            <span className={`text-xs font-medium ${step === s.n ? 'text-gray-900' : 'text-muted-foreground'}`}>{s.label}</span>
+  1017→            {s.n < 3 && <div className={`w-8 h-0.5 ${step > s.n ? 'bg-green-600' : 'bg-gray-200'}`} />}
+  1018→          </div>
+  1019→        ))}
+  1020→      </div>
+  1021→
+  1022→      {/* Step 1: Test Details */}
+  1023→      {step === 1 && (
+  1024→        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+  1025→          <Card className="border-0 shadow-sm">
+  1026→            <CardContent className="p-5 space-y-4">
+  1027→              <div>
+  1028→                <h3 className="text-base font-bold flex items-center gap-2 mb-1"><FileText className="w-5 h-5 text-blue-600" /> Test Information</h3>
+  1029→                <p className="text-xs text-muted-foreground">Fill in the basic details for your mock test</p>
+  1030→              </div>
+  1031→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  1032→                <div className="sm:col-span-2">
+  1033→                  <Label className="text-xs font-medium">Test Title *</Label>
+  1034→                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., SSC CGL 2024 - General Awareness" className="h-11" />
+  1035→                </div>
+  1036→                <div className="sm:col-span-2">
+  1037→                  <Label className="text-xs font-medium">Description</Label>
+  1038→                  <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Brief description of this test..." className="min-h-[80px] resize-none" />
+  1039→                </div>
+  1040→                <div>
+  1041→                  <Label className="text-xs font-medium">Category *</Label>
+  1042→                  <select className="w-full border rounded-md px-3 py-2.5 text-sm h-11 bg-white" value={catId} onChange={(e) => setCatId(e.target.value)}>
+  1043→                    <option value="">Select category...</option>
+  1044→                    {categories.map(c => <option key={c.id} value={c.id}>{c.name} ({c.examType})</option>)}
+  1045→                  </select>
+  1046→                </div>
+  1047→                <div>
+  1048→                  <Label className="text-xs font-medium">Exam Name</Label>
+  1049→                  <Input value={examName} onChange={(e) => setExamName(e.target.value)} placeholder="e.g., SSC CGL 2024" className="h-11" />
+  1050→                </div>
+  1051→                <div>
+  1052→                  <Label className="text-xs font-medium">Difficulty</Label>
+  1053→                  <select className="w-full border rounded-md px-3 py-2.5 text-sm h-11 bg-white" value={diff} onChange={(e) => setDiff(e.target.value)}>
+  1054→                    {['easy', 'medium', 'hard'].map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+  1055→                  </select>
+  1056→                </div>
+  1057→                <div>
+  1058→                  <Label className="text-xs font-medium">Time Limit (seconds)</Label>
+  1059→                  <Input type="number" value={time} onChange={(e) => setTime(e.target.value)} className="h-11" />
+  1060→                  <p className="text-[10px] text-muted-foreground mt-1">600 seconds = 10 minutes</p>
+  1061→                </div>
+  1062→              </div>
+  1063→              <div className="flex justify-end pt-2">
+  1064→                <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={createTest} disabled={!title || !catId}>
+  1065→                  Next: Add Questions <ChevronRight className="w-4 h-4 ml-2" />
+  1066→                </Button>
+  1067→              </div>
+  1068→            </CardContent>
+  1069→          </Card>
+  1070→        </motion.div>
+  1071→      )}
+  1072→
+  1073→      {/* Step 2: Add Questions */}
+  1074→      {step === 2 && (
+  1075→        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+  1076→          {/* Quick Stats Bar */}
+  1077→          <div className="flex items-center justify-between">
+  1078→            <div className="flex items-center gap-3">
+  1079→              <Badge variant="secondary" className="text-xs">{questions.length} questions</Badge>
+  1080→              <Badge variant="outline" className="text-xs">
+  1081→                {questions.filter(q => q.question.trim() && q.optionA.trim()).length} complete
+  1082→              </Badge>
+  1083→            </div>
+  1084→            <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
+  1085→              <Plus className="w-3.5 h-3.5" /> Add Question
+  1086→            </Button>
+  1087→          </div>
+  1088→
+  1089→          {/* Hidden file inputs */}
+  1090→          <input
+  1091→            type="file"
+  1092→            ref={imageInputRef}
+  1093→            accept="image/*"
+  1094→            onChange={handleImageExtract}
+  1095→            className="hidden"
+  1096→          />
+  1097→          <input
+  1098→            type="file"
+  1099→            ref={answersInputRef}
+  1100→            accept=".txt,.csv"
+  1101→            onChange={handleImportAnswers}
+  1102→            className="hidden"
+  1103→          />
+  1104→          <input
+  1105→            type="file"
+  1106→            ref={explanationsInputRef}
+  1107→            accept=".txt"
+  1108→            onChange={handleImportExplanations}
+  1109→            className="hidden"
+  1110→          />
+  1111→
+  1112→          {/* Import Actions Bar */}
+  1113→          <div className="flex items-center gap-2 flex-wrap">
+  1114→            {/* VISIBLE FILL STATUS BANNER — shows user exactly what's happening */}
+  1115→            {fillStatus && (
+  1116→              <div className={`w-full p-3 rounded-lg border flex items-center gap-2 text-sm font-medium ${
+  1117→                fillStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+  1118→                fillStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+  1119→                'bg-blue-50 border-blue-200 text-blue-800'
+  1120→              }`}>
+  1121→                {fillStatus.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
+  1122→                 fillStatus.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
+  1123→                 <Loader2 className="w-4 h-4 shrink-0 animate-spin" />}
+  1124→                <span>{fillStatus.msg}</span>
+  1125→              </div>
+  1126→            )}
+  1127→            <Button
+  1128→              variant="outline"
+  1129→              size="sm"
+  1130→              onClick={openCountDialog}
+  1131→              disabled={extractingImage}
+  1132→              className="gap-1.5 text-xs"
+  1133→            >
+  1134→              {extractingImage ? (
+  1135→                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+  1136→              ) : (
+  1137→                <Camera className="w-3.5 h-3.5" />
+  1138→              )}
+  1139→              {extractingImage ? `Extracting & Filling... (${extractElapsed}s)` : '📸 Upload Image (Auto Extract All)'}
+  1140→            </Button>
+  1141→            {extractingImage && (
+  1142→              <div className="w-full mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+  1143→                <p className="text-xs text-amber-700 font-medium animate-pulse mb-2">
+  1144→                  ⏳ VLM image se questions padh raha hai aur boxes me fill kar raha hai... (30-90 seconds)
+  1145→                </p>
+  1146→                <div className="w-full bg-amber-200 rounded-full h-1.5 overflow-hidden">
+  1147→                  <div
+  1148→                    className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
+  1149→                    style={{ width: `${Math.min((extractElapsed / 60) * 100, 95)}%` }}
+  1150→                  />
+  1151→                </div>
+  1152→                <p className="text-[10px] text-amber-600 mt-1">
+  1153→                  {extractElapsed < 30 ? 'VLM image analyze kar raha hai...' :
+  1154→                   extractElapsed < 60 ? 'Questions padh rahe hain...' :
+  1155→                   extractElapsed < 90 ? 'Boxes me data fill ho raha hai...' :
+  1156→                   'Almost done, finalizing...'}
+  1157→                </p>
+  1158→              </div>
+  1159→            )}
+  1160→            <Button
+  1161→              variant="outline"
+  1162→              size="sm"
+  1163→              onClick={() => answersInputRef.current?.click()}
+  1164→              disabled={importingAnswers}
+  1165→              className="gap-1.5 text-xs"
+  1166→            >
+  1167→              {importingAnswers ? (
+  1168→                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+  1169→              ) : (
+  1170→                <FileUp className="w-3.5 h-3.5" />
+  1171→              )}
+  1172→              {importingAnswers ? 'Importing...' : 'Import Correct Answers'}
+  1173→            </Button>
+  1174→            <Button
+  1175→              variant="outline"
+  1176→              size="sm"
+  1177→              onClick={() => explanationsInputRef.current?.click()}
+  1178→              disabled={importingExplanations}
+  1179→              className="gap-1.5 text-xs"
+  1180→            >
+  1181→              {importingExplanations ? (
+  1182→                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+  1183→              ) : (
+  1184→                <Upload className="w-3.5 h-3.5" />
+  1185→              )}
+  1186→              {importingExplanations ? 'Importing...' : 'Import Explanations'}
+  1187→            </Button>
+  1188→          </div>
+  1189→
+  1190→          {/* Questions */}
+  1191→          <div className="space-y-3">
+  1192→            {questions.map((q, i) => (
+  1193→              <Card key={i} className={`border shadow-sm overflow-hidden ${q.question.trim() && q.optionA.trim() ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-amber-400'}`}>
+  1194→                <CardContent className="p-4 space-y-3">
+  1195→                  {/* Question Header */}
+  1196→                  <div className="flex items-center justify-between">
+  1197→                    <div className="flex items-center gap-2">
+  1198→                      <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+  1199→                      <span className="text-xs text-muted-foreground">Section: </span>
+  1200→                      <Input
+  1201→                        value={q.section}
+  1202→                        onChange={(e) => updateQ(i, 'section', e.target.value)}
+  1203→                        placeholder="General"
+  1204→                        className="w-32 h-7 text-xs"
+  1205→                      />
+  1206→                    </div>
+  1207→                    <div className="flex items-center gap-1">
+  1208→                      <button onClick={() => duplicateQ(i)} className="p-1.5 rounded hover:bg-gray-100 text-muted-foreground hover:text-blue-600 transition-colors" title="Duplicate">
+  1209→                        <Copy className="w-3.5 h-3.5" />
+  1210→                      </button>
+  1211→                      {questions.length > 1 && (
+  1212→                        <button onClick={() => removeQ(i)} className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors" title="Delete">
+  1213→                          <Trash2 className="w-3.5 h-3.5" />
+  1214→                        </button>
+  1215→                      )}
+  1216→                    </div>
+  1217→                  </div>
+  1218→
+  1219→                  {/* Question Text */}
+  1220→                  <Textarea
+  1221→                    value={q.question}
+  1222→                    onChange={(e) => updateQ(i, 'question', e.target.value)}
+  1223→                    placeholder="Type your question here..."
+  1224→                    className="min-h-[60px] resize-none text-sm"
+  1225→                  />
+  1226→
+  1227→                  {/* Options - 2x2 Grid */}
+  1228→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+  1229→                    {(['A', 'B', 'C', 'D'] as const).map((opt) => (
+  1230→                      <div key={opt} className="relative">
+  1231→                        <div className={`absolute left-0 top-0 w-6 h-6 rounded-l-md flex items-center justify-center text-xs font-bold text-white ${q.correctOption === opt ? 'bg-green-600' : 'bg-gray-300'}`}>
+  1232→                          {opt}
+  1233→                        </div>
+  1234→                        <Input
+  1235→                          value={q[`option${opt}` as keyof QuestionForm]}
+  1236→                          onChange={(e) => updateQ(i, `option${opt}` as keyof QuestionForm, e.target.value)}
+  1237→                          placeholder={`Option ${opt}`}
+  1238→                          className={`pl-9 h-10 text-sm ${q.correctOption === opt ? 'border-green-500 bg-green-50/50' : ''}`}
+  1239→                        />
+  1240→                        <button
+  1241→                          onClick={() => updateQ(i, 'correctOption', opt)}
+  1242→                          className={`absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+  1243→                            q.correctOption === opt ? 'border-green-600 bg-green-600' : 'border-gray-300 hover:border-green-400'
+  1244→                          }`}
+  1245→                          title={`Set ${opt} as correct answer`}
+  1246→                        >
+  1247→                          {q.correctOption === opt && <div className="w-2 h-2 rounded-full bg-white" />}
+  1248→                        </button>
+  1249→                      </div>
+  1250→                    ))}
+  1251→                  </div>
+  1252→
+  1253→                  {/* Explanation & Negative Marking */}
+  1254→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+  1255→                    <div>
+  1256→                      <Label className="text-[10px] text-muted-foreground">Explanation (optional)</Label>
+  1257→                      <Input
+  1258→                        value={q.explanation}
+  1259→                        onChange={(e) => updateQ(i, 'explanation', e.target.value)}
+  1260→                        placeholder="Why is this the correct answer?"
+  1261→                        className="h-9 text-xs"
+  1262→                      />
+  1263→                    </div>
+  1264→                    <div>
+  1265→                      <Label className="text-[10px] text-muted-foreground">Negative Marking</Label>
+  1266→                      <Input
+  1267→                        type="number"
+  1268→                        step="0.25"
+  1269→                        value={q.negativeMark}
+  1270→                        onChange={(e) => updateQ(i, 'negativeMark', e.target.value)}
+  1271→                        placeholder="0"
+  1272→                        className="h-9 text-xs"
+  1273→                      />
+  1274→                    </div>
+  1275→                  </div>
+  1276→                </CardContent>
+  1277→              </Card>
+  1278→            ))}
+  1279→          </div>
+  1280→
+  1281→          {/* Action Buttons */}
+  1282→          <div className="flex items-center justify-between gap-3 sticky bottom-4 bg-gray-50 py-3 px-2 rounded-xl border">
+  1283→            <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5">
+  1284→              <ArrowLeft className="w-4 h-4" /> Back
+  1285→            </Button>
+  1286→            <div className="flex items-center gap-2">
+  1287→              <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
+  1288→                <Plus className="w-3.5 h-3.5" /> Add More
+  1289→              </Button>
+  1290→              <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={saveQuestions} disabled={saving || questions.filter(q => q.question.trim() && q.optionA.trim()).length === 0}>
+  1291→                {saving ? (
+  1292→                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Saving...</>
+  1293→                ) : (
+  1294→                  <><Save className="w-4 h-4 mr-2" /> Save {questions.filter(q => q.question.trim() && q.optionA.trim()).length} Questions</>
+  1295→                )}
+  1296→              </Button>
+  1297→            </div>
+  1298→          </div>
+  1299→        </motion.div>
+  1300→      )}
+  1301→
+  1302→      {/* Step 3: Success */}
+  1303→      {step === 3 && (
+  1304→        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
+  1305→          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+  1306→            <CheckCircle2 className="w-10 h-10 text-green-600" />
+  1307→          </div>
+  1308→          <h2 className="text-2xl font-bold text-gray-900 mb-2">Test Created Successfully!</h2>
+  1309→          <p className="text-muted-foreground mb-1">
+  1310→            <strong>&quot;{title}&quot;</strong> has been created with <strong>{savedCount} questions</strong>
+  1311→          </p>
+  1312→          <p className="text-sm text-muted-foreground mb-6">Students can now see and attempt this test from the Mock Tests page.</p>
+  1313→          <div className="flex justify-center gap-3">
+  1314→            <Button variant="outline" onClick={resetAll}>
+  1315→              <Plus className="w-4 h-4 mr-2" /> Create Another Test
+  1316→            </Button>
+  1317→            <Button className="bg-blue-700 hover:bg-blue-800" onClick={() => useAppStore.getState().setView('tests')}>
+  1318→              View All Tests
+  1319→            </Button>
+  1320→          </div>
+  1321→        </motion.div>
+  1322→      )}
+  1323→
+  1324→      {/* ===== Count Dialog: asks "kitne questions hain?" BEFORE picking image ===== */}
+  1325→      <Dialog open={showCountDialog} onOpenChange={setShowCountDialog}>
+  1326→        <DialogContent className="sm:max-w-md">
+  1327→          <DialogHeader>
+  1328→            <DialogTitle className="flex items-center gap-2">
+  1329→              <Camera className="w-5 h-5 text-blue-600" />
+  1330→              Image me kitne questions hain?
+  1331→            </DialogTitle>
+  1332→            <DialogDescription>
+  1333→              Image ya PDF me jitne questions hain, wo number yahan likhein.
+  1334→              <br />
+  1335→              <strong className="text-gray-700">Example:</strong> agar 34 questions hain to <strong>34</strong> likhein.
+  1336→              <br /><br />
+  1337→              <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block">
+  1338→                ℹ️ Pehle {questionCount && parseInt(questionCount) > 0 ? parseInt(questionCount) : 'N'} empty boxes banenge, FIR image select hogi, FIR VLM data auto-fill karega.
+  1339→              </span>
+  1340→            </DialogDescription>
+  1341→          </DialogHeader>
+  1342→          <div className="py-2">
+  1343→            <Label htmlFor="qcount" className="text-xs font-medium mb-1.5 block">
+  1344→              Kitne questions add karne hain? (1 se 200)
+  1345→            </Label>
+  1346→            <Input
+  1347→              id="qcount"
+  1348→              type="number"
+  1349→              min={1}
+  1350→              max={200}
+  1351→              autoFocus
+  1352→              value={questionCount}
+  1353→              onChange={(e) => setQuestionCount(e.target.value)}
+  1354→              onKeyDown={(e) => {
+  1355→                if (e.key === 'Enter') {
+  1356→                  e.preventDefault();
+  1357→                  confirmCountAndPickImage();
+  1358→                }
+  1359→              }}
+  1360→              placeholder="e.g., 34"
+  1361→              className="h-12 text-lg font-semibold text-center"
+  1362→            />
+  1363→            {/* Quick presets */}
+  1364→            <div className="flex flex-wrap gap-2 mt-3">
+  1365→              {[10, 25, 34, 50, 75, 100].map(preset => (
+  1366→                <button
+  1367→                  key={preset}
+  1368→                  type="button"
+  1369→                  onClick={() => setQuestionCount(String(preset))}
+  1370→                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+  1371→                    questionCount === String(preset)
+  1372→                      ? 'bg-blue-600 text-white border-blue-600'
+  1373→                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+  1374→                  }`}
+  1375→                >
+  1376→                  {preset}
+  1377→                </button>
+  1378→              ))}
+  1379→            </div>
+  1380→          </div>
+  1381→          <DialogFooter className="gap-2 sm:gap-2">
+  1382→            <DialogClose asChild>
+  1383→              <Button variant="outline" className="gap-1.5">
+  1384→                <X className="w-4 h-4" /> Cancel
+  1385→              </Button>
+  1386→            </DialogClose>
+  1387→            <Button
+  1388→              className="bg-blue-700 hover:bg-blue-800 gap-1.5"
+  1389→              onClick={confirmCountAndPickImage}
+  1390→              disabled={!questionCount || parseInt(questionCount) < 1}
+  1391→            >
+  1392→              <Camera className="w-4 h-4" />
+  1393→              Create Boxes &amp; Select Image
+  1394→            </Button>
+  1395→          </DialogFooter>
+  1396→        </DialogContent>
+  1397→      </Dialog>
+  1398→    </div>
+  1399→  );
+  1400→}
+  1401→
+  1402→// ==================== USERS TAB ====================
+  1403→interface StudentRow {
+  1404→  id: string;
+  1405→  name: string;
+  1406→  email: string | null;
+  1407→  phone: string | null;
+  1408→  deviceId: string;
+  1409→  freeTestsUsed: number;
+  1410→  isSubscribed: boolean;
+  1411→  subscriptionAt: string | null;
+  1412→  createdAt: string;
+  1413→  totalAttempts: number;
+  1414→  totalPayments: number;
+  1415→  lastPayment: { id: string; amount: number; currency: string; status: string; createdAt: string } | null;
+  1416→}
+  1417→
+  1418→function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
+  1419→  const [students, setStudents] = useState<StudentRow[]>([]);
+  1420→  const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
+  1421→  const [search, setSearch] = useState('');
+  1422→  const [loading, setLoading] = useState(true);
+  1423→  const [deleting, setDeleting] = useState<string | null>(null);
+  1424→  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  1425→  const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
+  1426→  const [summary, setSummary] = useState({ totalStudents: 0, totalPaid: 0, totalFree: 0 });
+  1427→
+  1428→  const [reloadKey, setReloadKey] = useState(0);
+  1429→
+  1430→  useEffect(() => {
+  1431→    let cancelled = false;
+  1432→    (async () => {
+  1433→      setLoading(true);
+  1434→      try {
+  1435→        const params = new URLSearchParams({ filter, search });
+  1436→        const res = await fetch(`/api/admin/students?${params}`);
+  1437→        if (res.ok && !cancelled) {
+  1438→          const data = await res.json();
+  1439→          if (!cancelled) {
+  1440→            setStudents(data.students);
+  1441→            setSummary(data.summary);
+  1442→          }
+  1443→        }
+  1444→      } catch {}
+  1445→      if (!cancelled) setLoading(false);
+  1446→    })();
+  1447→    return () => { cancelled = true; };
+  1448→  }, [filter, search, reloadKey]);
+  1449→
+  1450→  async function handleDelete() {
+  1451→    if (!deleteTarget) return;
+  1452→    setDeleting(deleteTarget.id);
+  1453→    try {
+  1454→      const res = await fetch('/api/admin/students', {
+  1455→        method: 'DELETE',
+  1456→        headers: { 'Content-Type': 'application/json' },
+  1457→        body: JSON.stringify({ id: deleteTarget.id }),
+  1458→      });
+  1459→      if (res.ok) {
+  1460→        toast.success(`User "${deleteTarget.name}" deleted`);
+  1461→        setShowDeleteDialog(false);
+  1462→        setDeleteTarget(null);
+  1463→        setReloadKey(k => k + 1);
+  1464→        onRefresh();
+  1465→      }
+  1466→    } catch {}
+  1467→    setDeleting(null);
+  1468→  }
+  1469→
+  1470→  const filters = [
+  1471→    { key: 'all' as const, label: 'All', count: summary.totalStudents },
+  1472→    { key: 'free' as const, label: 'Free', count: summary.totalFree },
+  1473→    { key: 'paid' as const, label: 'Paid', count: summary.totalPaid },
+  1474→  ];
+  1475→
+  1476→  return (
+  1477→    <div className="space-y-4">
+  1478→      {/* Filter Bar */}
+  1479→      <Card className="border-0 shadow-sm">
+  1480→        <CardContent className="p-4">
+  1481→          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+  1482→            <div className="flex items-center gap-2">
+  1483→              <Filter className="w-4 h-4 text-muted-foreground" />
+  1484→              {filters.map(f => (
+  1485→                <button
+  1486→                  key={f.key}
+  1487→                  onClick={() => { setFilter(f.key); }}
+  1488→                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+  1489→                    filter === f.key
+  1490→                      ? 'bg-blue-700 text-white'
+  1491→                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+  1492→                  }`}
+  1493→                >
+  1494→                  {f.label} ({f.count})
+  1495→                </button>
+  1496→              ))}
+  1497→            </div>
+  1498→            <div className="relative w-full sm:w-64">
+  1499→              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+  1500→              <input
+  1501→                type="text"
+  1502→                placeholder="Search by name, email, phone..."
+  1503→                value={search}
+  1504→                onChange={(e) => setSearch(e.target.value)}
+  1505→                onKeyDown={(e) => e.key === 'Enter' && fetchStudents()}
+  1506→                className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+  1507→              />
+  1508→            </div>
+  1509→          </div>
+  1510→        </CardContent>
+  1511→      </Card>
+  1512→
+  1513→      {/* Users Table */}
+  1514→      <Card className="border-0 shadow-sm">
+  1515→        <CardContent className="p-0">
+  1516→          {/* Table Header */}
+  1517→          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+  1518→            <div className="col-span-3">User</div>
+  1519→            <div className="col-span-2 hidden sm:block">Email</div>
+  1520→            <div className="col-span-1 hidden md:block">Phone</div>
+  1521→            <div className="col-span-2 text-center">Status</div>
+  1522→            <div className="col-span-2 text-center hidden sm:block">Activity</div>
+  1523→            <div className="col-span-2 sm:col-span-2 text-right">Actions</div>
+  1524→          </div>
+  1525→
+  1526→          {loading ? (
+  1527→            <div className="flex items-center justify-center py-12">
+  1528→              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+  1529→              <span className="ml-2 text-sm text-muted-foreground">Loading users...</span>
+  1530→            </div>
+  1531→          ) : students.length === 0 ? (
+  1532→            <div className="text-center py-12 text-muted-foreground text-sm">No users found</div>
+  1533→          ) : (
+  1534→            <div className="max-h-[60vh] overflow-y-auto">
+  1535→              {students.map((student) => (
+  1536→                <div key={student.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
+  1537→                  {/* User Info */}
+  1538→                  <div className="col-span-3">
+  1539→                    <div className="flex items-center gap-2">
+  1540→                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+  1541→                        student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+  1542→                      }`}>
+  1543→                        {student.name.charAt(0).toUpperCase()}
+  1544→                      </div>
+  1545→                      <div className="min-w-0">
+  1546→                        <p className="text-sm font-medium truncate">{student.name}</p>
+  1547→                        <p className="text-[10px] text-muted-foreground sm:hidden truncate">{student.email || student.phone || '—'}</p>
+  1548→                      </div>
+  1549→                    </div>
+  1550→                  </div>
+  1551→
+  1552→                  {/* Email */}
+  1553→                  <div className="col-span-2 hidden sm:block">
+  1554→                    <p className="text-xs truncate">{student.email || '—'}</p>
+  1555→                  </div>
+  1556→
+  1557→                  {/* Phone */}
+  1558→                  <div className="col-span-1 hidden md:block">
+  1559→                    <p className="text-xs truncate">{student.phone || '—'}</p>
+  1560→                  </div>
+  1561→
+  1562→                  {/* Status */}
+  1563→                  <div className="col-span-2 flex justify-center">
+  1564→                    {student.isSubscribed ? (
+  1565→                      <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5">
+  1566→                        <Crown className="w-2.5 h-2.5" /> Paid
+  1567→                      </Badge>
+  1568→                    ) : (
+  1569→                      <Badge variant="secondary" className="text-[10px]">
+  1570→                        Free ({student.freeTestsUsed}/5)
+  1571→                      </Badge>
+  1572→                    )}
+  1573→                  </div>
+  1574→
+  1575→                  {/* Activity */}
+  1576→                  <div className="col-span-2 hidden sm:flex flex-col items-center gap-0.5">
+  1577→                    <span className="text-xs font-medium">{student.totalAttempts} attempts</span>
+  1578→                    {student.lastPayment && (
+  1579→                      <span className="text-[10px] text-emerald-600">Paid ₹{student.lastPayment.amount / 100}</span>
+  1580→                    )}
+  1581→                  </div>
+  1582→
+  1583→                  {/* Actions */}
+  1584→                  <div className="col-span-2 sm:col-span-2 flex justify-end gap-1">
+  1585→                    {student.subscriptionAt && (
+  1586→                      <button
+  1587→                        className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors"
+  1588→                        title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}
+  1589→                      >
+  1590→                        <Receipt className="w-4 h-4" />
+  1591→                      </button>
+  1592→                    )}
+  1593→                    <button
+  1594→                      onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+  1595→                      className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+  1596→                      title="Delete user"
+  1597→                    >
+  1598→                      <Trash2 className="w-4 h-4" />
+  1599→                    </button>
+  1600→                  </div>
+  1601→                </div>
+  1602→              ))}
+  1603→            </div>
+  1604→          )}
+  1605→        </CardContent>
+  1606→      </Card>
+  1607→
+  1608→      {/* Delete Confirmation Dialog */}
+  1609→      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+  1610→        <DialogContent>
+  1611→          <DialogHeader>
+  1612→            <DialogTitle className="flex items-center gap-2 text-red-600">
+  1613→              <AlertTriangle className="w-5 h-5" /> Delete User
+  1614→            </DialogTitle>
+  1615→            <DialogDescription>
+  1616→              Are you sure you want to delete <strong>{deleteTarget?.name}</strong>?
+  1617→              This will permanently delete all their test attempts, payments, and data. This cannot be undone.
+  1618→            </DialogDescription>
+  1619→          </DialogHeader>
+  1620→          {deleteTarget && (
+  1621→            <div className="bg-red-50 rounded-xl p-3 text-xs space-y-1">
+  1622→              <p><span className="text-muted-foreground">Name:</span> <strong>{deleteTarget.name}</strong></p>
+  1623→              <p><span className="text-muted-foreground">Email:</span> {deleteTarget.email || '—'}</p>
+  1624→              <p><span className="text-muted-foreground">Attempts:</span> {deleteTarget.totalAttempts}</p>
+  1625→              <p><span className="text-muted-foreground">Status:</span> {deleteTarget.isSubscribed ? 'Paid' : 'Free'}</p>
+  1626→            </div>
+  1627→          )}
+  1628→          <DialogFooter>
+  1629→            <DialogClose asChild><Button variant="outline" size="sm">Cancel</Button></DialogClose>
+  1630→            <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleting}>
+  1631→              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
+  1632→              {deleting ? 'Deleting...' : 'Delete User'}
+  1633→            </Button>
+  1634→          </DialogFooter>
+  1635→        </DialogContent>
+  1636→      </Dialog>
+  1637→    </div>
+  1638→  );
+  1639→}
+  1640→
+  1641→// ==================== PAYMENTS TAB ====================
+  1642→interface PaymentRow {
+  1643→  id: string;
+  1644→  studentId: string;
+  1645→  studentName: string;
+  1646→  studentEmail: string | null;
+  1647→  amount: number;
+  1648→  currency: string;
+  1649→  status: string;
+  1650→  razorpayOrderId: string | null;
+  1651→  razorpayPaymentId: string | null;
+  1652→  createdAt: string;
+  1653→}
+  1654→
+  1655→function AdminPaymentsTab() {
+  1656→  const [payments, setPayments] = useState<PaymentRow[]>([]);
+  1657→  const [loading, setLoading] = useState(true);
+  1658→
+  1659→  useEffect(() => {
+  1660→    async function load() {
+  1661→      try {
+  1662→        const res = await fetch('/api/admin/payments');
+  1663→        if (res.ok) setPayments(await res.json());
+  1664→      } catch {}
+  1665→      setLoading(false);
+  1666→    }
+  1667→    load();
+  1668→  }, []);
+  1669→
+  1670→  const totalRevenue = payments.reduce((s, p) => s + (p.status === 'completed' ? p.amount : 0), 0);
+  1671→
+  1672→  return (
+  1673→    <div className="space-y-4">
+  1674→      {/* Revenue Summary */}
+  1675→      <Card className="border-0 shadow-sm">
+  1676→        <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+  1677→          <div className="flex items-center gap-3">
+  1678→            <div className="p-2 rounded-xl bg-emerald-100">
+  1679→              <CreditCard className="w-5 h-5 text-emerald-700" />
+  1680→            </div>
+  1681→            <div>
+  1682→              <p className="text-2xl font-bold text-gray-900">₹{totalRevenue / 100}</p>
+  1683→              <p className="text-[11px] text-muted-foreground">Total Revenue ({payments.filter(p => p.status === 'completed').length} payments)</p>
+  1684→            </div>
+  1685→          </div>
+  1686→          <Badge variant="secondary" className="text-xs">
+  1687→            {payments.length} total transactions
+  1688→          </Badge>
+  1689→        </CardContent>
+  1690→      </Card>
+  1691→
+  1692→      {/* Payments Table */}
+  1693→      <Card className="border-0 shadow-sm">
+  1694→        <CardContent className="p-0">
+  1695→          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+  1696→            <div className="col-span-3">Student</div>
+  1697→            <div className="col-span-2 text-center">Amount</div>
+  1698→            <div className="col-span-2 text-center">Status</div>
+  1699→            <div className="col-span-3 hidden sm:block">Order ID</div>
+  1700→            <div className="col-span-2 text-right">Date</div>
+  1701→          </div>
+  1702→
+  1703→          {loading ? (
+  1704→            <div className="flex items-center justify-center py-12">
+  1705→              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+  1706→              <span className="ml-2 text-sm text-muted-foreground">Loading payments...</span>
+  1707→            </div>
+  1708→          ) : payments.length === 0 ? (
+  1709→            <div className="text-center py-12 text-muted-foreground text-sm">No payments yet</div>
+  1710→          ) : (
+  1711→            <div className="max-h-[60vh] overflow-y-auto">
+  1712→              {payments.map((p) => (
+  1713→                <div key={p.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
+  1714→                  <div className="col-span-3">
+  1715→                    <p className="text-sm font-medium truncate">{p.studentName}</p>
+  1716→                    <p className="text-[10px] text-muted-foreground truncate">{p.studentEmail || '—'}</p>
+  1717→                  </div>
+  1718→                  <div className="col-span-2 text-center">
+  1719→                    <p className="text-sm font-bold">₹{p.amount / 100}</p>
+  1720→                  </div>
+  1721→                  <div className="col-span-2 flex justify-center">
+  1722→                    <Badge className={`text-[10px] border-0 ${
+  1723→                      p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+  1724→                    }`}>
+  1725→                      {p.status === 'completed' ? '✓ Success' : p.status}
+  1726→                    </Badge>
+  1727→                  </div>
+  1728→                  <div className="col-span-3 hidden sm:block">
+  1729→                    <p className="text-[10px] text-muted-foreground font-mono truncate">{p.razorpayOrderId || '—'}</p>
+  1730→                  </div>
+  1731→                  <div className="col-span-2 text-right">
+  1732→                    <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+  1733→                  </div>
+  1734→                </div>
+  1735→              ))}
+  1736→            </div>
+  1737→          )}
+  1738→        </CardContent>
+  1739→      </Card>
+  1740→    </div>
+  1741→  );
+  1742→}
+  1743→

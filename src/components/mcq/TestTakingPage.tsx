@@ -224,9 +224,14 @@ export function TestTakingPage() {
                 </div>
               ))}
             </div>
-            <Button className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base" onClick={() => setShowInstructions(false)}>
-              I have read the instructions — Start Test
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" className="h-12 px-6" onClick={() => { setIsTestActive(false); clearAnswers(); setView('tests'); }}>
+                <ChevronLeft className="w-4 h-4 mr-1" /> Back
+              </Button>
+              <Button className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base" onClick={() => setShowInstructions(false)}>
+                I have read the instructions — Start Test
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </motion.div>

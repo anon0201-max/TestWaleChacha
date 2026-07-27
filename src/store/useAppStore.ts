@@ -158,6 +158,10 @@ interface AppState {
   // Admin
   adminData: AdminData;
   setAdminData: (data: Partial<AdminData>) => void;
+
+  // Theme
+  themeColor: string;
+  setThemeColor: (color: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -235,6 +239,10 @@ export const useAppStore = create<AppState>()(
 
       adminData: { isLoggedIn: false, stats: { totalStudents: 0, totalTests: 0, totalQuestions: 0, totalAttempts: 0, totalPayments: 0 } },
       setAdminData: (data) => set((state) => ({ adminData: { ...state.adminData, ...data } })),
+
+      // Theme
+      themeColor: 'blue',
+      setThemeColor: (color) => set({ themeColor: color }),
     }),
     {
       name: 'mcq-app-storage',
@@ -245,6 +253,7 @@ export const useAppStore = create<AppState>()(
         freeTestsUsed: state.freeTestsUsed,
         freeTestsRemaining: state.freeTestsRemaining,
         isSubscribed: state.isSubscribed,
+        themeColor: state.themeColor,
       }),
     }
   )

@@ -17,7 +17,7 @@ export function HomePage() {
   return (
     <div className="space-y-8">
       {/* Hero - Navy Blue Testbook Style */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-800 via-blue-900 to-slate-900 p-6 sm:p-8 md:p-12 text-white">
+      <section className="hero-theme relative overflow-hidden rounded-2xl p-6 sm:p-8 md:p-12 text-white">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-5 right-20 w-40 h-40 border border-white rounded-full" />
           <div className="absolute bottom-5 left-10 w-60 h-60 border border-white rounded-full" />
@@ -32,11 +32,11 @@ export function HomePage() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
               India&apos;s #1 <span className="text-cyan-400">Free Mock Test</span> Platform
             </h1>
-            <p className="text-sm sm:text-base text-blue-200 mb-6 max-w-lg">
+            <p className="text-sm sm:text-base text-white/70 mb-6 max-w-lg">
               Practice government exam mock tests for SSC CGL, UPSC, IBPS PO, RRB NTPC and more. Real exam interface with question palette &amp; timer.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base" onClick={() => setView('tests')}>
+              <Button size="lg" className="theme-btn text-white font-semibold px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base" onClick={() => setView('tests')}>
                 Start Free Test <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
               {isLoggedIn ? (
@@ -148,7 +148,7 @@ export function HomePage() {
                 Sign Up Free
               </Button>
             )}
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8" onClick={() => setShowSubscriptionModal(true)}>
+            <Button size="lg" className="theme-btn text-white font-semibold px-8" onClick={() => setShowSubscriptionModal(true)}>
               Subscribe Now — ₹100 <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>

@@ -120,3 +120,166 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ==================== MULTI-COLOR THEME SYSTEM ==================== */
+/* Theme color CSS variables applied via data-theme attribute */
+:root,
+[data-theme="blue"] {
+  --theme-50: #eff6ff;
+  --theme-100: #dbeafe;
+  --theme-200: #bfdbfe;
+  --theme-300: #93c5fd;
+  --theme-400: #60a5fa;
+  --theme-500: #3b82f6;
+  --theme-600: #2563eb;
+  --theme-700: #1d4ed8;
+  --theme-800: #1e40af;
+  --theme-900: #1e3a8a;
+  --theme-gradient-start: #2563eb;
+  --theme-gradient-mid: #1e3a8a;
+  --theme-gradient-end: #0f172a;
+  --theme-light: #dbeafe;
+}
+
+[data-theme="emerald"] {
+  --theme-50: #ecfdf5;
+  --theme-100: #d1fae5;
+  --theme-200: #a7f3d0;
+  --theme-300: #6ee7b7;
+  --theme-400: #34d399;
+  --theme-500: #10b981;
+  --theme-600: #059669;
+  --theme-700: #047857;
+  --theme-800: #065f46;
+  --theme-900: #064e3b;
+  --theme-gradient-start: #059669;
+  --theme-gradient-mid: #065f46;
+  --theme-gradient-end: #0f172a;
+  --theme-light: #d1fae5;
+}
+
+[data-theme="purple"] {
+  --theme-50: #faf5ff;
+  --theme-100: #f3e8ff;
+  --theme-200: #e9d5ff;
+  --theme-300: #d8b4fe;
+  --theme-400: #c084fc;
+  --theme-500: #a855f7;
+  --theme-600: #9333ea;
+  --theme-700: #7e22ce;
+  --theme-800: #6b21a8;
+  --theme-900: #581c87;
+  --theme-gradient-start: #9333ea;
+  --theme-gradient-mid: #6b21a8;
+  --theme-gradient-end: #0f172a;
+  --theme-light: #f3e8ff;
+}
+
+[data-theme="rose"] {
+  --theme-50: #fff1f2;
+  --theme-100: #ffe4e6;
+  --theme-200: #fecdd3;
+  --theme-300: #fda4af;
+  --theme-400: #fb7185;
+  --theme-500: #f43f5e;
+  --theme-600: #e11d48;
+  --theme-700: #be123c;
+  --theme-800: #9f1239;
+  --theme-900: #881337;
+  --theme-gradient-start: #e11d48;
+  --theme-gradient-mid: #9f1239;
+  --theme-gradient-end: #0f172a;
+  --theme-light: #ffe4e6;
+}
+
+[data-theme="orange"] {
+  --theme-50: #fff7ed;
+  --theme-100: #ffedd5;
+  --theme-200: #fed7aa;
+  --theme-300: #fdba74;
+  --theme-400: #fb923c;
+  --theme-500: #f97316;
+  --theme-600: #ea580c;
+  --theme-700: #c2410c;
+  --theme-800: #9a3412;
+  --theme-900: #7c2d12;
+  --theme-gradient-start: #ea580c;
+  --theme-gradient-mid: #9a3412;
+  --theme-gradient-end: #0f172a;
+  --theme-light: #ffedd5;
+}
+
+[data-theme="teal"] {
+  --theme-50: #f0fdfa;
+  --theme-100: #ccfbf1;
+  --theme-200: #99f6e4;
+  --theme-300: #5eead4;
+  --theme-400: #2dd4bf;
+  --theme-500: #14b8a6;
+  --theme-600: #0d9488;
+  --theme-700: #0f766e;
+  --theme-800: #115e59;
+  --theme-900: #134e4a;
+  --theme-gradient-start: #0d9488;
+  --theme-gradient-mid: #115e59;
+  --theme-gradient-end: #0f172a;
+  --theme-light: #ccfbf1;
+}
+
+[data-theme="cyan"] {
+  --theme-50: #ecfeff;
+  --theme-100: #cffafe;
+  --theme-200: #a5f3fc;
+  --theme-300: #67e8f9;
+  --theme-400: #22d3ee;
+  --theme-500: #06b6d4;
+  --theme-600: #0891b2;
+  --theme-700: #0e7490;
+  --theme-800: #155e75;
+  --theme-900: #164e63;
+  --theme-gradient-start: #0891b2;
+  --theme-gradient-mid: #155e75;
+  --theme-gradient-end: #0f172a;
+  --theme-light: #cffafe;
+}
+
+[data-theme="amber"] {
+  --theme-50: #fffbeb;
+  --theme-100: #fef3c7;
+  --theme-200: #fde68a;
+  --theme-300: #fcd34d;
+  --theme-400: #fbbf24;
+  --theme-500: #f59e0b;
+  --theme-600: #d97706;
+  --theme-700: #b45309;
+  --theme-800: #92400e;
+  --theme-900: #78350f;
+  --theme-gradient-start: #d97706;
+  --theme-gradient-mid: #92400e;
+  --theme-gradient-end: #0f172a;
+  --theme-light: #fef3c7;
+}
+
+/* Theme-specific component overrides */
+.hero-theme {
+  background: linear-gradient(135deg, var(--theme-gradient-start), var(--theme-gradient-mid), var(--theme-gradient-end));
+}
+
+.theme-btn {
+  background-color: var(--theme-600);
+}
+.theme-btn:hover {
+  background-color: var(--theme-700);
+}
+
+/* Theme-aware primary buttons */
+.btn-theme-primary {
+  background-color: var(--theme-600) !important;
+}
+.btn-theme-primary:hover {
+  background-color: var(--theme-700) !important;
+}
+
+.auth-modal-theme {
+  background: linear-gradient(135deg, var(--theme-700), var(--theme-800), #0f172a);
+}

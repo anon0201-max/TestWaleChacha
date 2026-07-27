@@ -20,7 +20,7 @@ export function AuthModal() {
     setIsTestActive, clearAnswers, setCurrentQuestionIndex, setTimeRemaining,
   } = useAppStore();
 
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,7 +37,7 @@ export function AuthModal() {
   const [prevShowAuthModal, setPrevShowAuthModal] = useState<'login' | 'signup' | null>(showAuthModal);
   if (showAuthModal !== prevShowAuthModal) {
     setPrevShowAuthModal(showAuthModal);
-    if (showAuthModal) {
+    if (showAuthModal && showAuthModal !== null) {
       setMode(showAuthModal);
       setError('');
       setSuccess('');
@@ -73,11 +73,16 @@ export function AuthModal() {
     setPhone('');
   }
 
-  function switchMode(newMode: 'login' | 'signup') {
+  function switchMode(newMode: 'login' | 'signup' | 'forgot') {
     setMode(newMode);
     setError('');
     setSuccess('');
+    setNewPassword('');
+    setConfirmNewPassword('');
   }
+
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   async function handleLogin() {
     setLoading(true);
@@ -96,6 +101,43 @@ export function AuthModal() {
         if (pendingTestId) startPendingTest();
       } else {
         setError(data.error || 'Login failed');
+      }
+    } catch { setError('Server error. Please try again.'); }
+    setLoading(false);
+  }
+
+  async function handleResetPassword() {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    if (!email || !newPassword || !confirmNewPassword) {
+      setError('Email, new password, and confirm password are required');
+      setLoading(false);
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccess('Password reset successfully! You can now login with your new password.');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } else {
+        setError(data.error || 'Failed to reset password');
       }
     } catch { setError('Server error. Please try again.'); }
     setLoading(false);
@@ -153,7 +195,7 @@ export function AuthModal() {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 p-6 text-white relative">
+          <div className="auth-modal-theme bg-gradient-to-br p-6 text-white relative">
             <button onClick={handleClose} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/20 transition-colors">
               <X className="w-4 h-4" />
             </button>
@@ -161,17 +203,19 @@ export function AuthModal() {
               <Logo size="md" variant="light" />
             </div>
             <h2 className="text-xl font-bold">
-              {mode === 'login' ? 'Welcome Back!' : 'Create Account'}
+              {mode === 'login' ? 'Welcome Back!' : mode === 'forgot' ? 'Reset Password' : 'Create Account'}
             </h2>
             <p className="text-blue-200 text-sm mt-1">
               {mode === 'login'
                 ? 'Login to track your progress and unlock all tests'
-                : 'Sign up for 5 free mock tests and detailed solutions'}
+                : mode === 'forgot'
+                  ? 'Enter your email to set a new password'
+                  : 'Sign up for 5 free mock tests and detailed solutions'}
             </p>
           </div>
 
           {/* Mode Tabs */}
-          <div className="flex border-b">
+          <div className={`flex border-b ${mode === 'forgot' ? '' : ''}`}>
             <button onClick={() => switchMode('login')} className={'flex-1 py-3 text-sm font-medium transition-all border-b-2 ' + tabClass(mode === 'login')}>
               <LogIn className="w-4 h-4 inline mr-1.5" /> Login
             </button>
@@ -207,8 +251,14 @@ export function AuthModal() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-9 h-11" />
               </div>
+              {mode === 'login' && (
+                <p className="text-right mt-1">
+                  <button onClick={() => switchMode('forgot')} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Forgot Password?</button>
+                </p>
+              )}
             </div>
 
+            {mode !== 'forgot' && (
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Password</Label>
               <div className="relative">
@@ -225,7 +275,46 @@ export function AuthModal() {
                 </button>
               </div>
             </div>
+            )}
 
+            {mode === 'forgot' && (
+              <>
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Min 6 characters"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-9 pr-10 h-11"
+                    />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Confirm new password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="pl-9 h-11"
+                      onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
+                    />
+                  </div>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-3 flex items-start gap-2 text-xs text-amber-700">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>Enter the email you registered with and set a new password. Your old password will be replaced.</span>
+                </div>
+              </>
+            )}
             {mode === 'signup' && (
               <div>
                 <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Phone Number <span className="text-muted-foreground/60">(Optional)</span></Label>
@@ -243,18 +332,18 @@ export function AuthModal() {
               </div>
             )}
 
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold" onClick={mode === 'login' ? handleLogin : handleSignup} disabled={loading || !email || !password}>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold" onClick={mode === 'forgot' ? handleResetPassword : mode === 'login' ? handleLogin : handleSignup} disabled={loading || !email || (mode !== 'forgot' && !password) || (mode === 'forgot' && (!newPassword || !confirmNewPassword))}>
               {loading ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{mode === 'login' ? 'Logging in...' : 'Creating account...'}</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{mode === 'forgot' ? 'Resetting...' : mode === 'login' ? 'Logging in...' : 'Creating account...'}</>
               ) : (
-                <>{mode === 'login' ? 'Login' : 'Create Account'}<ArrowRight className="w-4 h-4 ml-2" /></>
+                <>{mode === 'forgot' ? 'Reset Password' : mode === 'login' ? 'Login' : 'Create Account'}<ArrowRight className="w-4 h-4 ml-2" /></>
               )}
             </Button>
 
             <p className="text-center text-xs text-muted-foreground">
-              {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-              <button onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')} className="text-blue-600 hover:text-blue-700 font-medium">
-                {mode === 'login' ? 'Sign up free' : 'Login here'}
+              {mode === 'forgot' ? 'Remember your password? ' : mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+              <button onClick={() => switchMode(mode === 'forgot' ? 'login' : mode === 'login' ? 'signup' : 'login')} className="text-blue-600 hover:text-blue-700 font-medium">
+                {mode === 'forgot' ? 'Login here' : mode === 'login' ? 'Sign up free' : 'Login here'}
               </button>
             </p>
           </div>
