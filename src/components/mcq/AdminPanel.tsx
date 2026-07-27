@@ -15,8 +15,8 @@ import { toast } from 'sonner';
 import {
   ArrowLeft, LogOut, Plus, Trash2, BarChart3, BookOpen, Users, CreditCard,
   Save, Shield, FileText, Settings, Edit2, Eye, EyeOff, Copy, CheckCircle2,
-  ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
-  HelpCircle, Pencil, Camera, FileUp, Upload, Loader2,
+  Crown, ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
+  HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
 } from 'lucide-react';
 
 // ==================== ADMIN LOGIN ====================
@@ -167,10 +167,12 @@ export function AdminPanel() {
       {/* Admin Content */}
       <div className="max-w-7xl mx-auto px-4 py-5">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
           {[
-            { icon: Users, label: 'Students', value: stats.totalStudents, color: 'bg-blue-50 text-blue-700', iconBg: 'bg-blue-100' },
-            { icon: FileText, label: 'Tests', value: stats.totalTests, color: 'bg-emerald-50 text-emerald-700', iconBg: 'bg-emerald-100' },
+            { icon: Users, label: 'Total Users', value: stats.totalStudents, color: 'bg-blue-50 text-blue-700', iconBg: 'bg-blue-100' },
+            { icon: BadgeCheck, label: 'Paid Users', value: stats.totalPaidStudents, color: 'bg-emerald-50 text-emerald-700', iconBg: 'bg-emerald-100' },
+            { icon: BadgeX, label: 'Free Users', value: stats.totalFreeStudents, color: 'bg-gray-50 text-gray-600', iconBg: 'bg-gray-100' },
+            { icon: FileText, label: 'Tests', value: stats.totalTests, color: 'bg-indigo-50 text-indigo-700', iconBg: 'bg-indigo-100' },
             { icon: HelpCircle, label: 'Questions', value: stats.totalQuestions, color: 'bg-amber-50 text-amber-700', iconBg: 'bg-amber-100' },
             { icon: CreditCard, label: 'Payments', value: stats.totalPayments, color: 'bg-purple-50 text-purple-700', iconBg: 'bg-purple-100' },
           ].map((item) => (
@@ -201,6 +203,12 @@ export function AdminPanel() {
             <TabsTrigger value="create-test" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
               <Plus className="w-3.5 h-3.5" /> Create Test
             </TabsTrigger>
+            <TabsTrigger value="users" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+              <Users className="w-3.5 h-3.5" /> Users
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
+              <Wallet className="w-3.5 h-3.5" /> Payments
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -214,6 +222,12 @@ export function AdminPanel() {
           </TabsContent>
           <TabsContent value="create-test">
             <AdminCreateTestTab onCreated={fetchTests} />
+          </TabsContent>
+          <TabsContent value="users">
+            <AdminUsersTab onRefresh={fetchStats} />
+          </TabsContent>
+          <TabsContent value="payments">
+            <AdminPaymentsTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -1381,6 +1395,348 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ==================== USERS TAB ====================
+interface StudentRow {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  deviceId: string;
+  freeTestsUsed: number;
+  isSubscribed: boolean;
+  subscriptionAt: string | null;
+  createdAt: string;
+  totalAttempts: number;
+  totalPayments: number;
+  lastPayment: { id: string; amount: number; currency: string; status: string; createdAt: string } | null;
+}
+
+function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
+  const [students, setStudents] = useState<StudentRow[]>([]);
+  const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
+  const [summary, setSummary] = useState({ totalStudents: 0, totalPaid: 0, totalFree: 0 });
+
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ filter, search });
+        const res = await fetch(`/api/admin/students?${params}`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          if (!cancelled) {
+            setStudents(data.students);
+            setSummary(data.summary);
+          }
+        }
+      } catch {}
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [filter, search, reloadKey]);
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(deleteTarget.id);
+    try {
+      const res = await fetch('/api/admin/students', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: deleteTarget.id }),
+      });
+      if (res.ok) {
+        toast.success(`User "${deleteTarget.name}" deleted`);
+        setShowDeleteDialog(false);
+        setDeleteTarget(null);
+        setReloadKey(k => k + 1);
+        onRefresh();
+      }
+    } catch {}
+    setDeleting(null);
+  }
+
+  const filters = [
+    { key: 'all' as const, label: 'All', count: summary.totalStudents },
+    { key: 'free' as const, label: 'Free', count: summary.totalFree },
+    { key: 'paid' as const, label: 'Paid', count: summary.totalPaid },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Filter Bar */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              {filters.map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => { setFilter(f.key); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    filter === f.key
+                      ? 'bg-blue-700 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {f.label} ({f.count})
+                </button>
+              ))}
+            </div>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name, email, phone..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchStudents()}
+                className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Users Table */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-0">
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="col-span-3">User</div>
+            <div className="col-span-2 hidden sm:block">Email</div>
+            <div className="col-span-1 hidden md:block">Phone</div>
+            <div className="col-span-2 text-center">Status</div>
+            <div className="col-span-2 text-center hidden sm:block">Activity</div>
+            <div className="col-span-2 sm:col-span-2 text-right">Actions</div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading users...</span>
+            </div>
+          ) : students.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">No users found</div>
+          ) : (
+            <div className="max-h-[60vh] overflow-y-auto">
+              {students.map((student) => (
+                <div key={student.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
+                  {/* User Info */}
+                  <div className="col-span-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        {student.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{student.name}</p>
+                        <p className="text-[10px] text-muted-foreground sm:hidden truncate">{student.email || student.phone || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="col-span-2 hidden sm:block">
+                    <p className="text-xs truncate">{student.email || '—'}</p>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="col-span-1 hidden md:block">
+                    <p className="text-xs truncate">{student.phone || '—'}</p>
+                  </div>
+
+                  {/* Status */}
+                  <div className="col-span-2 flex justify-center">
+                    {student.isSubscribed ? (
+                      <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5">
+                        <Crown className="w-2.5 h-2.5" /> Paid
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Free ({student.freeTestsUsed}/5)
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Activity */}
+                  <div className="col-span-2 hidden sm:flex flex-col items-center gap-0.5">
+                    <span className="text-xs font-medium">{student.totalAttempts} attempts</span>
+                    {student.lastPayment && (
+                      <span className="text-[10px] text-emerald-600">Paid ₹{student.lastPayment.amount / 100}</span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="col-span-2 sm:col-span-2 flex justify-end gap-1">
+                    {student.subscriptionAt && (
+                      <button
+                        className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors"
+                        title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}
+                      >
+                        <Receipt className="w-4 h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+                      className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+                      title="Delete user"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" /> Delete User
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{deleteTarget?.name}</strong>?
+              This will permanently delete all their test attempts, payments, and data. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteTarget && (
+            <div className="bg-red-50 rounded-xl p-3 text-xs space-y-1">
+              <p><span className="text-muted-foreground">Name:</span> <strong>{deleteTarget.name}</strong></p>
+              <p><span className="text-muted-foreground">Email:</span> {deleteTarget.email || '—'}</p>
+              <p><span className="text-muted-foreground">Attempts:</span> {deleteTarget.totalAttempts}</p>
+              <p><span className="text-muted-foreground">Status:</span> {deleteTarget.isSubscribed ? 'Paid' : 'Free'}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline" size="sm">Cancel</Button></DialogClose>
+            <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleting}>
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
+              {deleting ? 'Deleting...' : 'Delete User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ==================== PAYMENTS TAB ====================
+interface PaymentRow {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  razorpayOrderId: string | null;
+  razorpayPaymentId: string | null;
+  createdAt: string;
+}
+
+function AdminPaymentsTab() {
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch('/api/admin/payments');
+        if (res.ok) setPayments(await res.json());
+      } catch {}
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const totalRevenue = payments.reduce((s, p) => s + (p.status === 'completed' ? p.amount : 0), 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Revenue Summary */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-100">
+              <CreditCard className="w-5 h-5 text-emerald-700" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">₹{totalRevenue / 100}</p>
+              <p className="text-[11px] text-muted-foreground">Total Revenue ({payments.filter(p => p.status === 'completed').length} payments)</p>
+            </div>
+          </div>
+          <Badge variant="secondary" className="text-xs">
+            {payments.length} total transactions
+          </Badge>
+        </CardContent>
+      </Card>
+
+      {/* Payments Table */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-0">
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="col-span-3">Student</div>
+            <div className="col-span-2 text-center">Amount</div>
+            <div className="col-span-2 text-center">Status</div>
+            <div className="col-span-3 hidden sm:block">Order ID</div>
+            <div className="col-span-2 text-right">Date</div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading payments...</span>
+            </div>
+          ) : payments.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground text-sm">No payments yet</div>
+          ) : (
+            <div className="max-h-[60vh] overflow-y-auto">
+              {payments.map((p) => (
+                <div key={p.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
+                  <div className="col-span-3">
+                    <p className="text-sm font-medium truncate">{p.studentName}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{p.studentEmail || '—'}</p>
+                  </div>
+                  <div className="col-span-2 text-center">
+                    <p className="text-sm font-bold">₹{p.amount / 100}</p>
+                  </div>
+                  <div className="col-span-2 flex justify-center">
+                    <Badge className={`text-[10px] border-0 ${
+                      p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+                    }`}>
+                      {p.status === 'completed' ? '✓ Success' : p.status}
+                    </Badge>
+                  </div>
+                  <div className="col-span-3 hidden sm:block">
+                    <p className="text-[10px] text-muted-foreground font-mono truncate">{p.razorpayOrderId || '—'}</p>
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

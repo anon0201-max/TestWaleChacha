@@ -20,7 +20,7 @@ function formatTime(seconds: number): string {
 
 export function ResultsPage() {
   const { lastResult, setView, clearAnswers, currentTest, freeTestsRemaining, isSubscribed, user } = useAppStore();
-  const [rankings, setRankings] = useState<Array<{ studentName: string; score: number; timeTaken: number; rank: number }>>([]);
+  const [rankings, setRankings] = useState<Array<{ studentId: string; studentName: string; score: number; timeTaken: number; rank: number }>>([]);
   const [loadingRankings, setLoadingRankings] = useState(true);
 
   // Fetch rankings when results load
@@ -43,7 +43,7 @@ export function ResultsPage() {
   const { score, correctAnswers, totalQuestions, answerDetails, timeTaken } = lastResult;
   const percentage = score;
   const incorrectAnswers = totalQuestions - correctAnswers;
-  const myRank = rankings.find(r => r.studentName === user?.name);
+  const myRank = rankings.find(r => r.studentId === user?.id);
 
   const getGrade = () => {
     if (percentage >= 90) return { label: 'Excellent!', emoji: '🏆', color: 'text-emerald-600', gradient: 'from-emerald-500 via-teal-500 to-cyan-600' };
@@ -108,7 +108,7 @@ export function ResultsPage() {
             ) : rankings.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {rankings.slice(0, 10).map((r) => {
-                  const isMe = r.studentName === user?.name;
+                  const isMe = r.studentId === user?.id;
                   return (
                     <div key={r.rank} className={`flex items-center justify-between p-2.5 rounded-lg text-sm ${isMe ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
                       <div className="flex items-center gap-3">

@@ -123,7 +123,7 @@ export async function GET(request: Request) {
       const attempts = await db.testAttempt.findMany({
         where: { testId, completed: true },
         include: {
-          student: { select: { name: true } },
+          student: { select: { id: true, name: true } },
         },
         orderBy: [
           { score: 'desc' },
@@ -131,7 +131,23 @@ export async function GET(request: Request) {
         ],
       });
 
-      const rankingsData = attempts.map((attempt, index) => ({
+      // Deduplicate: keep only best attempt per student (no conflicts)
+      const bestByStudent = new Map<string, (typeof attempts)[0]>();
+      for (const attempt of attempts) {
+        const existing = bestByStudent.get(attempt.studentId);
+        if (!existing || attempt.score > existing.score || (attempt.score === existing.score && attempt.timeTaken < existing.timeTaken)) {
+          bestByStudent.set(attempt.studentId, attempt);
+        }
+      }
+
+      // Sort deduplicated results
+      const sorted = Array.from(bestByStudent.values()).sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.timeTaken - b.timeTaken;
+      });
+
+      const rankingsData = sorted.map((attempt, index) => ({
+        studentId: attempt.studentId,
         studentName: attempt.student.name,
         score: attempt.score,
         timeTaken: attempt.timeTaken,

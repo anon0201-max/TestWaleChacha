@@ -4,8 +4,17 @@ import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Zap, LogIn, LogOut, UserCircle, History } from 'lucide-react';
+import { Crown, Zap, LogIn, LogOut, UserCircle, History, Receipt, CheckCircle2 } from 'lucide-react';
 import { Logo } from './Logo';
+
+interface PaymentInfo {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  razorpayOrderId: string | null;
+  createdAt: string;
+}
 
 export function AppHeader() {
   const {
@@ -14,6 +23,23 @@ export function AppHeader() {
   } = useAppStore();
   const [showProfile, setShowProfile] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const [payment, setPayment] = useState<PaymentInfo | null>(null);
+
+  // Fetch payment when profile opens
+  useEffect(() => {
+    if (!showProfile || !isSubscribed || !user?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/student/payments?studentId=${user!.id}`);
+        if (res.ok && !cancelled) {
+          const payments: PaymentInfo[] = await res.json();
+          if (!cancelled) setPayment(payments[0] || null);
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [showProfile, isSubscribed, user?.id]);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -66,22 +92,64 @@ export function AppHeader() {
                     onClick={() => setShowProfile(!showProfile)}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                   >
-                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                      isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-blue-600 text-white'
+                    }`}>
                       {user.name.charAt(0).toUpperCase()}
                     </div>
                     <span className="hidden sm:inline text-sm font-medium max-w-[100px] truncate">{user.name}</span>
                   </button>
 
                   {showProfile && (
-                    <div className="absolute right-0 top-full mt-1 w-64 bg-white rounded-xl shadow-lg border p-2 z-50">
+                    <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-xl shadow-lg border p-2 z-50">
+                      {/* Header */}
                       <div className="px-3 py-2 border-b mb-1">
                         <p className="font-semibold text-sm">{user.name}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
+
+                      {/* Payment Bill - if subscribed */}
+                      {isSubscribed && payment && (
+                        <div className="mx-2 mb-1 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg p-3 border border-emerald-100">
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span className="text-xs font-semibold text-emerald-700">PRO Active</span>
+                          </div>
+                          <div className="text-xs space-y-0.5">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Amount</span>
+                              <span className="font-bold text-emerald-700">₹{payment.amount / 100}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Date</span>
+                              <span className="font-medium">{new Date(payment.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                            {payment.razorpayOrderId && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Order ID</span>
+                                <span className="font-mono text-[10px]">{payment.razorpayOrderId.slice(0, 12)}...</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Payment Bill - subscribed but payment fetching */}
+                      {isSubscribed && !payment && (
+                        <div className="mx-2 mb-1 bg-amber-50 rounded-lg p-3 border border-amber-100 flex items-center gap-2">
+                          <Crown className="w-4 h-4 text-amber-500" />
+                          <div>
+                            <p className="text-xs font-semibold text-amber-700">PRO Member</p>
+                            <p className="text-[10px] text-amber-600">Unlimited access to all tests</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Stats */}
                       <div className="px-3 py-2 text-xs space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">Free tests used</span>
-                          <span className="font-medium">{user.freeTestsUsed}/5</span>
+                          <span className="font-medium">{isSubscribed ? '∞' : `${user.freeTestsUsed}/5`}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">Status</span>
@@ -92,6 +160,27 @@ export function AppHeader() {
                           )}
                         </div>
                       </div>
+
+                      {/* Subscription CTA - if not subscribed */}
+                      {!isSubscribed && (
+                        <div className="mx-2 mb-1 bg-blue-50 rounded-lg p-3 border border-blue-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Zap className="w-4 h-4 text-blue-600" />
+                            <div>
+                              <p className="text-xs font-semibold text-blue-700">{freeTestsRemaining} free tests left</p>
+                              <p className="text-[10px] text-blue-600">Upgrade for unlimited access</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => { setShowProfile(false); useAppStore.getState().setShowSubscriptionModal(true); }}
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <Crown className="w-3.5 h-3.5" /> Subscribe Now — ₹100
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Actions */}
                       <div className="border-t mt-1 pt-1">
                         <button
                           onClick={() => { setShowProfile(false); setView('my-attempts'); }}
@@ -99,12 +188,11 @@ export function AppHeader() {
                         >
                           <History className="w-4 h-4" /> My Test History
                         </button>
-                        {!isSubscribed && (
+                        {isSubscribed && payment && (
                           <button
-                            onClick={() => { setShowProfile(false); useAppStore.getState().setShowSubscriptionModal(true); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-blue-50 text-blue-700 font-medium"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-emerald-50 text-emerald-700"
                           >
-                            <Crown className="w-4 h-4" /> Upgrade to Pro — ₹100
+                            <Receipt className="w-4 h-4" /> View Bill
                           </button>
                         )}
                         <button
