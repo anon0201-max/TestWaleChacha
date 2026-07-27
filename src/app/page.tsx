@@ -13,6 +13,7 @@ import { SubscriptionModal } from '@/components/mcq/SubscriptionModal';
 import { AuthModal } from '@/components/mcq/AuthModal';
 import { AppHeader } from '@/components/mcq/AppHeader';
 import { AppFooter } from '@/components/mcq/AppFooter';
+import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 
 function AppContent() {
   const searchParams = useSearchParams();
@@ -84,6 +85,7 @@ function AppContent() {
       {!isAdminOrTestTaking && <AppFooter />}
       <SubscriptionModal />
       <AuthModal />
+      <PwaInstallPrompt />
     </div>
   );
 }

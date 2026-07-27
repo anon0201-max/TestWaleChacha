@@ -180,7 +180,7 @@ export function AppFooter() {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400 justify-center">
                 <Phone className="w-4 h-4 text-emerald-500" />
-                <span>+91 98765 43210</span>
+                <span>+91 8340197418</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400 justify-start sm:justify-end">
                 <MapPin className="w-4 h-4 text-emerald-500" />

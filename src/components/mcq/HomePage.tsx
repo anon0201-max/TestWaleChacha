@@ -17,40 +17,40 @@ export function HomePage() {
   return (
     <div className="space-y-8">
       {/* Hero - Navy Blue Testbook Style */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-800 via-blue-900 to-slate-900 p-8 md:p-12 text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-800 via-blue-900 to-slate-900 p-6 sm:p-8 md:p-12 text-white">
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-5 right-20 w-40 h-40 border border-white rounded-full" />
           <div className="absolute bottom-5 left-10 w-60 h-60 border border-white rounded-full" />
         </div>
         <div className="relative z-10 max-w-2xl">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
               {examTypes.map((t) => (
                 <Badge key={t} className="bg-white/15 text-white/90 hover:bg-white/20 border-0 text-xs">{t}</Badge>
               ))}
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
               India&apos;s #1 <span className="text-cyan-400">Free Mock Test</span> Platform
             </h1>
-            <p className="text-blue-200 mb-6 max-w-lg">
+            <p className="text-sm sm:text-base text-blue-200 mb-6 max-w-lg">
               Practice government exam mock tests for SSC CGL, UPSC, IBPS PO, RRB NTPC and more. Real exam interface with question palette &amp; timer.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 h-12" onClick={() => setView('tests')}>
+              <Button size="lg" className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base" onClick={() => setView('tests')}>
                 Start Free Test <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
               {isLoggedIn ? (
                 isSubscribed ? (
-                  <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                  <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white">
                     <Crown className="w-5 h-5 mr-2 text-amber-400" /> PRO Member
                   </Button>
                 ) : (
-                  <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" onClick={() => setShowSubscriptionModal(true)}>
+                  <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => setShowSubscriptionModal(true)}>
                     <Lock className="w-4 h-4 mr-2" /> Unlock All — ₹100
                   </Button>
                 )
               ) : (
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10" onClick={() => setShowAuthModal('signup')}>
+                <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => setShowAuthModal('signup')}>
                   <UserCircle className="w-5 h-5 mr-2" /> Sign Up Free
                 </Button>
               )}
@@ -133,9 +133,9 @@ export function HomePage() {
 
       {/* Pricing */}
       {!isSubscribed && (
-        <section className="rounded-2xl border-2 border-blue-200 bg-blue-50/50 p-8 text-center">
-          <Crown className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-          <h2 className="text-2xl font-bold mb-2">Get Unlimited Access — ₹100</h2>
+        <section className="rounded-2xl border-2 border-blue-200 bg-blue-50/50 p-6 sm:p-8 text-center">
+          <Crown className="w-10 h-10 sm:w-12 sm:h-12 text-amber-500 mx-auto mb-3" />
+          <h2 className="text-xl sm:text-2xl font-bold mb-2">Get Unlimited Access — ₹100</h2>
           <p className="text-muted-foreground mb-4 max-w-md mx-auto">
             {isLoggedIn
               ? `${freeTestsRemaining} free tests remaining. Unlock all ${categories.reduce((s, c) => s + c._count.tests, 0)}+ tests with detailed solutions.`
