@@ -160,7 +160,34 @@ export function TestTakingPage() {
     if (timeRemaining <= 0 && isTestActive) handleSubmitTest();
   }, [timeRemaining, isTestActive, handleSubmitTest]);
 
-  if (!currentTest || !currentQuestion) return null;
+  if (!currentTest) return null;
+
+  // Handle blank/empty test (no questions)
+  if (currentTest.questions.length === 0) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
+          <Card className="border-0 shadow-lg">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="w-8 h-8 text-amber-600" />
+              </div>
+              <h2 className="text-xl font-bold mb-2">No Questions Available</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                This test &ldquo;{currentTest.title}&rdquo; doesn&apos;t have any questions yet. Please try again later.
+              </p>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 font-semibold"
+                onClick={() => { setIsTestActive(false); clearAnswers(); setView('tests'); }}
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" /> Go Back to Tests
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   const options = [
     { key: 'A', value: currentQuestion.optionA },

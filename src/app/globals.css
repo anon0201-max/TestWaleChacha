@@ -283,3 +283,84 @@
 .auth-modal-theme {
   background: linear-gradient(135deg, var(--theme-700), var(--theme-800), #0f172a);
 }
+
+/* ==================== DARK MODE OVERRIDES ==================== */
+.dark .hero-theme {
+  opacity: 0.95;
+}
+
+.dark .auth-modal-theme {
+  opacity: 0.95;
+}
+
+/* Dark mode background override for main page */
+.dark body {
+  background-color: oklch(0.145 0 0);
+}
+
+/* Dark mode card shadows */
+.dark .shadow-sm {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode header */
+.dark header {
+  background-color: oklch(0.205 0 0);
+  border-color: oklch(0.269 0 0);
+}
+
+/* Dark mode stat card icon backgrounds */
+.dark .bg-blue-100 { background-color: oklch(0.269 0.05 250) !important; }
+.dark .bg-blue-100.text-blue-700 { color: oklch(0.7 0.15 250) !important; }
+.dark .bg-green-100 { background-color: oklch(0.269 0.08 150) !important; }
+.dark .bg-green-100.text-green-700 { color: oklch(0.7 0.15 150) !important; }
+.dark .bg-purple-100 { background-color: oklch(0.269 0.08 300) !important; }
+.dark .bg-purple-100.text-purple-700 { color: oklch(0.7 0.12 300) !important; }
+.dark .bg-amber-100 { background-color: oklch(0.269 0.08 80) !important; }
+.dark .bg-amber-100.text-amber-700 { color: oklch(0.7 0.15 80) !important; }
+
+/* Dark mode pricing section */
+.dark .border-blue-200 {
+  border-color: oklch(0.35 0.1 250) !important;
+}
+.dark .bg-blue-50\/50 {
+  background-color: oklch(0.22 0.05 250) !important;
+}
+
+/* Dark mode for TestTakingPage top bar */
+.dark .bg-blue-900 {
+  background-color: oklch(0.22 0.06 250) !important;
+}
+.dark .bg-blue-800 {
+  background-color: oklch(0.28 0.06 250) !important;
+}
+
+/* Dark mode profile dropdown */
+.dark .bg-gray-50 {
+  background-color: oklch(0.22 0 0) !important;
+}
+
+/* Dark mode hover states for theme toggle */
+.dark .hover\:bg-gray-100:hover {
+  background-color: oklch(0.269 0 0);
+}
+
+/* Smooth transition for dark mode */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode specific overrides for page background */
+html.dark .bg-gray-50 {
+  background-color: oklch(0.145 0 0);
+}
+
+/* Dark mode footer */
+.dark footer {
+  border-color: oklch(0.269 0 0);
+}
+

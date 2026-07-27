@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import {
   Trophy, ArrowLeft, Clock, CheckCircle2, XCircle, RotateCcw, Home,
-  Star, Target, Zap, Crown, Medal, Award, TrendingUp, Users,
+  Star, Target, Zap, Crown, Medal, Award, TrendingUp, Users, Play, Loader2,
 } from 'lucide-react';
 
 function formatTime(seconds: number): string {
@@ -19,9 +19,10 @@ function formatTime(seconds: number): string {
 }
 
 export function ResultsPage() {
-  const { lastResult, setView, clearAnswers, currentTest, freeTestsRemaining, isSubscribed, user } = useAppStore();
+  const { lastResult, setView, clearAnswers, currentTest, freeTestsRemaining, isSubscribed, user, setCurrentTest, setIsTestActive, setCurrentQuestionIndex, setTimeRemaining } = useAppStore();
   const [rankings, setRankings] = useState<Array<{ studentId: string; studentName: string; score: number; timeTaken: number; rank: number }>>([]);
   const [loadingRankings, setLoadingRankings] = useState(true);
+  const [reattemptLoading, setReattemptLoading] = useState(false);
 
   // Fetch rankings when results load
   useEffect(() => {
@@ -53,6 +54,25 @@ export function ResultsPage() {
   };
 
   const grade = getGrade();
+
+  async function handleReAttempt() {
+    if (!currentTest || reattemptLoading) return;
+    setReattemptLoading(true);
+    try {
+      const res = await fetch(`/api/tests/${currentTest.id}?testId=${currentTest.id}`);
+      if (res.ok) {
+        const testData = await res.json();
+        setCurrentTest(testData);
+      }
+      clearAnswers();
+      setCurrentQuestionIndex(0);
+      setTimeRemaining(currentTest.timeLimit);
+      setIsTestActive(true);
+      useAppStore.getState().setView('test-taking');
+    } catch {
+      setReattemptLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -205,8 +225,11 @@ export function ResultsPage() {
 
       {/* Actions */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex flex-col sm:flex-row gap-3 justify-center">
+        <Button variant="outline" size="lg" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800" onClick={handleReAttempt} disabled={reattemptLoading}>
+          {reattemptLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Starting...</> : <><RotateCcw className="w-4 h-4 mr-2" />Re-attempt This Test</>}
+        </Button>
         <Button variant="outline" size="lg" onClick={() => { clearAnswers(); setView('tests'); }}>
-          <RotateCcw className="w-4 h-4 mr-2" /> Take Another Test
+          <ArrowLeft className="w-4 h-4 mr-2" /> Take Another Test
         </Button>
         <Button size="lg" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => { clearAnswers(); setView('home'); }}>
           <Home className="w-4 h-4 mr-2" /> Back to Home

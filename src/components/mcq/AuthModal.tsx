@@ -174,8 +174,8 @@ export function AuthModal() {
 
   const tabClass = (active: boolean) =>
     active
-      ? 'border-blue-600 text-blue-700 bg-blue-50/50'
-      : 'border-transparent text-muted-foreground hover:text-foreground';
+      ? 'border-blue-600 text-blue-700 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-950/50'
+      : 'border-transparent text-muted-foreground hover:text-foreground dark:hover:text-gray-300';
 
   return (
     <AnimatePresence>
@@ -191,7 +191,7 @@ export function AuthModal() {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 25 }}
-          className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+          className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -251,11 +251,6 @@ export function AuthModal() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-9 h-11" />
               </div>
-              {mode === 'login' && (
-                <p className="text-right mt-1">
-                  <button onClick={() => switchMode('forgot')} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Forgot Password?</button>
-                </p>
-              )}
             </div>
 
             {mode !== 'forgot' && (
@@ -274,6 +269,11 @@ export function AuthModal() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {mode === 'login' && (
+                <p className="text-right mt-1.5">
+                  <button onClick={() => switchMode('forgot')} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Forgot Password?</button>
+                </p>
+              )}
             </div>
             )}
 

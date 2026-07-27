@@ -54,7 +54,7 @@ export function AppHeader() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 border-b bg-white relative">
+    <header className="sticky top-0 z-30 border-b bg-white dark:bg-gray-900 dark:border-gray-800 relative">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <button onClick={() => setView('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity relative z-10">
           <Logo size="sm" />

@@ -27,6 +27,11 @@ function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [adminForgotOpen, setAdminForgotOpen] = useState(false);
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMsg, setForgotMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   async function handleLogin() {
     setLoading(true);
@@ -45,6 +50,41 @@ function AdminLogin() {
       }
     } catch { setError('Server error'); }
     setLoading(false);
+  }
+
+  async function handleAdminForgotPassword() {
+    setForgotMsg(null);
+    if (!forgotNewPassword || !forgotConfirmPassword) {
+      setForgotMsg({ type: 'error', text: 'All fields are required' });
+      return;
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotMsg({ type: 'error', text: 'Passwords do not match' });
+      return;
+    }
+    if (forgotNewPassword.length < 4) {
+      setForgotMsg({ type: 'error', text: 'Password must be at least 4 characters' });
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      const res = await fetch('/api/admin/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: '', newPassword: forgotNewPassword }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setForgotMsg({ type: 'success', text: 'Admin password reset successfully! You can now login with the new password.' });
+        setForgotNewPassword('');
+        setForgotConfirmPassword('');
+      } else {
+        setForgotMsg({ type: 'error', text: data.error || 'Failed to reset password' });
+      }
+    } catch {
+      setForgotMsg({ type: 'error', text: 'Server error. Please try again.' });
+    }
+    setForgotLoading(false);
   }
 
   return (
@@ -84,6 +124,9 @@ function AdminLogin() {
                   </button>
                 </div>
               </div>
+              <p className="text-right">
+                <button onClick={() => setAdminForgotOpen(true)} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Forgot Password?</button>
+              </p>
               {error && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
@@ -95,6 +138,43 @@ function AdminLogin() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Admin Forgot Password Dialog */}
+        <Dialog open={adminForgotOpen} onOpenChange={(open) => { if (!open) { setAdminForgotOpen(false); setForgotMsg(null); } }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Shield className="w-5 h-5 text-blue-600" />Reset Admin Password</DialogTitle>
+              <DialogDescription>Set a new password for admin login</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {forgotMsg && (
+                <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                  className={`p-3 rounded-xl text-sm flex items-center gap-2 border ${
+                    forgotMsg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+                  }`}>
+                  {forgotMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+                  {forgotMsg.text}
+                </motion.div>
+              )}
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
+                <Input type="password" value={forgotNewPassword} onChange={(e) => setForgotNewPassword(e.target.value)} placeholder="Enter new password (min 4 chars)" className="h-11" />
+              </div>
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
+                <Input type="password" value={forgotConfirmPassword} onChange={(e) => setForgotConfirmPassword(e.target.value)} placeholder="Confirm new password" className="h-11" onKeyDown={(e) => e.key === 'Enter' && handleAdminForgotPassword()} />
+              </div>
+              <div className="flex gap-2">
+                <DialogClose asChild>
+                  <Button variant="outline" className="flex-1 h-11">Cancel</Button>
+                </DialogClose>
+                <Button className="flex-1 h-11 bg-blue-700 hover:bg-blue-800 font-semibold" onClick={handleAdminForgotPassword} disabled={forgotLoading || !forgotNewPassword || !forgotConfirmPassword}>
+                  {forgotLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Resetting...</> : <><Save className="w-4 h-4 mr-2" />Reset Password</>}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </div>
   );
