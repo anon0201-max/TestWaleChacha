@@ -150,7 +150,7 @@ export function AppFooter() {
 
             {/* Features */}
             <div>
-              <h4 className="font-semibold text-white text-sm mb-4 uppercase tracking-wider">Why TestWaleChaha?</h4>
+              <h4 className="font-semibold text-white text-sm mb-4 uppercase tracking-wider">Why TestWaleChacha?</h4>
               <div className="space-y-3.5">
                 {[
                   { icon: '🎯', title: '5 Free Tests', desc: 'Sign up & start immediately' },
@@ -176,7 +176,7 @@ export function AppFooter() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Mail className="w-4 h-4 text-emerald-500" />
-                <span>support@testwalechaha.in</span>
+                <span>support@testwalechacha.in</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400 justify-center">
                 <Phone className="w-4 h-4 text-emerald-500" />
@@ -192,7 +192,7 @@ export function AppFooter() {
           {/* Bottom Bar */}
           <div className="border-t border-gray-800 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span>© {new Date().getFullYear()} TestWaleChaha. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} TestWaleChacha. All rights reserved.</span>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <button

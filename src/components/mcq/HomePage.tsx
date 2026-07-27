@@ -108,7 +108,7 @@ export function HomePage() {
 
       {/* Features */}
       <section>
-        <h2 className="text-xl font-bold mb-4">Why Choose TestWaleChaha?</h2>
+        <h2 className="text-xl font-bold mb-4">Why Choose TestWaleChacha?</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { icon: BarChart3, title: 'Real Exam Interface', desc: 'Question palette, mark for review, timer — exactly like SSC/UPSC online exam.' },
