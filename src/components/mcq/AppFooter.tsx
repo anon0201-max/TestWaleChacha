@@ -1,7 +1,8 @@
 'use client';
 
-import { GraduationCap, Heart, Crown, UserCircle, Shield, History, BookOpen, Zap, Trophy, Phone, Mail, MapPin, ArrowUp } from 'lucide-react';
+import { Heart, Crown, UserCircle, Shield, History, BookOpen, Zap, Trophy, Phone, Mail, MapPin, ArrowUp } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { Logo } from './Logo';
 
 export function AppFooter() {
   const { isSubscribed, isLoggedIn, setShowSubscriptionModal, setShowAuthModal, setView } = useAppStore();
@@ -53,11 +54,8 @@ export function AppFooter() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             {/* Brand */}
             <div>
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <GraduationCap className="w-5 h-5 text-white" />
-                </div>
-                <span className="font-bold text-lg text-white">QuizMaster</span>
+              <div className="mb-4">
+                <Logo size="md" variant="light" />
               </div>
               <p className="text-sm text-gray-400 leading-relaxed mb-4">
                 India&apos;s #1 free mock test platform for government exam preparation. Practice SSC, UPSC, Banking, Railways &amp; more with real exam interface.
@@ -152,7 +150,7 @@ export function AppFooter() {
 
             {/* Features */}
             <div>
-              <h4 className="font-semibold text-white text-sm mb-4 uppercase tracking-wider">Why QuizMaster?</h4>
+              <h4 className="font-semibold text-white text-sm mb-4 uppercase tracking-wider">Why TestWaleChaha?</h4>
               <div className="space-y-3.5">
                 {[
                   { icon: '🎯', title: '5 Free Tests', desc: 'Sign up & start immediately' },
@@ -178,7 +176,7 @@ export function AppFooter() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <Mail className="w-4 h-4 text-emerald-500" />
-                <span>support@quizmaster.in</span>
+                <span>support@testwalechaha.in</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400 justify-center">
                 <Phone className="w-4 h-4 text-emerald-500" />
@@ -194,7 +192,7 @@ export function AppFooter() {
           {/* Bottom Bar */}
           <div className="border-t border-gray-800 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span>© {new Date().getFullYear()} QuizMaster. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} TestWaleChaha. All rights reserved.</span>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <button

@@ -106,7 +106,7 @@ export function SubscriptionModal() {
               </div>
               <div className="p-5 space-y-4">
                 <div className="bg-blue-50 rounded-xl p-3 flex items-center justify-between">
-                  <div><p className="text-sm font-medium">QuizMaster Pro - Unlimited</p><p className="text-xs text-muted-foreground">{user?.email || 'One-time payment'}</p></div>
+                  <div><p className="text-sm font-medium">TestWaleChaha Pro - Unlimited</p><p className="text-xs text-muted-foreground">{user?.email || 'One-time payment'}</p></div>
                   <p className="font-bold">₹100</p>
                 </div>
                 <div>

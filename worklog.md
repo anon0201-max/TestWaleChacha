@@ -327,3 +327,30 @@ Stage Summary:
 - FIX: Removed `multiple`, rewrote fill logic (dynamic empty-box finding), added visible status banner
 - All 34 questions now fill correctly in ~60 seconds (single VLM call)
 - Files modified: /home/z/my-project/src/components/mcq/AdminPanel.tsx
+
+---
+Task ID: auth-toggle-fix-rebrand
+Agent: main (Z.ai Code)
+Task: Fix login/signup toggle bug, rebrand QuizMaster → TestWaleChaha with logo, explain payment gateway
+
+Work Log:
+- Fixed AuthModal.tsx: The bug was a render-time `if (showAuthModal && mode !== showAuthModal) { setMode(showAuthModal) }` which called setState during render. This caused React to reset `mode` back to the store's `showAuthModal` value on every re-render — so when user clicked "Sign up free", mode flipped to 'signup' but immediately got reset to 'login' on the next render.
+- Fix: Replaced with official React "adjusting state when a prop changes" pattern using prevShowAuthModal tracking — only syncs mode when showAuthModal actually changes from external caller, allowing in-modal toggle to work freely.
+- Also fixed: useState declarations order — moved error/success state BEFORE the sync block to avoid temporal dead zone error.
+- Created /src/components/mcq/Logo.tsx — reusable Logo component with gradient badge + "TestWale" (bold) + "Chaha" (gradient accent). Supports sm/md/lg sizes and light/dark variants.
+- Rebranded all instances of "QuizMaster" → "TestWaleChaha" in:
+  - layout.tsx (title, description, keywords)
+  - AppHeader.tsx (uses Logo component)
+  - AuthModal.tsx (uses Logo component in header)
+  - SubscriptionModal.tsx (product name)
+  - HomePage.tsx (section heading)
+  - AppFooter.tsx (brand, section heading, copyright, email)
+- Verified: Login modal opens → click "Sign Up" tab → shows "Create Account" with name/phone fields → click "Login" tab → shows "Welcome Back!" → both tabs AND bottom text links toggle correctly.
+- Lint clean, no console errors.
+
+Stage Summary:
+- Auth toggle bug fixed: Login ↔ Signup now works in both directions via tabs and bottom text links
+- Rebrand complete: All "QuizMaster" references replaced with "TestWaleChaha"
+- Logo component created at /src/components/mcq/Logo.tsx (gradient badge + text, 3 sizes, 2 variants)
+- Files modified: AuthModal.tsx, AppHeader.tsx, HomePage.tsx, AppFooter.tsx, SubscriptionModal.tsx, layout.tsx
+- Files created: Logo.tsx

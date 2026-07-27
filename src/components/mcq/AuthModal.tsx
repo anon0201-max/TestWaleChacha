@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X, Mail, Lock, User, Phone, GraduationCap, Eye, EyeOff,
+  X, Mail, Lock, User, Phone, Eye, EyeOff,
   Loader2, ArrowRight, LogIn, UserPlus, CheckCircle2,
 } from 'lucide-react';
+import { Logo } from './Logo';
 
 export function AuthModal() {
   const {
@@ -29,8 +30,18 @@ export function AuthModal() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  if (showAuthModal && mode !== showAuthModal) {
-    setMode(showAuthModal);
+  // Track the previous showAuthModal value so we can sync `mode` ONLY when it changes
+  // (official React pattern: "adjusting state when a prop changes").
+  // This lets the user freely toggle login/signup inside the modal via switchMode(),
+  // while still respecting the mode requested by the external opener (header/footer).
+  const [prevShowAuthModal, setPrevShowAuthModal] = useState<'login' | 'signup' | null>(showAuthModal);
+  if (showAuthModal !== prevShowAuthModal) {
+    setPrevShowAuthModal(showAuthModal);
+    if (showAuthModal) {
+      setMode(showAuthModal);
+      setError('');
+      setSuccess('');
+    }
   }
 
   async function startPendingTest() {
@@ -146,11 +157,8 @@ export function AuthModal() {
             <button onClick={handleClose} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/20 transition-colors">
               <X className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-cyan-300" />
-              </div>
-              <span className="font-bold text-lg">QuizMaster</span>
+            <div className="mb-3">
+              <Logo size="md" variant="light" />
             </div>
             <h2 className="text-xl font-bold">
               {mode === 'login' ? 'Welcome Back!' : 'Create Account'}

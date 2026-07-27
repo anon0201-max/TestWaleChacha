@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Zap, GraduationCap, LogIn, LogOut, UserCircle, History } from 'lucide-react';
+import { Crown, Zap, LogIn, LogOut, UserCircle, History } from 'lucide-react';
+import { Logo } from './Logo';
 
 export function AppHeader() {
   const {
@@ -28,11 +29,8 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 border-b bg-white relative">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <button onClick={() => setView('home')} className="flex items-center gap-2 font-bold text-lg hover:text-blue-600 transition-colors relative z-10">
-          <div className="w-8 h-8 rounded-lg bg-blue-700 flex items-center justify-center">
-            <GraduationCap className="w-5 h-5 text-white" />
-          </div>
-          <span className="hidden sm:inline">QuizMaster</span>
+        <button onClick={() => setView('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity relative z-10">
+          <Logo size="sm" />
         </button>
 
         <nav className="flex items-center gap-1 sm:gap-2 relative z-10">
