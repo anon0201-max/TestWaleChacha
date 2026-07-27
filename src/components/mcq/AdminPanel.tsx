@@ -711,7 +711,6 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     }, 1000);
 
     try {
-      const allNewQuestions: QuestionForm[] = [];
       let totalExtracted = 0;
       let hasError = false;
 
@@ -721,11 +720,12 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
         const formData = new FormData();
         formData.append('image', file);
 
-        // Use AbortController with 3-minute timeout per file
+        // Use AbortController with 5-minute timeout per file (VLM can take 2-3 min for large images)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 180000);
+        const timeoutId = setTimeout(() => controller.abort(), 300000);
 
         try {
+          console.log(`📤 Uploading image ${i + 1}/${fileList.length}: ${file.name}`);
           const res = await fetch('/api/admin/extract-question', {
             method: 'POST',
             body: formData,
@@ -733,7 +733,10 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           });
           clearTimeout(timeoutId);
 
+          console.log(`📡 Response status: ${res.status}`);
           const data = await res.json();
+          console.log(`📋 Extraction result:`, { success: data.success, count: data.count, hasQuestions: !!data.questions, error: data.error });
+
           if (data.success && data.questions && data.questions.length > 0) {
             const newQuestions: QuestionForm[] = data.questions.map((q: any) => ({
               question: q.question || '',
@@ -746,8 +749,13 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               section: q.section || 'General',
               negativeMark: q.negativeMark || '0',
             }));
-            allNewQuestions.push(...newQuestions);
+
+            // CRITICAL FIX: Use functional state update to avoid stale closure
+            // After 2-3 minutes of waiting, the `questions` variable in closure is stale
+            setQuestions(prev => [...prev, ...newQuestions]);
             totalExtracted += newQuestions.length;
+            console.log(`✅ Added ${newQuestions.length} questions to form (total so far: ${totalExtracted})`);
+            toast.success(`Image ${i + 1}: ${newQuestions.length} questions extracted!`);
           } else if (data.success && data.question) {
             // Fallback: single question
             const newQ: QuestionForm = {
@@ -761,27 +769,30 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               section: data.question.section || 'General',
               negativeMark: data.question.negativeMark || '0',
             };
-            allNewQuestions.push(newQ);
+            // CRITICAL FIX: functional state update
+            setQuestions(prev => [...prev, newQ]);
             totalExtracted += 1;
+            console.log(`✅ Added 1 question to form`);
+            toast.success(`Image ${i + 1}: 1 question extracted!`);
           } else {
             hasError = true;
+            console.error(`❌ Extraction failed for image ${i + 1}:`, data.error);
             toast.error(`Image ${i + 1}: ${data.error || 'Failed to extract'}`);
           }
         } catch (err: any) {
           clearTimeout(timeoutId);
           hasError = true;
+          console.error(`❌ Fetch error for image ${i + 1}:`, err);
           if (err?.name === 'AbortError') {
-            toast.error(`Image ${i + 1}: Timed out (3 min)`);
+            toast.error(`Image ${i + 1}: Timed out (5 min). Try a smaller image.`);
           } else {
-            toast.error(`Image ${i + 1}: Failed to extract`);
+            toast.error(`Image ${i + 1}: ${err?.message || 'Failed to extract'}`);
           }
         }
       }
 
-      // Add all extracted questions at once
-      if (allNewQuestions.length > 0) {
-        setQuestions([...questions, ...allNewQuestions]);
-        toast.success(`✅ ${totalExtracted} questions extracted from ${fileList.length} image${fileList.length > 1 ? 's' : ''}!`);
+      if (totalExtracted > 0) {
+        toast.success(`🎉 Total: ${totalExtracted} questions extracted from ${fileList.length} image${fileList.length > 1 ? 's' : ''}!`);
       } else if (!hasError) {
         toast.error('No questions could be extracted from the image(s).');
       }

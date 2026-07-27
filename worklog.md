@@ -249,3 +249,27 @@ Stage Summary:
 - API now detects and rejects non-question images (screenshots, placeholders)
 - Clear error message guides user to upload actual question paper
 - Real question paper still works: 34/34 questions extracted
+
+---
+Task ID: 12
+Agent: Main Agent
+Task: Fix "progress complete but no questions added" bug
+
+Work Log:
+- Root cause: STALE CLOSURE BUG in handleImageExtract
+- When VLM took 2-3 minutes to respond, the `questions` variable captured in the closure became stale
+- `setQuestions([...questions, ...newQuestions])` was using the OLD questions array, not the latest state
+- FIX: Changed to functional state update: `setQuestions(prev => [...prev, ...newQuestions])`
+- Also changed to add questions immediately after EACH image extraction (not wait until all done)
+- Increased client-side timeout from 3 min to 5 min (VLM can take 2-3 min for large images)
+- Added console.log statements for debugging: upload, response status, extraction result, questions added
+- Added per-image toast: "Image 1: 34 questions extracted!" immediately after each image
+- Browser verified: uploaded 34-question image → 98 seconds → all 34 questions added → "Save 34 Questions" button
+- Lint clean
+
+Stage Summary:
+- Stale closure bug FIXED: questions now properly added to form after extraction
+- Functional state update ensures latest state is always used
+- Per-image immediate feedback (toast shows right after each image)
+- 5-minute timeout prevents premature abort
+- Verified: 34/34 questions successfully added and visible in form
