@@ -697,8 +697,10 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   }
 
   async function handleImageExtract(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
     setExtractingImage(true);
     setExtractElapsed(0);
 
@@ -709,59 +711,79 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     }, 1000);
 
     try {
-      const formData = new FormData();
-      formData.append('image', file);
+      const allNewQuestions: QuestionForm[] = [];
+      let totalExtracted = 0;
+      let hasError = false;
 
-      // Use AbortController with 3-minute timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 180000);
+      // Process each image file sequentially
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        const formData = new FormData();
+        formData.append('image', file);
 
-      const res = await fetch('/api/admin/extract-question', {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
+        // Use AbortController with 3-minute timeout per file
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
 
-      const data = await res.json();
-      if (data.success && data.questions && data.questions.length > 0) {
-        // Handle multiple questions from image
-        const newQuestions: QuestionForm[] = data.questions.map((q: any) => ({
-          question: q.question || '',
-          optionA: q.optionA || '',
-          optionB: q.optionB || '',
-          optionC: q.optionC || '',
-          optionD: q.optionD || '',
-          correctOption: q.correctOption || 'A',
-          explanation: q.explanation || '',
-          section: q.section || 'General',
-          negativeMark: q.negativeMark || '0',
-        }));
-        setQuestions([...questions, ...newQuestions]);
-        toast.success(`✅ ${data.questions.length} questions extracted from image!`);
-      } else if (data.success && data.question) {
-        // Fallback: single question
-        const newQ: QuestionForm = {
-          question: data.question.question || '',
-          optionA: data.question.optionA || '',
-          optionB: data.question.optionB || '',
-          optionC: data.question.optionC || '',
-          optionD: data.question.optionD || '',
-          correctOption: data.question.correctOption || 'A',
-          explanation: data.question.explanation || '',
-          section: data.question.section || 'General',
-          negativeMark: data.question.negativeMark || '0',
-        };
-        setQuestions([...questions, newQ]);
-        toast.success('1 question extracted from image!');
-      } else {
-        toast.error(data.error || 'Failed to extract questions from image');
+        try {
+          const res = await fetch('/api/admin/extract-question', {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+
+          const data = await res.json();
+          if (data.success && data.questions && data.questions.length > 0) {
+            const newQuestions: QuestionForm[] = data.questions.map((q: any) => ({
+              question: q.question || '',
+              optionA: q.optionA || '',
+              optionB: q.optionB || '',
+              optionC: q.optionC || '',
+              optionD: q.optionD || '',
+              correctOption: q.correctOption || 'A',
+              explanation: q.explanation || '',
+              section: q.section || 'General',
+              negativeMark: q.negativeMark || '0',
+            }));
+            allNewQuestions.push(...newQuestions);
+            totalExtracted += newQuestions.length;
+          } else if (data.success && data.question) {
+            // Fallback: single question
+            const newQ: QuestionForm = {
+              question: data.question.question || '',
+              optionA: data.question.optionA || '',
+              optionB: data.question.optionB || '',
+              optionC: data.question.optionC || '',
+              optionD: data.question.optionD || '',
+              correctOption: data.question.correctOption || 'A',
+              explanation: data.question.explanation || '',
+              section: data.question.section || 'General',
+              negativeMark: data.question.negativeMark || '0',
+            };
+            allNewQuestions.push(newQ);
+            totalExtracted += 1;
+          } else {
+            hasError = true;
+            toast.error(`Image ${i + 1}: ${data.error || 'Failed to extract'}`);
+          }
+        } catch (err: any) {
+          clearTimeout(timeoutId);
+          hasError = true;
+          if (err?.name === 'AbortError') {
+            toast.error(`Image ${i + 1}: Timed out (3 min)`);
+          } else {
+            toast.error(`Image ${i + 1}: Failed to extract`);
+          }
+        }
       }
-    } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        toast.error('Request timed out (3 min). Try a smaller image or fewer questions.');
-      } else {
-        toast.error('Failed to extract questions. Please try again.');
+
+      // Add all extracted questions at once
+      if (allNewQuestions.length > 0) {
+        setQuestions([...questions, ...allNewQuestions]);
+        toast.success(`✅ ${totalExtracted} questions extracted from ${fileList.length} image${fileList.length > 1 ? 's' : ''}!`);
+      } else if (!hasError) {
+        toast.error('No questions could be extracted from the image(s).');
       }
     } finally {
       clearInterval(timerInterval);
@@ -916,6 +938,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
             type="file"
             ref={imageInputRef}
             accept="image/*"
+            multiple
             onChange={handleImageExtract}
             className="hidden"
           />
@@ -948,12 +971,26 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               ) : (
                 <Camera className="w-3.5 h-3.5" />
               )}
-              {extractingImage ? `Extracting... (${extractElapsed}s)` : '📸 Upload Image (All Ques)'}
+              {extractingImage ? `Extracting ALL Questions... (${extractElapsed}s)` : '📸 Upload Image (Auto Extract All)'}
             </Button>
             {extractingImage && (
-              <span className="text-xs text-amber-600 font-medium animate-pulse">
-                ⏳ VLM processing image — please wait (can take 30-60s for large images)
-              </span>
+              <div className="w-full mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-700 font-medium animate-pulse mb-2">
+                  ⏳ VLM processing image — please wait (can take 30-60 seconds for large images with many questions)
+                </p>
+                <div className="w-full bg-amber-200 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min((extractElapsed / 60) * 100, 95)}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-amber-600 mt-1">
+                  {extractElapsed < 30 ? 'Starting VLM analysis...' :
+                   extractElapsed < 60 ? 'Reading questions from image...' :
+                   extractElapsed < 90 ? 'Almost there, parsing questions...' :
+                   'Finalizing extraction...'}
+                </p>
+              </div>
             )}
             <Button
               variant="outline"

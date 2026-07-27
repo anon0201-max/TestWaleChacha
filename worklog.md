@@ -209,3 +209,23 @@ Stage Summary:
 - Progress timer shows elapsed seconds so user knows it's working (not stuck)
 - maxDuration=300 prevents Next.js from timing out the VLM request
 - "Test Created Successfully!" confirmation after saving all extracted questions
+
+---
+Task ID: 10
+Agent: Main Agent
+Task: Confirm auto-extract all questions from image + add multi-image upload
+
+Work Log:
+- Verified existing API already extracts ALL questions from single image (34/34 from test image)
+- Added `multiple` attribute to file input — now user can select multiple images at once (for multi-page tests)
+- Updated handleImageExtract to process multiple files sequentially and combine all questions
+- Enhanced progress UI: now shows full progress bar (amber gradient filling as time passes) + status text ("Starting VLM analysis..." → "Reading questions..." → "Almost there..." → "Finalizing...")
+- Button label changed to "📸 Upload Image (Auto Extract All)" for clarity
+- Browser verified end-to-end: uploaded 34-question image → "Extracting ALL Questions... (11s)" → progress bar filled → 49 seconds total → "Save 34 Questions" button appeared → all 34 questions in form
+- Lint clean, no errors
+
+Stage Summary:
+- Image upload auto-extracts ALL questions from image (verified: 34/34)
+- Multi-image upload now supported (select multiple page images at once)
+- Progress bar + status text shows live progress so user knows it's working
+- Single image with 34 questions takes ~45-50 seconds to extract
