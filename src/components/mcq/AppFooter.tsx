@@ -173,17 +173,17 @@ export function AppFooter() {
 
           {/* Contact & Stats Bar */}
           <div className="border-t border-gray-800 pt-6 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Mail className="w-4 h-4 text-emerald-500" />
-                <span>support@testwalechacha.in</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
+              <div className="flex items-center gap-2 text-sm text-gray-400 justify-start">
+                <Mail className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span className="break-all">support@testwalechacha.in</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400 justify-center">
-                <Phone className="w-4 h-4 text-emerald-500" />
+              <div className="flex items-center gap-2 text-sm text-gray-400 justify-start sm:justify-center">
+                <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>+91 8340197418</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-400 justify-start sm:justify-end">
-                <MapPin className="w-4 h-4 text-emerald-500" />
+                <MapPin className="w-4 h-4 text-emerald-500 shrink-0" />
                 <span>New Delhi, India</span>
               </div>
             </div>
