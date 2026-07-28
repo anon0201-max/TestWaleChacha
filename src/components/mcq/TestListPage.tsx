@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, handleSubscribeClick } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -71,7 +71,7 @@ export function TestListPage() {
     }
     // Subscription check for logged-in users
     if (!isSubscribed && freeTestsRemaining <= 0) {
-      useAppStore.getState().handleSubscribeClick();
+      handleSubscribeClick();
       return;
     }
     handleStartTest(test);

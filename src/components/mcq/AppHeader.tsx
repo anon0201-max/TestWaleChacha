@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, handleSubscribeClick } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Crown, Zap, LogIn, LogOut, UserCircle, History, Receipt, CheckCircle2, Menu, X } from 'lucide-react';
@@ -182,7 +182,7 @@ export function AppHeader() {
                             </div>
                           </div>
                           <button
-                            onClick={() => { setShowProfile(false); useAppStore.getState().handleSubscribeClick(); }}
+                            onClick={() => { setShowProfile(false); handleSubscribeClick(); }}
                             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all"
                           >
                             <Crown className="w-3.5 h-3.5" /> Subscribe Now — ₹100

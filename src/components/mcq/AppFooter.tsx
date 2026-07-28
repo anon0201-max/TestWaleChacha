@@ -1,11 +1,11 @@
 'use client';
 
 import { Heart, Crown, UserCircle, Shield, History, BookOpen, Zap, Trophy, Phone, Mail, MapPin, ArrowUp } from 'lucide-react';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, handleSubscribeClick } from '@/store/useAppStore';
 import { Logo } from './Logo';
 
 export function AppFooter() {
-  const { isSubscribed, isLoggedIn, handleSubscribeClick, setShowAuthModal, setView } = useAppStore();
+  const { isSubscribed, isLoggedIn, setShowAuthModal, setView } = useAppStore();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

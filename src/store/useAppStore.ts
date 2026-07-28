@@ -146,7 +146,7 @@ interface AppState {
   // Subscription
   showSubscriptionModal: boolean;
   setShowSubscriptionModal: (show: boolean) => void;
-  handleSubscribeClick: () => void;
+
 
   // Auth Modal
   showAuthModal: 'login' | 'signup' | null;
@@ -231,14 +231,7 @@ export const useAppStore = create<AppState>()(
 
       showSubscriptionModal: false,
       setShowSubscriptionModal: (show) => set({ showSubscriptionModal: show }),
-      handleSubscribeClick: () => {
-        const state = useAppStore.getState();
-        if (!state.isLoggedIn) {
-          set({ showAuthModal: 'login' });
-        } else {
-          set({ showSubscriptionModal: true });
-        }
-      },
+
 
       showAuthModal: null,
       setShowAuthModal: (show) => set({ showAuthModal: show }),
@@ -267,3 +260,13 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+// Helper: open subscription modal — but if user not logged in, open auth modal first
+export function handleSubscribeClick() {
+  const state = useAppStore.getState();
+  if (!state.isLoggedIn) {
+    useAppStore.getState().setShowAuthModal('login');
+  } else {
+    useAppStore.getState().setShowSubscriptionModal(true);
+  }
+}

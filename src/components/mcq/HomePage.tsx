@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, handleSubscribeClick } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import {
 const examTypes = ['SSC', 'UPSC', 'Banking', 'Railways', 'General'];
 
 export function HomePage() {
-  const { setView, categories, freeTestsRemaining, isSubscribed, isLoggedIn, handleSubscribeClick, setShowAuthModal } = useAppStore();
+  const { setView, categories, freeTestsRemaining, isSubscribed, isLoggedIn, setShowAuthModal } = useAppStore();
 
   return (
     <div className="space-y-8">
@@ -45,7 +45,7 @@ export function HomePage() {
                     <Crown className="w-5 h-5 mr-2 text-amber-400" /> PRO Member
                   </Button>
                 ) : (
-                  <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => setShowSubscriptionModal(true)}>
+                  <Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={handleSubscribeClick}>
                     <Lock className="w-4 h-4 mr-2" /> Unlock All — ₹100
                   </Button>
                 )
