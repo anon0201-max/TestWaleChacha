@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, Suspense, lazy } from 'react';
+import React, { useEffect, Suspense, lazy, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/store/useAppStore';
 import { HomePage } from '@/components/mcq/HomePage';
@@ -10,6 +10,7 @@ import { AuthModal } from '@/components/mcq/AuthModal';
 import { AppHeader } from '@/components/mcq/AppHeader';
 import { AppFooter } from '@/components/mcq/AppFooter';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
+import { Button } from '@/components/ui/button';
 
 // Lazy load heavy/conditionally-rendered components to reduce initial bundle
 const TestTakingPage = lazy(() => import('@/components/mcq/TestTakingPage').then(m => ({ default: m.TestTakingPage })));
@@ -22,6 +23,62 @@ function RouteFallback() {
   return (
     <div className="flex items-center justify-center py-20">
       <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    </div>
+  );
+}
+
+// Error boundary to catch client-side crashes gracefully
+class ErrorBoundary extends React.Component<{ children: React.ReactNode; fallback: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+function CrashFallback() {
+  const [showDetails, setShowDetails] = useState(false);
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
+        <div className="text-5xl mb-4">😵</div>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h1>
+        <p className="text-gray-500 mb-6">The app encountered an unexpected error. This is usually fixed by refreshing.</p>
+        <Button
+          onClick={() => {
+            // Clear corrupted localStorage and reload
+            try {
+              localStorage.removeItem('mcq-app-storage');
+            } catch { /* ignore */ }
+            window.location.reload();
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 h-11"
+        >
+          🔄 Refresh & Fix
+        </Button>
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          className="block mx-auto mt-4 text-xs text-gray-400 hover:text-gray-600"
+        >
+          {showDetails ? 'Hide' : 'Show'} technical details
+        </button>
+        {showDetails && (
+          <pre className="mt-3 text-left text-xs text-red-500 bg-red-50 p-3 rounded-lg overflow-auto max-h-40 font-mono">
+            {typeof window !== 'undefined' && (window as any).__NEXT_ERROR__?.toString() || 'No details available'}
+          </pre>
+        )}
+      </div>
     </div>
   );
 }
@@ -50,25 +107,36 @@ function AppContent() {
           fetch('/api/categories').then(r => r.ok ? r.json() : []),
           fetch('/api/tests').then(r => r.ok ? r.json() : []),
         ]);
-        setCategories(catRes);
-        setTests(testRes);
+        setCategories(Array.isArray(catRes) ? catRes : []);
+        setTests(Array.isArray(testRes) ? testRes : []);
 
         // If logged in, refresh user data from server
         if (user?.id) {
-          const meRes = await fetch(`/api/auth/me?studentId=${user.id}`);
-          if (meRes.ok) {
-            const meData = await meRes.json();
-            setUser(meData);
-          }
+          try {
+            const meRes = await fetch(`/api/auth/me?studentId=${user.id}`);
+            if (meRes.ok) {
+              const meData = await meRes.json();
+              setUser(meData);
+            }
+          } catch { /* silent */ }
         } else if (deviceId) {
           // Guest: fetch student by deviceId
-          const studentRes = await fetch(`/api/student?deviceId=${deviceId}`);
-          if (studentRes.ok) {
-            const studentData = await studentRes.json();
-            setStudentData({ freeTestsUsed: studentData.freeTestsUsed, isSubscribed: studentData.isSubscribed });
-          }
+          try {
+            const studentRes = await fetch(`/api/student?deviceId=${deviceId}`);
+            if (studentRes.ok) {
+              const studentData = await studentRes.json();
+              if (studentData && typeof studentData === 'object') {
+                setStudentData({
+                  freeTestsUsed: Number(studentData.freeTestsUsed) || 0,
+                  isSubscribed: Boolean(studentData.isSubscribed),
+                });
+              }
+            }
+          } catch { /* silent */ }
         }
-      } catch {}
+      } catch {
+        // Network error - don't crash the app
+      }
     }
     loadData();
   }, [deviceId, user?.id, setCategories, setTests, setStudentData, setUser]);
@@ -103,12 +171,14 @@ function AppContent() {
 
 export default function Page() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-      </div>
-    }>
-      <AppContent />
-    </Suspense>
+    <ErrorBoundary fallback={<CrashFallback />}>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+        </div>
+      }>
+        <AppContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

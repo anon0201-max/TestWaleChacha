@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
         phone: student.phone,
         deviceId: student.deviceId,
         freeTestsUsed: student.freeTestsUsed,
+        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
         isSubscribed: student.isSubscribed,
         subscriptionAt: student.subscriptionAt,
         createdAt: student.createdAt,

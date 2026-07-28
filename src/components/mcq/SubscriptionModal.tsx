@@ -47,13 +47,21 @@ export function SubscriptionModal() {
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: 100, deviceId: deviceId || undefined, studentId }),
+        body: JSON.stringify({ amount: 100, deviceId: deviceId || undefined, studentId: studentId || undefined }),
       });
+
+      if (!orderRes.ok) {
+        const errData = await orderRes.json().catch(() => ({}));
+        setStep('form');
+        alert(errData.error || errData.message || 'Failed to create payment order. Please try again.');
+        return;
+      }
+
       const orderData = await orderRes.json();
 
-      if (!orderRes.ok || !orderData.id) {
+      if (!orderData.id) {
         setStep('form');
-        alert('Failed to create payment order. Please try again.');
+        alert('Invalid payment response. Please try again.');
         return;
       }
 
@@ -117,6 +125,12 @@ export function SubscriptionModal() {
           },
         },
       };
+
+      if (typeof window.Razorpay === 'undefined') {
+        setStep('form');
+        alert('Payment gateway is loading. Please try again in a few seconds.');
+        return;
+      }
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', function (_response: any) {
