@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Test, Question, Category } from '@/models';
 
 export async function GET(
   request: NextRequest,
@@ -7,16 +8,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    await dbConnect();
 
-    const test = await db.test.findUnique({
-      where: { id },
-      include: {
-        category: true,
-        questions: {
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
+    const test = await Test.findOne({ id }).lean();
 
     if (!test) {
       return NextResponse.json(
@@ -25,7 +19,23 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(test);
+    // Fetch category separately
+    const category = test.categoryId
+      ? await Category.findOne({ id: test.categoryId }).lean()
+      : null;
+
+    // Fetch questions separately
+    const questions = await Question.find({ testId: id })
+      .sort({ order: 1 })
+      .lean();
+
+    const result = {
+      ...test,
+      category,
+      questions,
+    };
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error fetching test:', error);
     return NextResponse.json(

@@ -1,0 +1,112 @@
+[
+  {
+    "id": "cmrxcpdbr0001rwiy64xkb6jn",
+    "name": "SSC CGL",
+    "slug": "ssc-cgl",
+    "icon": "Shield",
+    "color": "#1e40af",
+    "examType": "SSC",
+    "createdAt": "2026-07-23T10:10:56.055Z",
+    "updatedAt": "2026-07-23T10:10:56.055Z"
+  },
+  {
+    "id": "cmrxcpdbr0003rwiypivqylm0",
+    "name": "UPSC",
+    "slug": "upsc",
+    "icon": "Landmark",
+    "color": "#7c3aed",
+    "examType": "UPSC",
+    "createdAt": "2026-07-23T10:10:56.056Z",
+    "updatedAt": "2026-07-23T10:10:56.056Z"
+  },
+  {
+    "id": "cmrxcpdbs0004rwiyh4kg5zua",
+    "name": "Banking & IBPS",
+    "slug": "banking-ibps",
+    "icon": "Building2",
+    "color": "#059669",
+    "examType": "Banking",
+    "createdAt": "2026-07-23T10:10:56.056Z",
+    "updatedAt": "2026-07-23T10:10:56.056Z"
+  },
+  {
+    "id": "cmrxcpdbs0005rwiyvnyq140w",
+    "name": "Railways RRB",
+    "slug": "railways-rrb",
+    "icon": "TrainFront",
+    "color": "#dc2626",
+    "examType": "Railways",
+    "createdAt": "2026-07-23T10:10:56.057Z",
+    "updatedAt": "2026-07-23T10:10:56.057Z"
+  },
+  {
+    "id": "cmrxcpdbr0002rwiyzelgnlha",
+    "name": "Mathematics",
+    "slug": "mathematics",
+    "icon": "Calculator",
+    "color": "#4f46e5",
+    "examType": "General",
+    "createdAt": "2026-07-23T10:10:56.055Z",
+    "updatedAt": "2026-07-23T10:10:56.055Z"
+  },
+  {
+    "id": "cmrxcpdbu0007rwiytf00kojc",
+    "name": "English",
+    "slug": "english",
+    "icon": "BookOpen",
+    "color": "#0d9488",
+    "examType": "General",
+    "createdAt": "2026-07-23T10:10:56.058Z",
+    "updatedAt": "2026-07-23T10:10:56.058Z"
+  },
+  {
+    "id": "cmrxcpdbu0008rwiyyt70kc6x",
+    "name": "Current Affairs",
+    "slug": "current-affairs",
+    "icon": "Newspaper",
+    "color": "#b91c1c",
+    "examType": "General",
+    "createdAt": "2026-07-23T10:10:56.059Z",
+    "updatedAt": "2026-07-23T10:10:56.059Z"
+  },
+  {
+    "id": "cmrxcpdbu0009rwiy45um3hsn",
+    "name": "Computer Science",
+    "slug": "computer-science",
+    "icon": "Monitor",
+    "color": "#c026d3",
+    "examType": "General",
+    "createdAt": "2026-07-23T10:10:56.059Z",
+    "updatedAt": "2026-07-23T10:10:56.059Z"
+  },
+  {
+    "id": "cmrxcpdbv000arwiyya4rzki8",
+    "name": "Science & Tech",
+    "slug": "science-tech",
+    "icon": "Beaker",
+    "color": "#0891b2",
+    "examType": "General",
+    "createdAt": "2026-07-23T10:10:56.059Z",
+    "updatedAt": "2026-07-23T10:10:56.059Z"
+  },
+  {
+    "id": "cmrxcpdbu0006rwiyve50egj1",
+    "name": "General Knowledge",
+    "slug": "general-knowledge",
+    "icon": "Globe",
+    "color": "#ea580c",
+    "examType": "General",
+    "createdAt": "2026-07-23T10:10:56.058Z",
+    "updatedAt": "2026-07-23T10:10:56.058Z"
+  },
+  {
+    "id": "cmrxenekx000crw1zkbosp8ej",
+    "name": "Bihar SI",
+    "slug": "bihar-si",
+    "icon": "BookOpen",
+    "color": "#1e40af",
+    "examType": "Defence",
+    "createdAt": "2026-07-23T11:05:23.601Z",
+    "updatedAt": "2026-07-23T11:05:23.601Z"
+  }
+]

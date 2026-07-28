@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Category, Test } from '@/models';
 
 export async function GET() {
   try {
-    const categories = await db.category.findMany({
-      orderBy: { name: 'asc' },
-    });
+    await dbConnect();
+
+    const categories = await Category.find({}).sort({ name: 1 }).lean();
 
     // Count tests per category
-    const testCounts = await db.test.groupBy({
-      by: ['categoryId'],
-      _count: { id: true },
-    });
+    const testCounts = await Test.aggregate([
+      { $group: { _id: '$categoryId', count: { $sum: 1 } } },
+    ]);
 
-    const countMap = new Map(testCounts.map((tc) => [tc.categoryId, tc._count.id]));
+    const countMap = new Map(testCounts.map((tc) => [tc._id, tc.count]));
 
     const result = categories.map((cat) => ({
       ...cat,

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Payment, Student } from '@/models';
 
 export async function GET(request: NextRequest) {
   try {
+    await dbConnect();
     const { searchParams } = new URL(request.url);
     const deviceId = searchParams.get('deviceId');
     const studentId = searchParams.get('studentId');
@@ -14,24 +16,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const whereClause: Record<string, string> = {};
-    if (studentId) {
-      whereClause.studentId = studentId;
-    } else if (deviceId) {
-      const student = await db.student.findUnique({ where: { deviceId } });
+    let resolvedStudentId = studentId;
+
+    if (!resolvedStudentId && deviceId) {
+      const student = await Student.findOne({ deviceId }).lean();
       if (!student) {
         return NextResponse.json(
           { success: false, message: 'Student not found' },
           { status: 404 }
         );
       }
-      whereClause.studentId = student.id;
+      resolvedStudentId = student.id;
     }
 
-    const payments = await db.payment.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' },
-    });
+    const payments = await Payment.find({ studentId: resolvedStudentId })
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({ success: true, data: payments });
   } catch (error) {

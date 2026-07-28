@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cmrxdfma20002rw1z2ihh06ia",
+    "studentId": "cmrxdfe260000rw1za3qyzbkq",
+    "razorpayOrderId": "order_sim_1784802680712",
+    "razorpayPaymentId": "pay_test",
+    "razorpaySignature": "sig_sim_1784802680712",
+    "amount": 10000,
+    "status": "completed",
+    "currency": "INR",
+    "createdAt": "2026-07-23T10:31:20.714Z",
+    "updatedAt": "2026-07-23T10:31:20.714Z"
+  },
+  {
+    "id": "cmrxegdb8000brw1zmucz5szd",
+    "studentId": "cmrxdhqs80005rw1z8d7s8oxs",
+    "razorpayOrderId": "order_20f438505e6c50c689017e5e19c356c5",
+    "razorpayPaymentId": "pay_1784804395354",
+    "razorpaySignature": "sig_1784804395354",
+    "amount": 10000,
+    "status": "completed",
+    "currency": "INR",
+    "createdAt": "2026-07-23T10:59:55.364Z",
+    "updatedAt": "2026-07-23T10:59:55.364Z"
+  }
+]

@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Category, Test } from '@/models';
 
 export async function GET() {
   try {
-    const categories = await db.category.findMany({
-      orderBy: { name: 'asc' },
-    });
+    await dbConnect();
+    const categories = await Category.find().sort({ name: 1 }).lean();
 
-    const testCounts = await db.test.groupBy({
-      by: ['categoryId'],
-      _count: { id: true },
-    });
+    // Count tests per category using aggregation
+    const testCounts = await Test.aggregate([
+      { $group: { _id: '$categoryId', count: { $sum: 1 } } },
+    ]);
+    const countMap = new Map(testCounts.map((tc: any) => [tc._id, tc.count]));
 
-    const countMap = new Map<string, number>();
-    for (const tc of testCounts) {
-      countMap.set(tc.categoryId, tc._count.id);
-    }
-
-    const result = categories.map((cat) => ({
+    const result = categories.map((cat: any) => ({
       ...cat,
       _count: { tests: countMap.get(cat.id) || 0 },
     }));
@@ -34,6 +30,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    await dbConnect();
     const body = await request.json();
     const { name, slug, icon, color, examType } = body;
 
@@ -44,9 +41,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existing = await db.category.findUnique({
-      where: { slug },
-    });
+    const existing = await Category.findOne({ slug }).lean();
 
     if (existing) {
       return NextResponse.json(
@@ -55,14 +50,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const category = await db.category.create({
-      data: {
-        name,
-        slug,
-        icon: icon || 'BookOpen',
-        color: color || '#1e40af',
-        examType: examType || 'General',
-      },
+    const category = await Category.create({
+      name,
+      slug,
+      icon: icon || 'BookOpen',
+      color: color || '#1e40af',
+      examType: examType || 'General',
     });
 
     return NextResponse.json({
@@ -79,8 +72,56 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    await dbConnect();
+    const body = await request.json();
+    const { id, name, slug, icon, color, examType } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: 'Category ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const update: Record<string, any> = {};
+    if (name !== undefined) update.name = name;
+    if (slug !== undefined) update.slug = slug;
+    if (icon !== undefined) update.icon = icon;
+    if (color !== undefined) update.color = color;
+    if (examType !== undefined) update.examType = examType;
+
+    const category = await Category.findOneAndUpdate(
+      { id },
+      update,
+      { new: true }
+    ).lean();
+
+    if (!category) {
+      return NextResponse.json(
+        { success: false, message: 'Category not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Category updated successfully',
+      category,
+    });
+  } catch (error) {
+    console.error('Update category error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
+    await dbConnect();
     const { id } = await request.json();
 
     if (!id) {
@@ -90,10 +131,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const category = await db.category.findUnique({
-      where: { id },
-      include: { _count: { select: { tests: true } } },
-    });
+    const category = await Category.findOne({ id }).lean();
 
     if (!category) {
       return NextResponse.json(
@@ -102,14 +140,15 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    if (category._count.tests > 0) {
+    const testCount = await Test.countDocuments({ categoryId: id });
+    if (testCount > 0) {
       return NextResponse.json(
         { success: false, message: 'Cannot delete category with existing tests' },
         { status: 400 }
       );
     }
 
-    await db.category.delete({ where: { id } });
+    await Category.findOneAndDelete({ id });
 
     return NextResponse.json({
       success: true,

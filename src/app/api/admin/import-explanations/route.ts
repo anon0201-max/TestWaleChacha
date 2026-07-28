@@ -1,8 +1,11 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Test, Question } from '@/models';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const testId = formData.get('testId') as string | null;
@@ -15,16 +18,13 @@ export async function POST(request: Request) {
     }
 
     // Verify test exists
-    const test = await db.test.findUnique({ where: { id: testId } });
+    const test = await Test.findOne({ id: testId }).lean();
     if (!test) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
     // Get all questions ordered by `order`
-    const questions = await db.question.findMany({
-      where: { testId },
-      orderBy: { order: 'asc' },
-    });
+    const questions = await Question.find({ testId }).sort({ order: 1 }).lean();
 
     if (questions.length === 0) {
       return NextResponse.json({ error: 'No questions found for this test' }, { status: 404 });
@@ -61,10 +61,10 @@ export async function POST(request: Request) {
       const orderNum = i + 1; // 1-based order
       const explanation = explanationMap.get(orderNum);
       if (explanation) {
-        await db.question.update({
-          where: { id: question.id },
-          data: { explanation },
-        });
+        await Question.findOneAndUpdate(
+          { id: question.id },
+          { $set: { explanation } }
+        );
         updated++;
       }
     }

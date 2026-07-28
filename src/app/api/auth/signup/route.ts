@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password + '_quizmaster_salt').digest('hex');
@@ -8,6 +9,8 @@ function hashPassword(password: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    await dbConnect();
+
     const { name, email, password, deviceId } = await request.json();
 
     if (!email || !password || !name) {
@@ -17,9 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingStudent = await db.student.findUnique({
-      where: { email },
-    });
+    const existingStudent = await Student.findOne({ email });
 
     if (existingStudent) {
       return NextResponse.json(
@@ -31,32 +32,29 @@ export async function POST(request: NextRequest) {
     let student;
 
     if (deviceId) {
-      const guestStudent = await db.student.findUnique({
-        where: { deviceId },
-      });
+      const guestStudent = await Student.findOne({ deviceId });
 
       if (guestStudent) {
         const hashedPassword = hashPassword(password);
-        student = await db.student.update({
-          where: { id: guestStudent.id },
-          data: {
+        student = await Student.findOneAndUpdate(
+          { id: guestStudent.id },
+          {
             name,
             email,
             passwordHash: hashedPassword,
           },
-        });
+          { new: true }
+        );
       }
     }
 
     if (!student) {
       const hashedPassword = hashPassword(password);
-      student = await db.student.create({
-        data: {
-          name,
-          email,
-          passwordHash: hashedPassword,
-          deviceId: deviceId || null,
-        },
+      student = await Student.create({
+        name,
+        email,
+        passwordHash: hashedPassword,
+        deviceId: deviceId || undefined,
       });
     }
 

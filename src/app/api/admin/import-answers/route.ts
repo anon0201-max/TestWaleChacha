@@ -1,8 +1,11 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Test, Question } from '@/models';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
+    await dbConnect();
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const testId = formData.get('testId') as string | null;
@@ -16,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify test exists
-    const test = await db.test.findUnique({ where: { id: testId } });
+    const test = await Test.findOne({ id: testId }).lean();
     if (!test) {
       return NextResponse.json({ success: false, error: 'Test not found' }, { status: 404 });
     }
@@ -27,10 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Parse answers: each line should be in format "Q<number> <answer>" or just "<answer>" per line
     let updated = 0;
-    const questions = await db.question.findMany({
-      where: { testId },
-      orderBy: { order: 'asc' },
-    });
+    const questions = await Question.find({ testId }).sort({ order: 1 }).lean();
 
     for (const line of lines) {
       // Try formats: "Q1 A", "Q1: A", "1. A", "1 A", "1,A", or just "A" per line
@@ -53,10 +53,10 @@ export async function POST(request: NextRequest) {
 
       // Apply the answer if valid
       if (questionIndex >= 0 && questionIndex < questions.length && ['A', 'B', 'C', 'D'].includes(answer)) {
-        await db.question.update({
-          where: { id: questions[questionIndex].id },
-          data: { correctOption: answer },
-        });
+        await Question.findOneAndUpdate(
+          { id: questions[questionIndex].id },
+          { $set: { correctOption: answer } }
+        );
         updated++;
       }
     }
@@ -67,10 +67,10 @@ export async function POST(request: NextRequest) {
       for (const line of lines) {
         const trimmed = line.trim().toUpperCase();
         if (['A', 'B', 'C', 'D'].includes(trimmed) && lineIdx < questions.length) {
-          await db.question.update({
-            where: { id: questions[lineIdx].id },
-            data: { correctOption: trimmed },
-          });
+          await Question.findOneAndUpdate(
+            { id: questions[lineIdx].id },
+            { $set: { correctOption: trimmed } }
+          );
           updated++;
           lineIdx++;
         }

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Test, Question, Category } from '@/models';
 
 export async function GET(request: NextRequest) {
   try {
+    await dbConnect();
+
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
     const difficulty = searchParams.get('difficulty');
@@ -19,26 +22,33 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { examName: { contains: search, mode: 'insensitive' } },
+      where.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { examName: { $regex: search, $options: 'i' } },
       ];
     }
 
-    const tests = await db.test.findMany({
-      where,
-      include: {
-        category: true,
-        _count: {
-          select: { questions: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const tests = await Test.find(where)
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const result = tests.map(({ _count, ...test }) => ({
+    // Count questions per test
+    const testIdStrings = tests.map((t) => t.id);
+    const questionCounts = await Question.aggregate([
+      { $match: { testId: { $in: testIdStrings } } },
+      { $group: { _id: '$testId', count: { $sum: 1 } } },
+    ]);
+    const qCountMap = new Map(questionCounts.map((qc) => [qc._id, qc.count]));
+
+    // Fetch categories separately
+    const categoryIds = [...new Set(tests.map((t) => t.categoryId))];
+    const categories = await Category.find({ id: { $in: categoryIds } }).lean();
+    const catMap = new Map(categories.map((c) => [c.id, c]));
+
+    const result = tests.map((test) => ({
       ...test,
-      _count: { questions: _count.questions },
+      category: catMap.get(test.categoryId) || null,
+      _count: { questions: qCountMap.get(test.id) || 0 },
     }));
 
     return NextResponse.json(result);

@@ -1,25 +1,26 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Payment, Student } from '@/models';
 import { NextResponse } from 'next/server';
 
 // GET /api/admin/payments — list all payments with student info
 export async function GET() {
   try {
-    const payments = await db.payment.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    });
+    await dbConnect();
+
+    const payments = await Payment.find()
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
 
     // Get all unique student IDs
-    const studentIds = [...new Set(payments.map(p => p.studentId))];
+    const studentIds = [...new Set(payments.map((p: any) => p.studentId))];
 
     // Batch fetch students
-    const students = await db.student.findMany({
-      where: { id: { in: studentIds } },
-    });
-    const studentMap = new Map(students.map(s => [s.id, s]));
+    const students = await Student.find({ id: { $in: studentIds } }).lean();
+    const studentMap = new Map(students.map((s: any) => [s.id, s]));
 
     return NextResponse.json(
-      payments.map(p => ({
+      payments.map((p: any) => ({
         id: p.id,
         studentId: p.studentId,
         studentName: studentMap.get(p.studentId)?.name || 'Unknown',

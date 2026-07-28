@@ -1,15 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from 'next/server';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 
 export async function GET(request: NextRequest) {
   try {
+    await dbConnect();
     const { searchParams } = new URL(request.url);
-    const deviceId = searchParams.get("deviceId");
-    const studentId = searchParams.get("studentId");
+    const deviceId = searchParams.get('deviceId');
+    const studentId = searchParams.get('studentId');
 
     if (!deviceId && !studentId) {
       return NextResponse.json(
-        { success: false, message: "deviceId or studentId is required" },
+        { success: false, message: 'deviceId or studentId is required' },
         { status: 400 }
       );
     }
@@ -17,22 +19,20 @@ export async function GET(request: NextRequest) {
     let student;
 
     if (studentId) {
-      student = await db.student.findUnique({ where: { id: studentId } });
+      student = await Student.findOne({ id: studentId }).lean();
     } else if (deviceId) {
-      student = await db.student.findUnique({ where: { deviceId: deviceId! } });
+      student = await Student.findOne({ deviceId }).lean();
     }
 
     if (!student) {
-      const newStudent = await db.student.create({
-        data: {
-          name: "Guest User",
-          deviceId: deviceId || undefined,
-        },
+      const newStudent = await Student.create({
+        name: 'Guest User',
+        deviceId: deviceId || undefined,
       });
       return NextResponse.json({
         success: true,
         data: {
-          ...newStudent,
+          ...newStudent.toObject(),
           freeTestsRemaining: Math.max(0, 5 - newStudent.freeTestsUsed),
         },
       });
@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching student:", error);
+    console.error('Error fetching student:', error);
     return NextResponse.json(
-      { success: false, message: "Failed to fetch student" },
+      { success: false, message: 'Failed to fetch student' },
       { status: 500 }
     );
   }
@@ -56,12 +56,13 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    await dbConnect();
     const body = await request.json();
     const { studentId, deviceId, name, email, phone } = body;
 
     if (!studentId && !deviceId) {
       return NextResponse.json(
-        { success: false, message: "studentId or deviceId is required" },
+        { success: false, message: 'studentId or deviceId is required' },
         { status: 400 }
       );
     }
@@ -73,10 +74,11 @@ export async function PUT(request: NextRequest) {
     if (email !== undefined) updateData.email = email;
     if (phone !== undefined) updateData.phone = phone;
 
-    const student = await db.student.update({
-      where: whereClause,
-      data: updateData,
-    });
+    const student = await Student.findOneAndUpdate(
+      whereClause,
+      { $set: updateData },
+      { new: true }
+    ).lean();
 
     return NextResponse.json({
       success: true,
@@ -86,9 +88,9 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error updating student:", error);
+    console.error('Error updating student:', error);
     return NextResponse.json(
-      { success: false, message: "Failed to update student" },
+      { success: false, message: 'Failed to update student' },
       { status: 500 }
     );
   }

@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { AdminPassword } from '@/models';
 
 async function ensureAdminExists() {
-  const count = await db.adminPassword.count();
+  const count = await AdminPassword.countDocuments();
   if (count === 0) {
-    await db.adminPassword.create({
-      data: {
-        username: 'admin',
-        password: 'admin123',
-      },
+    await AdminPassword.create({
+      username: 'admin',
+      password: 'admin123',
     });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await dbConnect();
     await ensureAdminExists();
 
     const { username, password } = await request.json();
@@ -26,9 +26,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const admin = await db.adminPassword.findUnique({
-      where: { username },
-    });
+    const admin = await AdminPassword.findOne({ username }).lean();
 
     if (!admin) {
       return NextResponse.json(

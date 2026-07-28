@@ -1,51 +1,50 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student, TestAttempt, Payment } from '@/models';
 import { NextResponse } from 'next/server';
 
 // GET /api/admin/students?filter=all|free|paid&search=xxx
 export async function GET(request: Request) {
   try {
+    await dbConnect();
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get('filter') || 'all';
     const search = searchParams.get('search') || '';
 
-    const where: Record<string, unknown> = {};
+    const matchFilter: Record<string, any> = {};
 
     if (filter === 'free') {
-      where.isSubscribed = false;
+      matchFilter.isSubscribed = false;
     } else if (filter === 'paid') {
-      where.isSubscribed = true;
+      matchFilter.isSubscribed = true;
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' as const } },
-        { email: { contains: search, mode: 'insensitive' as const } },
-        { phone: { contains: search, mode: 'insensitive' as const } },
+      matchFilter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
       ];
     }
 
     // Fetch students
-    const students = await db.student.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: 500,
-    });
+    const students = await Student.find(matchFilter)
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .lean();
 
-    // Get attempt counts per student
-    const attemptCounts = await db.testAttempt.groupBy({
-      by: ['studentId'],
-      _count: { id: true },
-    });
-    const attemptCountMap = new Map(attemptCounts.map((ac) => [ac.studentId, ac._count.id]));
+    // Get attempt counts per student using aggregation
+    const attemptCounts = await TestAttempt.aggregate([
+      { $group: { _id: '$studentId', count: { $sum: 1 } } },
+    ]);
+    const attemptCountMap = new Map(attemptCounts.map((ac: any) => [ac._id, ac.count]));
 
-    // Get payment counts and last payment per student
-    const payments = await db.payment.findMany({
-      where: { status: 'completed' },
-      orderBy: { createdAt: 'desc' },
-    });
+    // Get completed payment counts and last payment per student
+    const payments = await Payment.find({ status: 'completed' })
+      .sort({ createdAt: -1 })
+      .lean();
 
     const paymentCountsMap = new Map<string, number>();
-    const lastPaymentMap = new Map<string, typeof payments[0]>();
+    const lastPaymentMap = new Map<string, any>();
 
     for (const payment of payments) {
       const sid = payment.studentId;
@@ -57,13 +56,13 @@ export async function GET(request: Request) {
 
     // Get summary counts
     const [totalStudents, totalPaid, totalFree] = await Promise.all([
-      db.student.count(),
-      db.student.count({ where: { isSubscribed: true } }),
-      db.student.count({ where: { isSubscribed: false } }),
+      Student.countDocuments(),
+      Student.countDocuments({ isSubscribed: true }),
+      Student.countDocuments({ isSubscribed: false }),
     ]);
 
     return NextResponse.json({
-      students: students.map(s => ({
+      students: students.map((s: any) => ({
         id: s.id,
         name: s.name,
         email: s.email,
@@ -88,15 +87,16 @@ export async function GET(request: Request) {
 // DELETE /api/admin/students — delete a student
 export async function DELETE(request: Request) {
   try {
+    await dbConnect();
     const { id } = await request.json();
     if (!id) {
       return NextResponse.json({ error: 'Student ID required' }, { status: 400 });
     }
 
     // Delete related records first, then student
-    await db.testAttempt.deleteMany({ where: { studentId: id } });
-    await db.payment.deleteMany({ where: { studentId: id } });
-    await db.student.delete({ where: { id } });
+    await TestAttempt.deleteMany({ studentId: id });
+    await Payment.deleteMany({ studentId: id });
+    await Student.findOneAndDelete({ id });
 
     return NextResponse.json({ success: true });
   } catch (error) {

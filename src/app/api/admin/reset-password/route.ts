@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { AdminPassword } from '@/models';
 
 export async function POST(request: NextRequest) {
   try {
+    await dbConnect();
+
     const { currentPassword, newPassword } = await request.json();
 
     if (!currentPassword || !newPassword) {
@@ -12,7 +15,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const admin = await db.adminPassword.findFirst();
+    const admin = await AdminPassword.findOne().lean();
 
     if (!admin) {
       return NextResponse.json(
@@ -28,10 +31,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await db.adminPassword.update({
-      where: { id: admin.id },
-      data: { password: newPassword },
-    });
+    await AdminPassword.findOneAndUpdate(
+      { id: admin.id },
+      { password: newPassword }
+    );
 
     return NextResponse.json({
       success: true,

@@ -1,19 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Category, Test, Question, TestAttempt } from '@/models';
 
 export async function GET() {
   try {
-    const tests = await db.test.findMany({
-      include: {
-        category: true,
-        _count: {
-          select: { questions: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    await dbConnect();
+    const tests = await Test.find()
+      .sort({ createdAt: -1 })
+      .lean();
 
-    return NextResponse.json(tests);
+    // Get question counts per test
+    const questionCounts = await Question.aggregate([
+      { $group: { _id: '$testId', count: { $sum: 1 } } },
+    ]);
+    const countMap = new Map(questionCounts.map((qc: any) => [qc._id, qc.count]));
+
+    // Fetch categories in batch
+    const categoryIds = [...new Set(tests.map((t: any) => t.categoryId).filter(Boolean))];
+    const categories = categoryIds.length > 0 ? await Category.find({ id: { $in: categoryIds } }).lean() : [];
+    const catMap = new Map(categories.map((c: any) => [c.id, c]));
+
+    const result = tests.map((test: any) => ({
+      ...test,
+      category: catMap.get(test.categoryId) || null,
+      _count: { questions: countMap.get(test.id) || 0 },
+    }));
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Get tests error:', error);
     return NextResponse.json(
@@ -25,6 +38,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    await dbConnect();
     const body = await request.json();
     const { title, description, categoryId, difficulty, timeLimit, examName, isActive } = body;
 
@@ -35,9 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const category = await db.category.findUnique({
-      where: { id: categoryId },
-    });
+    const category = await Category.findOne({ id: categoryId }).lean();
 
     if (!category) {
       return NextResponse.json(
@@ -46,17 +58,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const test = await db.test.create({
-      data: {
-        title,
-        description: description || '',
-        categoryId,
-        difficulty: difficulty || 'medium',
-        timeLimit: timeLimit || 600,
-        totalQuestions: 0,
-        examName: examName || 'Practice Test',
-        isActive: isActive !== undefined ? isActive : true,
-      },
+    const test = await Test.create({
+      title,
+      description: description || '',
+      categoryId,
+      difficulty: difficulty || 'medium',
+      timeLimit: timeLimit || 600,
+      totalQuestions: 0,
+      examName: examName || 'Practice Test',
+      isActive: isActive !== undefined ? isActive : true,
     });
 
     return NextResponse.json({
@@ -75,6 +85,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    await dbConnect();
     const { id } = await request.json();
 
     if (!id) {
@@ -84,9 +95,9 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await db.question.deleteMany({ where: { testId: id } });
-    await db.testAttempt.deleteMany({ where: { testId: id } });
-    await db.test.delete({ where: { id } });
+    await Question.deleteMany({ testId: id });
+    await TestAttempt.deleteMany({ testId: id });
+    await Test.findOneAndDelete({ id });
 
     return NextResponse.json({
       success: true,

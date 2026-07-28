@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password + '_quizmaster_salt').digest('hex');
@@ -8,6 +9,8 @@ function hashPassword(password: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    await dbConnect();
+
     const { email, password, deviceId } = await request.json();
 
     if (!email || !password) {
@@ -17,9 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const student = await db.student.findUnique({
-      where: { email },
-    });
+    const student = await Student.findOne({ email });
 
     if (!student) {
       return NextResponse.json(
@@ -38,10 +39,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (deviceId && student.deviceId !== deviceId) {
-      await db.student.update({
-        where: { id: student.id },
-        data: { deviceId },
-      });
+      await Student.findOneAndUpdate({ id: student.id }, { deviceId });
+      student.deviceId = deviceId;
     }
 
     return NextResponse.json({

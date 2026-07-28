@@ -1,8 +1,10 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
     const body = await request.json();
     const { studentId, deviceId } = body;
 
@@ -12,9 +14,9 @@ export async function POST(request: Request) {
 
     // Find student
     const student = studentId
-      ? await db.student.findUnique({ where: { id: studentId } })
+      ? await Student.findOne({ id: studentId })
       : deviceId
-        ? await db.student.findUnique({ where: { deviceId } })
+        ? await Student.findOne({ deviceId })
         : null;
 
     if (!student) {
@@ -22,25 +24,26 @@ export async function POST(request: Request) {
     }
 
     // Activate subscription
-    const updated = await db.student.update({
-      where: { id: student.id },
-      data: {
+    const updated = await Student.findOneAndUpdate(
+      { id: student.id },
+      {
         isSubscribed: true,
         subscriptionAt: new Date(),
       },
-    });
+      { new: true },
+    );
 
     return NextResponse.json({
       success: true,
       isSubscribed: true,
       student: {
-        id: updated.id,
-        name: updated.name,
-        email: updated.email,
-        freeTestsUsed: updated.freeTestsUsed,
-        freeTestsRemaining: Math.max(0, 5 - updated.freeTestsUsed),
-        isSubscribed: updated.isSubscribed,
-        subscriptionAt: updated.subscriptionAt,
+        id: updated!.id,
+        name: updated!.name,
+        email: updated!.email,
+        freeTestsUsed: updated!.freeTestsUsed,
+        freeTestsRemaining: Math.max(0, 5 - updated!.freeTestsUsed),
+        isSubscribed: updated!.isSubscribed,
+        subscriptionAt: updated!.subscriptionAt,
       },
       message: 'Subscription activated successfully! Unlimited tests unlocked.',
     });

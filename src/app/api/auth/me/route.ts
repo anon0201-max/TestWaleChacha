@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 
 export async function GET(request: NextRequest) {
   try {
+    await dbConnect();
+
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get('studentId');
     const email = searchParams.get('email');
@@ -17,13 +20,9 @@ export async function GET(request: NextRequest) {
     let student;
 
     if (studentId) {
-      student = await db.student.findUnique({
-        where: { id: studentId },
-      });
+      student = await Student.findOne({ id: studentId });
     } else if (email) {
-      student = await db.student.findUnique({
-        where: { email: email! },
-      });
+      student = await Student.findOne({ email });
     }
 
     if (!student) {
