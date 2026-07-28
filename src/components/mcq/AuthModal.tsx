@@ -174,8 +174,8 @@ export function AuthModal() {
 
   const tabClass = (active: boolean) =>
     active
-      ? 'border-blue-600 text-blue-700 bg-blue-50/50 dark:text-blue-400 dark:bg-blue-950/50'
-      : 'border-transparent text-muted-foreground hover:text-foreground dark:hover:text-gray-300';
+      ? 'border-white text-white bg-white/10'
+      : 'border-transparent text-white/60 hover:text-white';
 
   return (
     <AnimatePresence>
@@ -191,11 +191,11 @@ export function AuthModal() {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 25 }}
-          className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+          className="rounded-2xl max-w-md w-full shadow-2xl overflow-hidden" style={{ backgroundColor: '#1C1C84' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="auth-modal-theme bg-gradient-to-br p-6 text-white relative">
+          <div className="bg-gradient-to-br from-[#2525A0] to-[#1C1C84] p-6 text-white relative">
             <button onClick={handleClose} className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/20 transition-colors">
               <X className="w-4 h-4" />
             </button>
@@ -205,7 +205,7 @@ export function AuthModal() {
             <h2 className="text-xl font-bold">
               {mode === 'login' ? 'Welcome Back!' : mode === 'forgot' ? 'Reset Password' : 'Create Account'}
             </h2>
-            <p className="text-blue-200 text-sm mt-1">
+            <p className="text-blue-200/80 text-sm mt-1">
               {mode === 'login'
                 ? 'Login to track your progress and unlock all tests'
                 : mode === 'forgot'
@@ -215,7 +215,7 @@ export function AuthModal() {
           </div>
 
           {/* Mode Tabs */}
-          <div className={`flex border-b ${mode === 'forgot' ? '' : ''}`}>
+          <div className="flex border-b border-white/10">
             <button onClick={() => switchMode('login')} className={'flex-1 py-3 text-sm font-medium transition-all border-b-2 ' + tabClass(mode === 'login')}>
               <LogIn className="w-4 h-4 inline mr-1.5" /> Login
             </button>
@@ -225,7 +225,7 @@ export function AuthModal() {
           </div>
 
           {/* Form */}
-          <div className="p-5 space-y-4">
+          <div className="p-5 space-y-4" style={{ backgroundColor: '#1A1A7A' }}>
             {error && (
               <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3">{error}</motion.div>
             )}
@@ -237,41 +237,41 @@ export function AuthModal() {
 
             {mode === 'signup' && (
               <div>
-                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Full Name</Label>
+                <Label className="text-xs font-medium text-blue-200/80 mb-1.5 block">Full Name</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Enter your name" value={name} onChange={(e) => setName(e.target.value)} className="pl-9 h-11" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300/70" />
+                  <Input placeholder="Enter your name" value={name} onChange={(e) => setName(e.target.value)} className="pl-9 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40" />
                 </div>
               </div>
             )}
 
             <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Email Address</Label>
+              <Label className="text-xs font-medium text-blue-200/80 mb-1.5 block">Email Address</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-9 h-11" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300/70" />
+                <Input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-9 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40" />
               </div>
             </div>
 
             {mode !== 'forgot' && (
             <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Password</Label>
+              <Label className="text-xs font-medium text-blue-200/80 mb-1.5 block">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300/70" />
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   placeholder={mode === 'login' ? 'Enter your password' : 'Min 6 characters'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-9 pr-10 h-11"
+                  className="pl-9 pr-10 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {mode === 'login' && (
                 <p className="text-right mt-1.5">
-                  <button onClick={() => switchMode('forgot')} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Forgot Password?</button>
+                  <button onClick={() => switchMode('forgot')} className="text-xs text-blue-300 hover:text-white font-medium">Forgot Password?</button>
                 </p>
               )}
             </div>
@@ -280,36 +280,36 @@ export function AuthModal() {
             {mode === 'forgot' && (
               <>
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
+                  <Label className="text-xs font-medium text-blue-200/80 mb-1.5 block">New Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300/70" />
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Min 6 characters"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="pl-9 pr-10 h-11"
+                      className="pl-9 pr-10 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
+                  <Label className="text-xs font-medium text-blue-200/80 mb-1.5 block">Confirm New Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300/70" />
                     <Input
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Confirm new password"
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      className="pl-9 h-11"
+                      className="pl-9 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40"
                       onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
                     />
                   </div>
                 </div>
-                <div className="bg-amber-50 rounded-xl p-3 flex items-start gap-2 text-xs text-amber-700">
+                <div className="bg-white/10 rounded-xl p-3 flex items-start gap-2 text-xs text-amber-200">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>Enter the email you registered with and set a new password. Your old password will be replaced.</span>
                 </div>
@@ -317,22 +317,22 @@ export function AuthModal() {
             )}
             {mode === 'signup' && (
               <div>
-                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Phone Number <span className="text-muted-foreground/60">(Optional)</span></Label>
+                <Label className="text-xs font-medium text-blue-200/80 mb-1.5 block">Phone Number <span className="text-blue-200/40">(Optional)</span></Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="+91 XXXXX XXXXX" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-9 h-11" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300/70" />
+                  <Input placeholder="+91 XXXXX XXXXX" value={phone} onChange={(e) => setPhone(e.target.value)} className="pl-9 h-11 bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-white/40" />
                 </div>
               </div>
             )}
 
             {mode === 'signup' && (
-              <div className="bg-blue-50 rounded-xl p-3 flex items-start gap-2 text-xs text-blue-700">
+              <div className="bg-white/10 rounded-xl p-3 flex items-start gap-2 text-xs text-blue-200">
                 <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>Get <strong>5 free mock tests</strong> on signup with detailed solutions and performance tracking</span>
               </div>
             )}
 
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold" onClick={mode === 'forgot' ? handleResetPassword : mode === 'login' ? handleLogin : handleSignup} disabled={loading || !email || (mode !== 'forgot' && !password) || (mode === 'forgot' && (!newPassword || !confirmNewPassword))}>
+            <Button className="w-full bg-white text-[#1C1C84] hover:bg-white/90 h-11 font-semibold" onClick={mode === 'forgot' ? handleResetPassword : mode === 'login' ? handleLogin : handleSignup} disabled={loading || !email || (mode !== 'forgot' && !password) || (mode === 'forgot' && (!newPassword || !confirmNewPassword))}>
               {loading ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{mode === 'forgot' ? 'Resetting...' : mode === 'login' ? 'Logging in...' : 'Creating account...'}</>
               ) : (
@@ -340,9 +340,9 @@ export function AuthModal() {
               )}
             </Button>
 
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-center text-xs text-white/60">
               {mode === 'forgot' ? 'Remember your password? ' : mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-              <button onClick={() => switchMode(mode === 'forgot' ? 'login' : mode === 'login' ? 'signup' : 'login')} className="text-blue-600 hover:text-blue-700 font-medium">
+              <button onClick={() => switchMode(mode === 'forgot' ? 'login' : mode === 'login' ? 'signup' : 'login')} className="text-blue-300 hover:text-white font-medium">
                 {mode === 'forgot' ? 'Login here' : mode === 'login' ? 'Sign up free' : 'Login here'}
               </button>
             </p>
