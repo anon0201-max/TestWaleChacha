@@ -364,3 +364,12 @@ html.dark .bg-gray-50 {
   border-color: oklch(0.269 0 0);
 }
 
+/* Hide scrollbar for horizontal scroll areas */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+

@@ -17,6 +17,7 @@ import {
   Save, Shield, FileText, Settings, Edit2, Eye, EyeOff, Copy, CheckCircle2,
   Crown, ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
   HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
+  Menu,
 } from 'lucide-react';
 
 // ==================== ADMIN LOGIN ====================
@@ -91,7 +92,7 @@ function AdminLogin() {
     <div className="min-h-[70vh] flex items-center justify-center px-4 pt-12">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
         <Card className="w-full max-w-md mx-auto shadow-xl border-0">
-          <CardContent className="p-6">
+          <CardContent className="p-5 sm:p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-2xl bg-blue-700 flex items-center justify-center mx-auto mb-4">
                 <Shield className="w-8 h-8 text-white" />
@@ -141,10 +142,10 @@ function AdminLogin() {
 
         {/* Admin Forgot Password Dialog */}
         <Dialog open={adminForgotOpen} onOpenChange={(open) => { if (!open) { setAdminForgotOpen(false); setForgotMsg(null); } }}>
-          <DialogContent className="max-w-sm">
+          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2"><Shield className="w-5 h-5 text-blue-600" />Reset Admin Password</DialogTitle>
-              <DialogDescription>Set a new password for admin login</DialogDescription>
+              <DialogTitle className="flex items-center gap-2 text-base"><Shield className="w-5 h-5 text-blue-600" />Reset Admin Password</DialogTitle>
+              <DialogDescription className="text-xs">Set a new password for admin login</DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
               {forgotMsg && (
@@ -225,74 +226,74 @@ export function AdminPanel() {
     <div className="min-h-[80vh] bg-gray-50">
       {/* Admin Header */}
       <div className="bg-white border-b sticky top-14 z-20">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setView('home')} className="h-9 w-9">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Button variant="ghost" size="icon" onClick={() => setView('home')} className="h-9 w-9 shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-blue-700" />
-              <div>
-                <h1 className="text-base font-bold text-gray-900">Admin Panel</h1>
-                <p className="text-[11px] text-muted-foreground -mt-0.5">Manage tests, questions & categories</p>
+            <div className="flex items-center gap-2 min-w-0">
+              <Shield className="w-5 h-5 text-blue-700 shrink-0" />
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-bold text-gray-900 truncate">Admin Panel</h1>
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground -mt-0.5 hidden sm:block">Manage tests, questions & categories</p>
               </div>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setAdminData({ isLoggedIn: false })} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-            <LogOut className="w-3.5 h-3.5 mr-1.5" /> Logout
+          <Button variant="outline" size="sm" onClick={() => setAdminData({ isLoggedIn: false })} className="text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0">
+            <LogOut className="w-3.5 h-3.5 sm:mr-1.5" />
+            <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
       </div>
 
       {/* Admin Content */}
-      <div className="max-w-7xl mx-auto px-4 py-5">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-5">
+        {/* Stats Cards — more compact on mobile */}
+        <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-5">
           {[
-            { icon: Users, label: 'Total Users', value: stats.totalStudents, color: 'bg-blue-50 text-blue-700', iconBg: 'bg-blue-100' },
-            { icon: BadgeCheck, label: 'Paid Users', value: stats.totalPaidStudents, color: 'bg-emerald-50 text-emerald-700', iconBg: 'bg-emerald-100' },
-            { icon: BadgeX, label: 'Free Users', value: stats.totalFreeStudents, color: 'bg-gray-50 text-gray-600', iconBg: 'bg-gray-100' },
+            { icon: Users, label: 'Users', value: stats.totalStudents, color: 'bg-blue-50 text-blue-700', iconBg: 'bg-blue-100' },
+            { icon: BadgeCheck, label: 'Paid', value: stats.totalPaidStudents, color: 'bg-emerald-50 text-emerald-700', iconBg: 'bg-emerald-100' },
+            { icon: BadgeX, label: 'Free', value: stats.totalFreeStudents, color: 'bg-gray-50 text-gray-600', iconBg: 'bg-gray-100' },
             { icon: FileText, label: 'Tests', value: stats.totalTests, color: 'bg-indigo-50 text-indigo-700', iconBg: 'bg-indigo-100' },
             { icon: HelpCircle, label: 'Questions', value: stats.totalQuestions, color: 'bg-amber-50 text-amber-700', iconBg: 'bg-amber-100' },
             { icon: CreditCard, label: 'Payments', value: stats.totalPayments, color: 'bg-purple-50 text-purple-700', iconBg: 'bg-purple-100' },
           ].map((item) => (
             <Card key={item.label} className="border-0 shadow-sm">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className={`p-2 rounded-xl ${item.iconBg}`}><item.icon className={`w-5 h-5 ${item.color.split(' ')[1]}`} /></div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{item.value}</p>
-                  <p className="text-[11px] text-muted-foreground">{item.label}</p>
+              <CardContent className="p-2 sm:p-3 lg:p-4 flex flex-col lg:flex-row items-center gap-1.5 lg:gap-3">
+                <div className={`p-1.5 sm:p-2 rounded-lg lg:rounded-xl ${item.iconBg}`}><item.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 ${item.color.split(' ')[1]}`} /></div>
+                <div className="text-center lg:text-left">
+                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">{item.value}</p>
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-tight">{item.label}</p>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Tabs */}
+        {/* Tabs — horizontally scrollable on mobile, icon-only on mobile */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-white border mb-5 h-auto p-1 w-full sm:w-auto">
-            <TabsTrigger value="dashboard" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-              <LayoutGrid className="w-3.5 h-3.5" /> Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-              <BookOpen className="w-3.5 h-3.5" /> Categories
-            </TabsTrigger>
-            <TabsTrigger value="tests" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-              <FileText className="w-3.5 h-3.5" /> Tests
-            </TabsTrigger>
-            <TabsTrigger value="create-test" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-              <Plus className="w-3.5 h-3.5" /> Create Test
-            </TabsTrigger>
-            <TabsTrigger value="users" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-              <Users className="w-3.5 h-3.5" /> Users
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-              <Wallet className="w-3.5 h-3.5" /> Payments
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="text-xs gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white">
-              <Settings className="w-3.5 h-3.5" /> Settings
-            </TabsTrigger>
-          </TabsList>
+          <div className="mb-4 sm:mb-5 -mx-3 sm:mx-0">
+            <TabsList className="bg-white border mb-0 h-auto p-1 w-full inline-flex overflow-x-auto no-scrollbar gap-0.5">
+              {[
+                { value: 'dashboard', icon: LayoutGrid, label: 'Dashboard' },
+                { value: 'categories', icon: BookOpen, label: 'Categories' },
+                { value: 'tests', icon: FileText, label: 'Tests' },
+                { value: 'create-test', icon: Plus, label: 'Create' },
+                { value: 'users', icon: Users, label: 'Users' },
+                { value: 'payments', icon: Wallet, label: 'Payments' },
+                { value: 'settings', icon: Settings, label: 'Settings' },
+              ].map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="text-xs gap-1 sm:gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white whitespace-nowrap flex-shrink-0 px-2 sm:px-3 py-2"
+                >
+                  <tab.icon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           <TabsContent value="dashboard">
             <AdminDashboardContent onNavigate={setActiveTab} />
@@ -326,11 +327,11 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
   const { tests, categories } = useAppStore();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3 sm:space-y-5">
       {/* Quick Stats */}
-      <div className="grid sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">Categories</span>
               <Badge variant="secondary" className="text-[10px]">{categories.length}</Badge>
@@ -346,7 +347,7 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
           </CardContent>
         </Card>
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">Active Tests</span>
               <Badge variant="secondary" className="text-[10px]">{tests.filter(t => t.isActive).length}</Badge>
@@ -354,7 +355,7 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
             <div className="space-y-1.5">
               {tests.slice(0, 4).map((t) => (
                 <div key={t.id} className="flex items-center justify-between text-xs">
-                  <span className="truncate max-w-[150px]">{t.title}</span>
+                  <span className="truncate max-w-[120px] sm:max-w-[150px]">{t.title}</span>
                   <span className="text-muted-foreground">{t.totalQuestions}Q</span>
                 </div>
               ))}
@@ -362,7 +363,7 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
           </CardContent>
         </Card>
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">Quick Actions</span>
             </div>
@@ -380,24 +381,24 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
 
       {/* Recent Tests */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-4">
+        <CardContent className="p-3 sm:p-4">
           <h3 className="text-sm font-semibold mb-3">All Tests</h3>
           <div className="space-y-2">
             {tests.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">No tests yet. Create your first test!</p>
             ) : (
               tests.map((test) => (
-                <div key={test.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">
+                <div key={test.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors gap-2">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
                       {test.category?.name?.charAt(0) || '?'}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{test.title}</p>
-                      <p className="text-[11px] text-muted-foreground">{test.category?.name} · {test.totalQuestions} questions · {test.difficulty}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{test.title}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{test.category?.name} · {test.totalQuestions}Q · {test.difficulty}</p>
                     </div>
                   </div>
-                  <Badge variant={test.isActive ? 'default' : 'secondary'} className="text-[10px]">
+                  <Badge variant={test.isActive ? 'default' : 'secondary'} className="text-[10px] shrink-0">
                     {test.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
@@ -442,10 +443,10 @@ function AdminCategoriesTab({ onRefresh }: { onRefresh: () => void }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Add Category */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-5">
+        <CardContent className="p-3 sm:p-5">
           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Plus className="w-4 h-4 text-blue-600" /> Add New Category</h3>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div className="sm:col-span-2">
@@ -476,26 +477,26 @@ function AdminCategoriesTab({ onRefresh }: { onRefresh: () => void }) {
 
       {/* Categories List */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-5">
+        <CardContent className="p-3 sm:p-5">
           <h3 className="text-sm font-semibold mb-3">All Categories ({categories.length})</h3>
           <div className="space-y-2">
             {categories.map((cat) => (
-              <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-10 rounded-full" style={{ backgroundColor: cat.color }} />
-                  <div>
-                    <p className="text-sm font-medium">{cat.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
+              <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-2 h-8 sm:h-10 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{cat.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <Badge variant="secondary" className="text-[10px]">{cat.examType}</Badge>
                       <span className="text-[10px] text-muted-foreground">{cat._count.tests} tests</span>
-                      <span className="text-[10px] text-muted-foreground">/{cat.slug}</span>
+                      <span className="text-[10px] text-muted-foreground hidden sm:inline">/{cat.slug}</span>
                     </div>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                   onClick={() => handleDelete(cat.id)}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -551,7 +552,6 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ questionId }),
     });
-    // Refetch
     const res = await fetch(`/api/tests/${testId}`);
     if (res.ok) {
       const data = await res.json();
@@ -562,41 +562,40 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">All Tests ({tests.length})</h3>
-        <Badge variant="secondary" className="text-[10px]">{tests.reduce((s, t) => s + t.totalQuestions, 0)} total questions</Badge>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Tests ({tests.length})</h3>
+        <Badge variant="secondary" className="text-[10px] shrink-0">{tests.reduce((s, t) => s + t.totalQuestions, 0)}Q</Badge>
       </div>
 
       {tests.length === 0 ? (
         <Card className="border-0 shadow-sm">
           <CardContent className="p-10 text-center">
             <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">No tests yet. Go to &quot;Create Test&quot; tab to add your first test.</p>
+            <p className="text-sm text-muted-foreground">No tests yet. Go to &quot;Create&quot; tab to add your first test.</p>
           </CardContent>
         </Card>
       ) : (
         tests.map((test) => (
           <Card key={test.id} className="border-0 shadow-sm overflow-hidden">
-            {/* Test Header */}
             <div
-              className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+              className="p-3 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors gap-2"
               onClick={() => fetchQuestions(test.id)}
             >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: test.category?.color || '#1e40af' }}>
                   {test.category?.name?.charAt(0) || 'T'}
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{test.title}</p>
-                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <Badge variant="secondary" className="text-[10px]">{test.category?.name}</Badge>
-                    <span className="text-[10px] text-muted-foreground">{test.totalQuestions} questions</span>
-                    <span className="text-[10px] text-muted-foreground">{test.difficulty}</span>
-                    <span className="text-[10px] text-muted-foreground">{Math.floor(test.timeLimit / 60)}min</span>
+                    <span className="text-[10px] text-muted-foreground">{test.totalQuestions}Q</span>
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">{test.difficulty}</span>
+                    <span className="text-[10px] text-muted-foreground">{Math.floor(test.timeLimit / 60)}m</span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0 ml-2">
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                 {loadingQ === test.id ? (
                   <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
                 ) : (
@@ -623,12 +622,10 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
             <AnimatePresence>
               {expandedTestId === test.id && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="border-t bg-gray-50 p-4 space-y-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-xs font-semibold text-muted-foreground">
-                        Questions ({(testQuestions[test.id] || []).length})
-                      </h4>
-                    </div>
+                  <div className="border-t bg-gray-50 p-3 sm:p-4 space-y-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground">
+                      Questions ({(testQuestions[test.id] || []).length})
+                    </h4>
                     {(testQuestions[test.id] || []).length === 0 ? (
                       <p className="text-xs text-muted-foreground text-center py-4">No questions in this test</p>
                     ) : (
@@ -638,9 +635,9 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-bold text-blue-700 shrink-0">Q{i + 1}.</span>
-                                <span className="text-gray-700">{String(q.question).substring(0, 100)}{String(q.question).length > 100 ? '...' : ''}</span>
+                                <span className="text-gray-700">{String(q.question).substring(0, 80)}{String(q.question).length > 80 ? '...' : ''}</span>
                               </div>
-                              <div className="grid grid-cols-2 gap-1 ml-5 text-muted-foreground">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5 ml-5 text-muted-foreground">
                                 <div className={String(q.correctOption) === 'A' ? 'text-green-700 font-medium' : ''}>
                                   A. {String(q.optionA)}
                                 </div>
@@ -658,7 +655,7 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                              className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                               onClick={() => handleDeleteQuestion(String(q.id), test.id)}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -728,13 +725,11 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   const [extractElapsed, setExtractElapsed] = useState(0);
   const [importingAnswers, setImportingAnswers] = useState(false);
   const [importingExplanations, setImportingExplanations] = useState(false);
-  // VISIBLE fill status banner — shows user exactly what's happening with the fill
   const [fillStatus, setFillStatus] = useState<{ msg: string; type: 'info' | 'success' | 'error' } | null>(null);
 
-  // Count dialog state — asks user "kitne questions hain?" BEFORE picking image
+  // Count dialog state
   const [showCountDialog, setShowCountDialog] = useState(false);
   const [questionCount, setQuestionCount] = useState('');
-  // Index from which to START filling extracted data into existing empty boxes
   const fillStartIndexRef = useRef<number>(0);
 
   // File input refs
@@ -742,13 +737,9 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   const answersInputRef = useRef<HTMLInputElement>(null);
   const explanationsInputRef = useRef<HTMLInputElement>(null);
 
-  // DEBUG: Log every time questions state changes (helps verify fill is working)
   useEffect(() => {
     const filledCount = questions.filter(q => q.question.trim() !== '').length;
     console.log(`📊 questions state changed — total: ${questions.length}, filled: ${filledCount}, empty: ${questions.length - filledCount}`);
-    if (questions.length > 0 && questions[0].question.trim()) {
-      console.log(`📊 Box[0] now contains: "${questions[0].question.substring(0, 50)}..."`);
-    }
   }, [questions]);
 
   function addQuestion() {
@@ -814,7 +805,6 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     setSavedCount(0);
   }
 
-  // ====== NEW FLOW: Ask count FIRST, create empty boxes, THEN extract & fill ======
   function openCountDialog() {
     if (extractingImage) return;
     setQuestionCount('');
@@ -827,202 +817,120 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
       toast.error('Please enter a valid number between 1 and 200');
       return;
     }
-
-    // 1) Remove ALL completely-empty questions (untouched default boxes)
-    //    so the count the user enters matches exactly what they see.
     setQuestions(prev => {
       let cleaned = prev.filter(q => {
         const isEmpty = !q.question.trim() && !q.optionA.trim() && !q.optionB.trim() && !q.optionC.trim() && !q.optionD.trim() && !q.explanation.trim();
         return !isEmpty;
       });
-      // 2) Record the fill start index (where extracted data should go)
       fillStartIndexRef.current = cleaned.length;
-      // 3) Add N new empty boxes INSTANTLY — user sees them right away
       const newBoxes: QuestionForm[] = Array.from({ length: n }, () => emptyQuestion());
       return [...cleaned, ...newBoxes];
     });
-
     setShowCountDialog(false);
     toast.success(`✅ ${n} empty question boxes created! Ab image select karein...`);
-
-    // 4) Now open the file picker
     setTimeout(() => {
       imageInputRef.current?.click();
     }, 100);
   }
 
-  // Fill existing empty boxes with extracted data — finds first empty box dynamically.
-  // Uses a DIRECT state replacement approach for maximum reliability.
   function fillQuestionsFromExtract(extracted: QuestionForm[]): number {
     if (!extracted || extracted.length === 0) {
-      console.warn('⚠️ fillQuestionsFromExtract: no questions to fill');
       setFillStatus({ msg: '⚠️ No questions received from VLM to fill.', type: 'error' });
       return 0;
     }
-    console.log(`🔧 fillQuestionsFromExtract: START — filling ${extracted.length} questions`);
-    console.log(`🔧 First extracted question:`, extracted[0]?.question?.substring(0, 60));
     setFillStatus({ msg: `🔧 Filling ${extracted.length} questions into boxes...`, type: 'info' });
-
     let filledCount = 0;
     setQuestions(prev => {
-      console.log(`🔧 setQuestions updater — prev count: ${prev.length}`);
       const next = [...prev];
-
-      // Find first empty box and fill sequentially from there
       let startIdx = -1;
       for (let i = 0; i < next.length; i++) {
-        if (!next[i].question.trim()) {
-          startIdx = i;
-          break;
-        }
+        if (!next[i].question.trim()) { startIdx = i; break; }
       }
-      console.log(`🔧 First empty box at index: ${startIdx}`);
-
       if (startIdx === -1) {
-        // No empty boxes — append all
-        console.log(`🔧 No empty boxes — appending ${extracted.length}`);
-        for (const ex of extracted) {
-          next.push(ex);
-          filledCount++;
-        }
+        for (const ex of extracted) { next.push(ex); filledCount++; }
       } else {
         for (let k = 0; k < extracted.length; k++) {
           const targetIdx = startIdx + k;
-          if (targetIdx < next.length) {
-            next[targetIdx] = { ...next[targetIdx], ...extracted[k] };
-          } else {
-            next.push(extracted[k]);
-          }
+          if (targetIdx < next.length) { next[targetIdx] = { ...next[targetIdx], ...extracted[k] }; }
+          else { next.push(extracted[k]); }
           filledCount++;
         }
-        console.log(`🔧 Filled boxes ${startIdx}–${startIdx + extracted.length - 1}`);
       }
-
-      console.log(`🔧 AFTER fill — total: ${next.length}, Box[0]:`, next[0]?.question?.substring(0, 60));
       return next;
     });
-
-    // Show success status (slight delay so it appears after state update)
     setTimeout(() => {
       setFillStatus({ msg: `✅ ${extracted.length} questions filled into boxes!`, type: 'success' });
-      // Auto-clear after 8 seconds
       setTimeout(() => setFillStatus(null), 8000);
     }, 100);
-
     return filledCount;
   }
 
   async function handleImageExtract(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     const fileList = Array.from(files);
     setExtractingImage(true);
     setExtractElapsed(0);
-
-    // Start a timer to show elapsed seconds
     const startTime = Date.now();
     const timerInterval = setInterval(() => {
       setExtractElapsed(Math.floor((Date.now() - startTime) / 1000));
     }, 1000);
-
     try {
       let totalExtracted = 0;
       let hasError = false;
-
-      // Process each image file sequentially
       for (let i = 0; i < fileList.length; i++) {
         const file = fileList[i];
         const formData = new FormData();
         formData.append('image', file);
-
-        // Use AbortController with 5-minute timeout per file (VLM can take 2-3 min for large images)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 300000);
-
         try {
-          console.log(`📤 Uploading image ${i + 1}/${fileList.length}: ${file.name}`);
           setFillStatus({ msg: `📤 Uploading image to VLM... (this can take 1-3 minutes)`, type: 'info' });
-          const res = await fetch('/api/admin/extract-question', {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal,
-          });
+          const res = await fetch('/api/admin/extract-question', { method: 'POST', body: formData, signal: controller.signal });
           clearTimeout(timeoutId);
-
-          console.log(`📡 Response status: ${res.status}`);
           if (!res.ok) {
             const errText = await res.text().catch(() => 'Unknown error');
-            console.error(`❌ HTTP ${res.status}:`, errText.substring(0, 200));
             setFillStatus({ msg: `❌ VLM error (HTTP ${res.status}): ${errText.substring(0, 100)}`, type: 'error' });
             toast.error(`Image ${i + 1}: VLM returned HTTP ${res.status}`);
             hasError = true;
             continue;
           }
           const data = await res.json();
-          console.log(`📋 Extraction result:`, { success: data.success, count: data.count, hasQuestions: !!data.questions, error: data.error });
-
           if (data.success && data.questions && data.questions.length > 0) {
-            console.log(`🎉 VLM returned ${data.questions.length} questions — mapping to QuestionForm...`);
             const newQuestions: QuestionForm[] = data.questions.map((q: any) => ({
-              question: q.question || '',
-              optionA: q.optionA || '',
-              optionB: q.optionB || '',
-              optionC: q.optionC || '',
-              optionD: q.optionD || '',
-              correctOption: q.correctOption || 'A',
-              explanation: q.explanation || '',
-              section: q.section || 'General',
-              negativeMark: q.negativeMark || '0',
+              question: q.question || '', optionA: q.optionA || '', optionB: q.optionB || '', optionC: q.optionC || '', optionD: q.optionD || '',
+              correctOption: q.correctOption || 'A', explanation: q.explanation || '', section: q.section || 'General', negativeMark: q.negativeMark || '0',
             }));
-            console.log(`🎉 Mapped ${newQuestions.length} questions. First:`, newQuestions[0]);
-
-            // FILL existing empty boxes with extracted data
-            const filled = fillQuestionsFromExtract(newQuestions);
+            fillQuestionsFromExtract(newQuestions);
             totalExtracted += newQuestions.length;
-            console.log(`✅ Fill complete — ${filled} boxes filled (total extracted so far: ${totalExtracted})`);
             toast.success(`Image ${i + 1}: ${newQuestions.length} questions extracted & filled!`);
           } else if (data.success && data.question) {
-            // Fallback: single question
             const newQ: QuestionForm = {
-              question: data.question.question || '',
-              optionA: data.question.optionA || '',
-              optionB: data.question.optionB || '',
-              optionC: data.question.optionC || '',
-              optionD: data.question.optionD || '',
-              correctOption: data.question.correctOption || 'A',
-              explanation: data.question.explanation || '',
-              section: data.question.section || 'General',
-              negativeMark: data.question.negativeMark || '0',
+              question: data.question.question || '', optionA: data.question.optionA || '', optionB: data.question.optionB || '', optionC: data.question.optionC || '', optionD: data.question.optionD || '',
+              correctOption: data.question.correctOption || 'A', explanation: data.question.explanation || '', section: data.question.section || 'General', negativeMark: data.question.negativeMark || '0',
             };
-            const filled = fillQuestionsFromExtract([newQ]);
+            fillQuestionsFromExtract([newQ]);
             totalExtracted += 1;
-            console.log(`✅ Fill complete — ${filled} boxes filled`);
             toast.success(`Image ${i + 1}: 1 question extracted & filled!`);
           } else {
             hasError = true;
-            console.error(`❌ Extraction failed for image ${i + 1}:`, data.error);
             setFillStatus({ msg: `❌ ${data.error || 'Failed to extract questions'}`, type: 'error' });
             toast.error(`Image ${i + 1}: ${data.error || 'Failed to extract'}`);
           }
         } catch (err: any) {
           clearTimeout(timeoutId);
           hasError = true;
-          console.error(`❌ Fetch error for image ${i + 1}:`, err);
           if (err?.name === 'AbortError') {
             setFillStatus({ msg: '❌ Timed out (5 min). Try a smaller image.', type: 'error' });
-            toast.error(`Image ${i + 1}: Timed out (5 min). Try a smaller image.`);
           } else {
             setFillStatus({ msg: `❌ ${err?.message || 'Failed to extract'}`, type: 'error' });
-            toast.error(`Image ${i + 1}: ${err?.message || 'Failed to extract'}`);
           }
         }
       }
-
       if (totalExtracted > 0) {
-        toast.success(`🎉 Total: ${totalExtracted} questions extracted from ${fileList.length} image${fileList.length > 1 ? 's' : ''} & filled into boxes!`);
+        toast.success(`🎉 Total: ${totalExtracted} questions extracted!`);
       } else if (!hasError) {
-        toast.error('No questions could be extracted from the image(s). Empty boxes remain for manual entry.');
+        toast.error('No questions could be extracted. Empty boxes remain for manual entry.');
       }
     } finally {
       clearInterval(timerInterval);
@@ -1040,22 +948,12 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('testId', createdTestId);
-      const res = await fetch('/api/admin/import-answers', {
-        method: 'POST',
-        body: formData,
-      });
+      const res = await fetch('/api/admin/import-answers', { method: 'POST', body: formData });
       const data = await res.json();
-      if (data.success) {
-        toast.success(`Updated ${data.updated} correct answers successfully!`);
-      } else {
-        toast.error(data.error || 'Failed to import answers');
-      }
-    } catch {
-      toast.error('Failed to import answers. Please try again.');
-    } finally {
-      setImportingAnswers(false);
-      e.target.value = '';
-    }
+      if (data.success) { toast.success(`Updated ${data.updated} correct answers successfully!`); }
+      else { toast.error(data.error || 'Failed to import answers'); }
+    } catch { toast.error('Failed to import answers.'); }
+    finally { setImportingAnswers(false); e.target.value = ''; }
   }
 
   async function handleImportExplanations(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1066,41 +964,31 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('testId', createdTestId);
-      const res = await fetch('/api/admin/import-explanations', {
-        method: 'POST',
-        body: formData,
-      });
+      const res = await fetch('/api/admin/import-explanations', { method: 'POST', body: formData });
       const data = await res.json();
-      if (data.success) {
-        toast.success(`Updated ${data.updated} explanations successfully!`);
-      } else {
-        toast.error(data.error || 'Failed to import explanations');
-      }
-    } catch {
-      toast.error('Failed to import explanations. Please try again.');
-    } finally {
-      setImportingExplanations(false);
-      e.target.value = '';
-    }
+      if (data.success) { toast.success(`Updated ${data.updated} explanations successfully!`); }
+      else { toast.error(data.error || 'Failed to import explanations'); }
+    } catch { toast.error('Failed to import explanations.'); }
+    finally { setImportingExplanations(false); e.target.value = ''; }
   }
 
   return (
-    <div className="space-y-5">
-      {/* Step Indicator */}
-      <div className="flex items-center gap-2 mb-2">
+    <div className="space-y-4 sm:space-y-5">
+      {/* Step Indicator — compact on mobile */}
+      <div className="flex items-center gap-1 sm:gap-2 mb-2 overflow-x-auto">
         {[
-          { n: 1, label: 'Test Details' },
-          { n: 2, label: 'Add Questions' },
+          { n: 1, label: 'Details' },
+          { n: 2, label: 'Questions' },
           { n: 3, label: 'Done' },
         ].map((s) => (
-          <div key={s.n} className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+          <div key={s.n} className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold ${
               step > s.n ? 'bg-green-600 text-white' : step === s.n ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
             }`}>
-              {step > s.n ? <CheckCircle2 className="w-4 h-4" /> : s.n}
+              {step > s.n ? <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" /> : s.n}
             </div>
-            <span className={`text-xs font-medium ${step === s.n ? 'text-gray-900' : 'text-muted-foreground'}`}>{s.label}</span>
-            {s.n < 3 && <div className={`w-8 h-0.5 ${step > s.n ? 'bg-green-600' : 'bg-gray-200'}`} />}
+            <span className={`text-xs font-medium hidden sm:inline ${step === s.n ? 'text-gray-900' : 'text-muted-foreground'}`}>{s.label}</span>
+            {s.n < 3 && <div className={`w-4 sm:w-8 h-0.5 ${step > s.n ? 'bg-green-600' : 'bg-gray-200'}`} />}
           </div>
         ))}
       </div>
@@ -1109,19 +997,19 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
       {step === 1 && (
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
           <Card className="border-0 shadow-sm">
-            <CardContent className="p-5 space-y-4">
+            <CardContent className="p-4 sm:p-5 space-y-4">
               <div>
-                <h3 className="text-base font-bold flex items-center gap-2 mb-1"><FileText className="w-5 h-5 text-blue-600" /> Test Information</h3>
+                <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 mb-1"><FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /> Test Information</h3>
                 <p className="text-xs text-muted-foreground">Fill in the basic details for your mock test</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="sm:col-span-2">
                   <Label className="text-xs font-medium">Test Title *</Label>
                   <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., SSC CGL 2024 - General Awareness" className="h-11" />
                 </div>
                 <div className="sm:col-span-2">
                   <Label className="text-xs font-medium">Description</Label>
-                  <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Brief description of this test..." className="min-h-[80px] resize-none" />
+                  <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Brief description..." className="min-h-[70px] sm:min-h-[80px] resize-none" />
                 </div>
                 <div>
                   <Label className="text-xs font-medium">Category *</Label>
@@ -1141,14 +1029,14 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
                   </select>
                 </div>
                 <div>
-                  <Label className="text-xs font-medium">Time Limit (seconds)</Label>
+                  <Label className="text-xs font-medium">Time Limit (sec)</Label>
                   <Input type="number" value={time} onChange={(e) => setTime(e.target.value)} className="h-11" />
-                  <p className="text-[10px] text-muted-foreground mt-1">600 seconds = 10 minutes</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">600s = 10min</p>
                 </div>
               </div>
               <div className="flex justify-end pt-2">
                 <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={createTest} disabled={!title || !catId}>
-                  Next: Add Questions <ChevronRight className="w-4 h-4 ml-2" />
+                  Next <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
                 </Button>
               </div>
             </CardContent>
@@ -1158,48 +1046,29 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
 
       {/* Step 2: Add Questions */}
       {step === 2 && (
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3 sm:space-y-4">
           {/* Quick Stats Bar */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-xs">{questions.length} questions</Badge>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">{questions.length}Q</Badge>
               <Badge variant="outline" className="text-xs">
-                {questions.filter(q => q.question.trim() && q.optionA.trim()).length} complete
+                {questions.filter(q => q.question.trim() && q.optionA.trim()).length} done
               </Badge>
             </div>
             <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
-              <Plus className="w-3.5 h-3.5" /> Add Question
+              <Plus className="w-3.5 h-3.5" /> Add Q
             </Button>
           </div>
 
           {/* Hidden file inputs */}
-          <input
-            type="file"
-            ref={imageInputRef}
-            accept="image/*"
-            onChange={handleImageExtract}
-            className="hidden"
-          />
-          <input
-            type="file"
-            ref={answersInputRef}
-            accept=".txt,.csv"
-            onChange={handleImportAnswers}
-            className="hidden"
-          />
-          <input
-            type="file"
-            ref={explanationsInputRef}
-            accept=".txt"
-            onChange={handleImportExplanations}
-            className="hidden"
-          />
+          <input type="file" ref={imageInputRef} accept="image/*" onChange={handleImageExtract} className="hidden" />
+          <input type="file" ref={answersInputRef} accept=".txt,.csv" onChange={handleImportAnswers} className="hidden" />
+          <input type="file" ref={explanationsInputRef} accept=".txt" onChange={handleImportExplanations} className="hidden" />
 
           {/* Import Actions Bar */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* VISIBLE FILL STATUS BANNER — shows user exactly what's happening */}
             {fillStatus && (
-              <div className={`w-full p-3 rounded-lg border flex items-center gap-2 text-sm font-medium ${
+              <div className={`w-full p-2.5 sm:p-3 rounded-lg border flex items-center gap-2 text-xs sm:text-sm font-medium ${
                 fillStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
                 fillStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
                 'bg-blue-50 border-blue-200 text-blue-800'
@@ -1207,69 +1076,31 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
                 {fillStatus.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
                  fillStatus.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
                  <Loader2 className="w-4 h-4 shrink-0 animate-spin" />}
-                <span>{fillStatus.msg}</span>
+                <span className="break-all">{fillStatus.msg}</span>
               </div>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={openCountDialog}
-              disabled={extractingImage}
-              className="gap-1.5 text-xs"
-            >
-              {extractingImage ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Camera className="w-3.5 h-3.5" />
-              )}
-              {extractingImage ? `Extracting & Filling... (${extractElapsed}s)` : '📸 Upload Image (Auto Extract All)'}
+            <Button variant="outline" size="sm" onClick={openCountDialog} disabled={extractingImage} className="gap-1.5 text-xs">
+              {extractingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{extractingImage ? `Extracting... (${extractElapsed}s)` : '📸 Upload Image'}</span>
+              <span className="sm:hidden">{extractingImage ? `${extractElapsed}s` : '📸'}</span>
             </Button>
             {extractingImage && (
-              <div className="w-full mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-xs text-amber-700 font-medium animate-pulse mb-2">
-                  ⏳ VLM image se questions padh raha hai aur boxes me fill kar raha hai... (30-90 seconds)
+              <div className="w-full p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-xs text-amber-700 font-medium animate-pulse mb-1">
+                  ⏳ VLM image se questions padh raha hai...
                 </p>
                 <div className="w-full bg-amber-200 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.min((extractElapsed / 60) * 100, 95)}%` }}
-                  />
+                  <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min((extractElapsed / 60) * 100, 95)}%` }} />
                 </div>
-                <p className="text-[10px] text-amber-600 mt-1">
-                  {extractElapsed < 30 ? 'VLM image analyze kar raha hai...' :
-                   extractElapsed < 60 ? 'Questions padh rahe hain...' :
-                   extractElapsed < 90 ? 'Boxes me data fill ho raha hai...' :
-                   'Almost done, finalizing...'}
-                </p>
               </div>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => answersInputRef.current?.click()}
-              disabled={importingAnswers}
-              className="gap-1.5 text-xs"
-            >
-              {importingAnswers ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <FileUp className="w-3.5 h-3.5" />
-              )}
-              {importingAnswers ? 'Importing...' : 'Import Correct Answers'}
+            <Button variant="outline" size="sm" onClick={() => answersInputRef.current?.click()} disabled={importingAnswers} className="gap-1.5 text-xs">
+              {importingAnswers ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{importingAnswers ? 'Importing...' : 'Answers'}</span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => explanationsInputRef.current?.click()}
-              disabled={importingExplanations}
-              className="gap-1.5 text-xs"
-            >
-              {importingExplanations ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Upload className="w-3.5 h-3.5" />
-              )}
-              {importingExplanations ? 'Importing...' : 'Import Explanations'}
+            <Button variant="outline" size="sm" onClick={() => explanationsInputRef.current?.click()} disabled={importingExplanations} className="gap-1.5 text-xs">
+              {importingExplanations ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{importingExplanations ? 'Importing...' : 'Explanations'}</span>
             </Button>
           </div>
 
@@ -1277,20 +1108,15 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           <div className="space-y-3">
             {questions.map((q, i) => (
               <Card key={i} className={`border shadow-sm overflow-hidden ${q.question.trim() && q.optionA.trim() ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-amber-400'}`}>
-                <CardContent className="p-4 space-y-3">
+                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                   {/* Question Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
-                      <span className="text-xs text-muted-foreground">Section: </span>
-                      <Input
-                        value={q.section}
-                        onChange={(e) => updateQ(i, 'section', e.target.value)}
-                        placeholder="General"
-                        className="w-32 h-7 text-xs"
-                      />
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">Section:</span>
+                      <Input value={q.section} onChange={(e) => updateQ(i, 'section', e.target.value)} placeholder="General" className="w-24 sm:w-32 h-7 text-xs" />
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => duplicateQ(i)} className="p-1.5 rounded hover:bg-gray-100 text-muted-foreground hover:text-blue-600 transition-colors" title="Duplicate">
                         <Copy className="w-3.5 h-3.5" />
                       </button>
@@ -1303,18 +1129,13 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
                   </div>
 
                   {/* Question Text */}
-                  <Textarea
-                    value={q.question}
-                    onChange={(e) => updateQ(i, 'question', e.target.value)}
-                    placeholder="Type your question here..."
-                    className="min-h-[60px] resize-none text-sm"
-                  />
+                  <Textarea value={q.question} onChange={(e) => updateQ(i, 'question', e.target.value)} placeholder="Type your question here..." className="min-h-[50px] sm:min-h-[60px] resize-none text-sm" />
 
-                  {/* Options - 2x2 Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {/* Options - stacked on mobile, 2-col on sm+ */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
                     {(['A', 'B', 'C', 'D'] as const).map((opt) => (
                       <div key={opt} className="relative">
-                        <div className={`absolute left-0 top-0 w-6 h-6 rounded-l-md flex items-center justify-center text-xs font-bold text-white ${q.correctOption === opt ? 'bg-green-600' : 'bg-gray-300'}`}>
+                        <div className={`absolute left-0 top-0 w-6 h-6 sm:w-6 sm:h-6 rounded-l-md flex items-center justify-center text-xs font-bold text-white ${q.correctOption === opt ? 'bg-green-600' : 'bg-gray-300'}`}>
                           {opt}
                         </div>
                         <Input
@@ -1337,26 +1158,14 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
                   </div>
 
                   {/* Explanation & Negative Marking */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Explanation (optional)</Label>
-                      <Input
-                        value={q.explanation}
-                        onChange={(e) => updateQ(i, 'explanation', e.target.value)}
-                        placeholder="Why is this the correct answer?"
-                        className="h-9 text-xs"
-                      />
+                      <Label className="text-[10px] text-muted-foreground">Explanation</Label>
+                      <Input value={q.explanation} onChange={(e) => updateQ(i, 'explanation', e.target.value)} placeholder="Why is this correct?" className="h-9 text-xs" />
                     </div>
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Negative Marking</Label>
-                      <Input
-                        type="number"
-                        step="0.25"
-                        value={q.negativeMark}
-                        onChange={(e) => updateQ(i, 'negativeMark', e.target.value)}
-                        placeholder="0"
-                        className="h-9 text-xs"
-                      />
+                      <Label className="text-[10px] text-muted-foreground">Neg. Marking</Label>
+                      <Input type="number" step="0.25" value={q.negativeMark} onChange={(e) => updateQ(i, 'negativeMark', e.target.value)} placeholder="0" className="h-9 text-xs" />
                     </div>
                   </div>
                 </CardContent>
@@ -1364,8 +1173,8 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
             ))}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between gap-3 sticky bottom-4 bg-gray-50 py-3 px-2 rounded-xl border">
+          {/* Action Buttons — stacked on mobile */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 sticky bottom-2 bg-gray-50 py-2 px-1 rounded-xl border">
             <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5">
               <ArrowLeft className="w-4 h-4" /> Back
             </Button>
@@ -1377,7 +1186,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
                 {saving ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Saving...</>
                 ) : (
-                  <><Save className="w-4 h-4 mr-2" /> Save {questions.filter(q => q.question.trim() && q.optionA.trim()).length} Questions</>
+                  <><Save className="w-4 h-4 mr-1 sm:mr-2" /> Save {questions.filter(q => q.question.trim() && q.optionA.trim()).length}Q</>
                 )}
               </Button>
             </div>
@@ -1387,18 +1196,18 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
 
       {/* Step 3: Success */}
       {step === 3 && (
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
-          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 sm:py-10">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Test Created Successfully!</h2>
-          <p className="text-muted-foreground mb-1">
-            <strong>&quot;{title}&quot;</strong> has been created with <strong>{savedCount} questions</strong>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Test Created!</h2>
+          <p className="text-sm text-muted-foreground mb-1">
+            <strong>&quot;{title}&quot;</strong> with <strong>{savedCount} questions</strong>
           </p>
-          <p className="text-sm text-muted-foreground mb-6">Students can now see and attempt this test from the Mock Tests page.</p>
-          <div className="flex justify-center gap-3">
+          <p className="text-xs text-muted-foreground mb-6">Students can now attempt this test.</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 px-4">
             <Button variant="outline" onClick={resetAll}>
-              <Plus className="w-4 h-4 mr-2" /> Create Another Test
+              <Plus className="w-4 h-4 mr-2" /> Create Another
             </Button>
             <Button className="bg-blue-700 hover:bg-blue-800" onClick={() => useAppStore.getState().setView('tests')}>
               View All Tests
@@ -1407,58 +1216,37 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
         </motion.div>
       )}
 
-      {/* ===== Count Dialog: asks "kitne questions hain?" BEFORE picking image ===== */}
+      {/* Count Dialog */}
       <Dialog open={showCountDialog} onOpenChange={setShowCountDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
               <Camera className="w-5 h-5 text-blue-600" />
-              Image me kitne questions hain?
+              Kitne questions hain?
             </DialogTitle>
-            <DialogDescription>
-              Image ya PDF me jitne questions hain, wo number yahan likhein.
-              <br />
-              <strong className="text-gray-700">Example:</strong> agar 34 questions hain to <strong>34</strong> likhein.
-              <br /><br />
-              <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block">
-                ℹ️ Pehle {questionCount && parseInt(questionCount) > 0 ? parseInt(questionCount) : 'N'} empty boxes banenge, FIR image select hogi, FIR VLM data auto-fill karega.
-              </span>
+            <DialogDescription className="text-xs">
+              Image me jitne questions hain, wo number yahan likhein.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <Label htmlFor="qcount" className="text-xs font-medium mb-1.5 block">
-              Kitne questions add karne hain? (1 se 200)
-            </Label>
+            <Label htmlFor="qcount" className="text-xs font-medium mb-1.5 block">Kitne questions? (1-200)</Label>
             <Input
               id="qcount"
               type="number"
-              min={1}
-              max={200}
+              min={1} max={200}
               autoFocus
               value={questionCount}
               onChange={(e) => setQuestionCount(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  confirmCountAndPickImage();
-                }
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmCountAndPickImage(); } }}
               placeholder="e.g., 34"
               className="h-12 text-lg font-semibold text-center"
             />
-            {/* Quick presets */}
             <div className="flex flex-wrap gap-2 mt-3">
               {[10, 25, 34, 50, 75, 100].map(preset => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setQuestionCount(String(preset))}
+                <button key={preset} type="button" onClick={() => setQuestionCount(String(preset))}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
-                    questionCount === String(preset)
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
+                    questionCount === String(preset) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}>
                   {preset}
                 </button>
               ))}
@@ -1466,17 +1254,10 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
             <DialogClose asChild>
-              <Button variant="outline" className="gap-1.5">
-                <X className="w-4 h-4" /> Cancel
-              </Button>
+              <Button variant="outline" className="gap-1.5"><X className="w-4 h-4" /> Cancel</Button>
             </DialogClose>
-            <Button
-              className="bg-blue-700 hover:bg-blue-800 gap-1.5"
-              onClick={confirmCountAndPickImage}
-              disabled={!questionCount || parseInt(questionCount) < 1}
-            >
-              <Camera className="w-4 h-4" />
-              Create Boxes &amp; Select Image
+            <Button className="bg-blue-700 hover:bg-blue-800 gap-1.5" onClick={confirmCountAndPickImage} disabled={!questionCount || parseInt(questionCount) < 1}>
+              <Camera className="w-4 h-4" /> Select Image
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1510,7 +1291,6 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
   const [summary, setSummary] = useState({ totalStudents: 0, totalPaid: 0, totalFree: 0 });
-
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -1522,10 +1302,7 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
         const res = await fetch(`/api/admin/students?${params}`);
         if (res.ok && !cancelled) {
           const data = await res.json();
-          if (!cancelled) {
-            setStudents(data.students);
-            setSummary(data.summary);
-          }
+          if (!cancelled) { setStudents(data.students); setSummary(data.summary); }
         }
       } catch {}
       if (!cancelled) setLoading(false);
@@ -1560,35 +1337,32 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Filter Bar */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
               {filters.map(f => (
                 <button
                   key={f.key}
                   onClick={() => { setFilter(f.key); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    filter === f.key
-                      ? 'bg-blue-700 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+                    filter === f.key ? 'bg-blue-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
                   {f.label} ({f.count})
                 </button>
               ))}
             </div>
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search by name, email, phone..."
+                placeholder="Search name, email, phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && fetchStudents()}
                 className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
               />
             </div>
@@ -1596,83 +1370,47 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
         </CardContent>
       </Card>
 
-      {/* Users Table */}
-      <Card className="border-0 shadow-sm">
-        <CardContent className="p-0">
-          {/* Table Header */}
-          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-            <div className="col-span-3">User</div>
-            <div className="col-span-2 hidden sm:block">Email</div>
-            <div className="col-span-1 hidden md:block">Phone</div>
-            <div className="col-span-2 text-center">Status</div>
-            <div className="col-span-2 text-center hidden sm:block">Activity</div>
-            <div className="col-span-2 sm:col-span-2 text-right">Actions</div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <span className="ml-2 text-sm text-muted-foreground">Loading users...</span>
-            </div>
-          ) : students.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">No users found</div>
-          ) : (
-            <div className="max-h-[60vh] overflow-y-auto">
-              {students.map((student) => (
-                <div key={student.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
-                  {/* User Info */}
-                  <div className="col-span-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                        student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
-                      }`}>
-                        {student.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{student.name}</p>
-                        <p className="text-[10px] text-muted-foreground sm:hidden truncate">{student.email || student.phone || '—'}</p>
+      {/* Users List — Card layout on mobile, Table on desktop */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading users...</span>
+        </div>
+      ) : students.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground text-sm">No users found</div>
+      ) : (
+        <>
+          {/* Mobile: Card Layout */}
+          <div className="space-y-2 sm:hidden">
+            {students.map((student) => (
+              <Card key={student.id} className="border-0 shadow-sm overflow-hidden">
+                <div className="p-3 flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                      student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {student.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{student.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{student.email || student.phone || student.deviceId}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {student.isSubscribed ? (
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5 px-1.5 py-0">
+                            <Crown className="w-2.5 h-2.5" /> Paid
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                            Free ({student.freeTestsUsed}/5)
+                          </Badge>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">{student.totalAttempts} attempts</span>
                       </div>
                     </div>
                   </div>
-
-                  {/* Email */}
-                  <div className="col-span-2 hidden sm:block">
-                    <p className="text-xs truncate">{student.email || '—'}</p>
-                  </div>
-
-                  {/* Phone */}
-                  <div className="col-span-1 hidden md:block">
-                    <p className="text-xs truncate">{student.phone || '—'}</p>
-                  </div>
-
-                  {/* Status */}
-                  <div className="col-span-2 flex justify-center">
-                    {student.isSubscribed ? (
-                      <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5">
-                        <Crown className="w-2.5 h-2.5" /> Paid
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-[10px]">
-                        Free ({student.freeTestsUsed}/5)
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Activity */}
-                  <div className="col-span-2 hidden sm:flex flex-col items-center gap-0.5">
-                    <span className="text-xs font-medium">{student.totalAttempts} attempts</span>
-                    {student.lastPayment && (
-                      <span className="text-[10px] text-emerald-600">Paid ₹{student.lastPayment.amount / 100}</span>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="col-span-2 sm:col-span-2 flex justify-end gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     {student.subscriptionAt && (
-                      <button
-                        className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors"
-                        title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}
-                      >
+                      <button className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors" title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}>
                         <Receipt className="w-4 h-4" />
                       </button>
                     )}
@@ -1685,29 +1423,90 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop: Table Layout */}
+          <div className="hidden sm:block">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div className="col-span-3">User</div>
+                  <div className="col-span-2">Email</div>
+                  <div className="col-span-1">Phone</div>
+                  <div className="col-span-2 text-center">Status</div>
+                  <div className="col-span-2 text-center">Activity</div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto">
+                  {students.map((student) => (
+                    <div key={student.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center group">
+                      <div className="col-span-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                            student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            {student.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{student.name}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-span-2"><p className="text-xs truncate">{student.email || '—'}</p></div>
+                      <div className="col-span-1"><p className="text-xs truncate">{student.phone || '—'}</p></div>
+                      <div className="col-span-2 flex justify-center">
+                        {student.isSubscribed ? (
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5">
+                            <Crown className="w-2.5 h-2.5" /> Paid
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px]">Free ({student.freeTestsUsed}/5)</Badge>
+                        )}
+                      </div>
+                      <div className="col-span-2 flex flex-col items-center gap-0.5">
+                        <span className="text-xs font-medium">{student.totalAttempts} attempts</span>
+                        {student.lastPayment && <span className="text-[10px] text-emerald-600">Paid ₹{student.lastPayment.amount / 100}</span>}
+                      </div>
+                      <div className="col-span-2 flex justify-end gap-1">
+                        {student.subscriptionAt && (
+                          <button className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors" title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}>
+                            <Receipt className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+                          className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+                          title="Delete user"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="w-5 h-5" /> Delete User
             </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete <strong>{deleteTarget?.name}</strong>?
-              This will permanently delete all their test attempts, payments, and data. This cannot be undone.
+            <DialogDescription className="text-xs">
+              Delete <strong>{deleteTarget?.name}</strong> permanently? This cannot be undone.
             </DialogDescription>
           </DialogHeader>
           {deleteTarget && (
             <div className="bg-red-50 rounded-xl p-3 text-xs space-y-1">
               <p><span className="text-muted-foreground">Name:</span> <strong>{deleteTarget.name}</strong></p>
               <p><span className="text-muted-foreground">Email:</span> {deleteTarget.email || '—'}</p>
-              <p><span className="text-muted-foreground">Attempts:</span> {deleteTarget.totalAttempts}</p>
               <p><span className="text-muted-foreground">Status:</span> {deleteTarget.isSubscribed ? 'Paid' : 'Free'}</p>
             </div>
           )}
@@ -1715,7 +1514,7 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
             <DialogClose asChild><Button variant="outline" size="sm">Cancel</Button></DialogClose>
             <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleting}>
               {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
-              {deleting ? 'Deleting...' : 'Delete User'}
+              {deleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1739,7 +1538,7 @@ function AdminSettingsTab() {
       return;
     }
     if (newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: 'New password and confirm password do not match' });
+      setMessage({ type: 'error', text: 'Passwords do not match' });
       return;
     }
     if (newPassword.length < 4) {
@@ -1755,7 +1554,7 @@ function AdminSettingsTab() {
       });
       const data = await res.json();
       if (data.success) {
-        setMessage({ type: 'success', text: 'Password updated successfully! Use new password next time you login.' });
+        setMessage({ type: 'success', text: 'Password updated successfully!' });
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
@@ -1763,19 +1562,19 @@ function AdminSettingsTab() {
         setMessage({ type: 'error', text: data.error || 'Failed to reset password' });
       }
     } catch {
-      setMessage({ type: 'error', text: 'Server error. Please try again.' });
+      setMessage({ type: 'error', text: 'Server error.' });
     }
     setLoading(false);
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-5">
+        <CardContent className="p-4 sm:p-5">
           <h3 className="text-sm font-semibold mb-1 flex items-center gap-2">
             <Shield className="w-4 h-4 text-blue-600" /> Reset Admin Password
           </h3>
-          <p className="text-xs text-muted-foreground mb-4">Change your admin login password. Current credentials are required.</p>
+          <p className="text-xs text-muted-foreground mb-4">Change your admin login password.</p>
 
           {message && (
             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
@@ -1783,41 +1582,22 @@ function AdminSettingsTab() {
                 message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
               }`}>
               {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
-              {message.text}
+              <span className="break-all">{message.text}</span>
             </motion.div>
           )}
 
           <div className="space-y-3 max-w-md">
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Current Password</Label>
-              <Input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
-                className="h-11"
-              />
+              <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Enter current password" className="h-11" />
             </div>
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
-              <Input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password (min 4 chars)"
-                className="h-11"
-              />
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password (min 4 chars)" className="h-11" />
             </div>
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
-              <Input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-                className="h-11"
-                onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
-              />
+              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="h-11" onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()} />
             </div>
             <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={handleResetPassword} disabled={loading || !currentPassword || !newPassword || !confirmPassword}>
               {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : <><Save className="w-4 h-4 mr-2" />Update Password</>}
@@ -1861,73 +1641,100 @@ function AdminPaymentsTab() {
   const totalRevenue = payments.reduce((s, p) => s + (p.status === 'completed' ? p.amount : 0), 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Revenue Summary */}
       <Card className="border-0 shadow-sm">
-        <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <CardContent className="p-3 sm:p-4 flex flex-row sm:flex-col items-start sm:items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-emerald-100">
               <CreditCard className="w-5 h-5 text-emerald-700" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">₹{totalRevenue / 100}</p>
-              <p className="text-[11px] text-muted-foreground">Total Revenue ({payments.filter(p => p.status === 'completed').length} payments)</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">₹{totalRevenue / 100}</p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground">Revenue ({payments.filter(p => p.status === 'completed').length} paid)</p>
             </div>
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {payments.length} total transactions
+          <Badge variant="secondary" className="text-xs shrink-0">
+            {payments.length} total
           </Badge>
         </CardContent>
       </Card>
 
-      {/* Payments Table */}
-      <Card className="border-0 shadow-sm">
-        <CardContent className="p-0">
-          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-            <div className="col-span-3">Student</div>
-            <div className="col-span-2 text-center">Amount</div>
-            <div className="col-span-2 text-center">Status</div>
-            <div className="col-span-3 hidden sm:block">Order ID</div>
-            <div className="col-span-2 text-right">Date</div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <span className="ml-2 text-sm text-muted-foreground">Loading payments...</span>
-            </div>
-          ) : payments.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">No payments yet</div>
-          ) : (
-            <div className="max-h-[60vh] overflow-y-auto">
-              {payments.map((p) => (
-                <div key={p.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
-                  <div className="col-span-3">
+      {/* Payments */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading payments...</span>
+        </div>
+      ) : payments.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground text-sm">No payments yet</div>
+      ) : (
+        <>
+          {/* Mobile: Card Layout */}
+          <div className="space-y-2 sm:hidden">
+            {payments.map((p) => (
+              <Card key={p.id} className="border-0 shadow-sm">
+                <div className="p-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{p.studentName}</p>
                     <p className="text-[10px] text-muted-foreground truncate">{p.studentEmail || '—'}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className={`text-[10px] border-0 ${
+                        p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+                      }`}>
+                        {p.status === 'completed' ? '✓ Success' : p.status}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                  <div className="col-span-2 text-center">
-                    <p className="text-sm font-bold">₹{p.amount / 100}</p>
-                  </div>
-                  <div className="col-span-2 flex justify-center">
-                    <Badge className={`text-[10px] border-0 ${
-                      p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
-                    }`}>
-                      {p.status === 'completed' ? '✓ Success' : p.status}
-                    </Badge>
-                  </div>
-                  <div className="col-span-3 hidden sm:block">
-                    <p className="text-[10px] text-muted-foreground font-mono truncate">{p.razorpayOrderId || '—'}</p>
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
-                  </div>
+                  <p className="text-base font-bold text-gray-900 shrink-0">₹{p.amount / 100}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop: Table Layout */}
+          <div className="hidden sm:block">
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-0">
+                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <div className="col-span-3">Student</div>
+                  <div className="col-span-2 text-center">Amount</div>
+                  <div className="col-span-2 text-center">Status</div>
+                  <div className="col-span-3">Order ID</div>
+                  <div className="col-span-2 text-right">Date</div>
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto">
+                  {payments.map((p) => (
+                    <div key={p.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
+                      <div className="col-span-3">
+                        <p className="text-sm font-medium truncate">{p.studentName}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{p.studentEmail || '—'}</p>
+                      </div>
+                      <div className="col-span-2 text-center">
+                        <p className="text-sm font-bold">₹{p.amount / 100}</p>
+                      </div>
+                      <div className="col-span-2 flex justify-center">
+                        <Badge className={`text-[10px] border-0 ${
+                          p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+                        }`}>
+                          {p.status === 'completed' ? '✓ Success' : p.status}
+                        </Badge>
+                      </div>
+                      <div className="col-span-3">
+                        <p className="text-[10px] text-muted-foreground font-mono truncate">{p.razorpayOrderId || '—'}</p>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   );
 }
