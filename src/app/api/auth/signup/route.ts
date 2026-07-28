@@ -1,4 +1,5 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
@@ -8,6 +9,8 @@ function hashPassword(password: string): string {
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
+
     const { name, email, password, phone, deviceId } = await request.json();
 
     if (!name || !email || !password) {
@@ -19,39 +22,39 @@ export async function POST(request: Request) {
     }
 
     // Check if email already exists
-    const existingByEmail = await db.student.findFirst({ where: { email } });
+    const existingByEmail = await Student.findOne({ email }).lean();
     if (existingByEmail) {
       return NextResponse.json({ error: 'Email already registered. Please login.' }, { status: 409 });
     }
 
     // Check if deviceId already exists (guest student) — upgrade it
-    const existingByDevice = deviceId ? await db.student.findFirst({ where: { deviceId } }) : null;
+    const existingByDevice = deviceId ? await Student.findOne({ deviceId }).lean() : null;
 
     let student;
 
     if (existingByDevice) {
       // Upgrade existing guest student to registered account
-      student = await db.student.update({
-        where: { id: existingByDevice.id },
-        data: {
+      student = await Student.findOneAndUpdate(
+        { id: existingByDevice.id },
+        {
           name,
           email,
           passwordHash: hashPassword(password),
           phone: phone || null,
         },
-      });
+        { new: true }
+      ).lean();
     } else {
       // Create new student with auth
-      student = await db.student.create({
-        data: {
-          name,
-          email,
-          passwordHash: hashPassword(password),
-          phone: phone || null,
-          deviceId: deviceId || null,
-          freeTestsUsed: 0,
-        },
+      student = await Student.create({
+        name,
+        email,
+        passwordHash: hashPassword(password),
+        phone: phone || null,
+        deviceId: deviceId || null,
+        freeTestsUsed: 0,
       });
+      student = student.toObject();
     }
 
     return NextResponse.json({

@@ -1,4 +1,5 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
@@ -8,6 +9,8 @@ function hashPassword(password: string): string {
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
+
     const { email, password, deviceId } = await request.json();
 
     if (!email || !password) {
@@ -15,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     // Find student by email
-    const student = await db.student.findFirst({ where: { email } });
+    const student = await Student.findOne({ email }).lean();
 
     if (!student || !student.passwordHash) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
@@ -30,10 +33,10 @@ export async function POST(request: Request) {
     // Link deviceId if provided (for continuity)
     if (deviceId && !student.deviceId) {
       try {
-        await db.student.update({
-          where: { id: student.id },
-          data: { deviceId },
-        });
+        await Student.findOneAndUpdate(
+          { id: student.id },
+          { deviceId }
+        );
       } catch {
         // deviceId already taken by another student, ignore
       }

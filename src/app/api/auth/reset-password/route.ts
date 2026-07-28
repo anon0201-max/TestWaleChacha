@@ -1,4 +1,5 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
@@ -8,6 +9,8 @@ function hashPassword(password: string): string {
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
+
     const { email, newPassword } = await request.json();
 
     if (!email || !newPassword) {
@@ -19,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     // Find student by email
-    const student = await db.student.findFirst({ where: { email } });
+    const student = await Student.findOne({ email }).lean();
 
     if (!student) {
       return NextResponse.json({ error: 'No account found with this email' }, { status: 404 });
@@ -27,10 +30,10 @@ export async function POST(request: Request) {
 
     // Hash and update the new password
     const hashedPassword = hashPassword(newPassword);
-    await db.student.update({
-      where: { id: student.id },
-      data: { passwordHash: hashedPassword },
-    });
+    await Student.findOneAndUpdate(
+      { id: student.id },
+      { passwordHash: hashedPassword }
+    );
 
     return NextResponse.json({
       success: true,

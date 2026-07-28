@@ -1,8 +1,11 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Test, Question } from '@/models';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
+
     const body = await request.json();
     const { testId, questions } = body;
 
@@ -12,27 +15,25 @@ export async function POST(request: Request) {
 
     const created = await Promise.all(
       questions.map((q: Record<string, string>, i: number) =>
-        db.question.create({
-          data: {
-            testId,
-            question: q.question,
-            optionA: q.optionA,
-            optionB: q.optionB,
-            optionC: q.optionC,
-            optionD: q.optionD,
-            correctOption: q.correctOption,
-            explanation: q.explanation || null,
-            order: q.order ?? i,
-            section: q.section || 'General',
-            negativeMark: q.negativeMark ? parseFloat(q.negativeMark) : 0,
-          },
+        Question.create({
+          testId,
+          question: q.question,
+          optionA: q.optionA,
+          optionB: q.optionB,
+          optionC: q.optionC,
+          optionD: q.optionD,
+          correctOption: q.correctOption,
+          explanation: q.explanation || null,
+          order: q.order ?? i,
+          section: q.section || 'General',
+          negativeMark: q.negativeMark ? parseFloat(q.negativeMark) : 0,
         })
       )
     );
 
     // Update test totalQuestions count
-    const count = await db.question.count({ where: { testId } });
-    await db.test.update({ where: { id: testId }, data: { totalQuestions: count } });
+    const count = await Question.countDocuments({ testId });
+    await Test.findOneAndUpdate({ id: testId }, { totalQuestions: count });
 
     return NextResponse.json({ created: created.length, totalQuestions: count });
   } catch {
@@ -42,12 +43,14 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    await dbConnect();
+
     const { questionId } = await request.json();
-    const q = await db.question.findUnique({ where: { id: questionId } });
+    const q = await Question.findOne({ id: questionId }).lean();
     if (q) {
-      await db.question.delete({ where: { id: questionId } });
-      const count = await db.question.count({ where: { testId: q.testId } });
-      await db.test.update({ where: { id: q.testId }, data: { totalQuestions: count } });
+      await Question.findOneAndDelete({ id: questionId });
+      const count = await Question.countDocuments({ testId: q.testId });
+      await Test.findOneAndUpdate({ id: q.testId }, { totalQuestions: count });
     }
     return NextResponse.json({ success: true });
   } catch {

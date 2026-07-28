@@ -1,8 +1,11 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student, Test, Question, TestAttempt } from '@/models';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
+
     const body = await request.json();
     const { deviceId, studentId, testId, answers, timeTaken } = body;
 
@@ -13,17 +16,20 @@ export async function POST(request: Request) {
     // Get or create student
     let student;
     if (studentId) {
-      student = await db.student.findUnique({ where: { id: studentId } });
+      student = await Student.findOne({ id: studentId }).lean();
     } else if (deviceId) {
-      student = await db.student.findUnique({ where: { deviceId } });
+      student = await Student.findOne({ deviceId }).lean();
     }
 
     if (!student) {
       // Create guest student
       if (deviceId) {
-        student = await db.student.create({
-          data: { name: 'Guest Student', deviceId, freeTestsUsed: 0 },
+        student = await Student.create({
+          name: 'Guest Student',
+          deviceId,
+          freeTestsUsed: 0,
         });
+        student = student.toObject();
       } else {
         return NextResponse.json({ error: 'Student identification required' }, { status: 400 });
       }
@@ -38,18 +44,16 @@ export async function POST(request: Request) {
     }
 
     // Get the test with correct answers
-    const test = await db.test.findUnique({
-      where: { id: testId },
-      include: { questions: { orderBy: { order: 'asc' } } },
-    });
-
+    const test = await Test.findOne({ id: testId }).lean();
     if (!test) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
+    const questions = await Question.find({ testId }).sort({ order: 1 }).lean();
+
     // Calculate score
     let correctAnswers = 0;
-    const answerDetails = test.questions.map((q) => {
+    const answerDetails = questions.map((q: any) => {
       const userAnswer = answers[q.id] || null;
       const isCorrect = userAnswer === q.correctOption;
       if (isCorrect) correctAnswers++;
@@ -61,40 +65,45 @@ export async function POST(request: Request) {
       };
     });
 
-    const score = test.questions.length > 0 ? Math.round((correctAnswers / test.questions.length) * 100) : 0;
+    const score = questions.length > 0 ? Math.round((correctAnswers / questions.length) * 100) : 0;
 
     // Save attempt
-    const attempt = await db.testAttempt.create({
-      data: {
-        studentId: student.id,
-        testId,
-        score,
-        totalQuestions: test.questions.length,
-        correctAnswers,
-        timeTaken,
-        answers: JSON.stringify(answerDetails),
-        completed: true,
-      },
-      include: { test: { include: { category: true } } },
+    const attempt = await TestAttempt.create({
+      studentId: student.id,
+      testId,
+      score,
+      totalQuestions: questions.length,
+      correctAnswers,
+      timeTaken,
+      answers: JSON.stringify(answerDetails),
+      completed: true,
     });
+
+    // Populate test with category for the attempt response
+    const populatedTest = await Test.findOne({ id: testId }).populate('categoryId').lean();
+
+    const attemptResult = {
+      ...attempt.toObject(),
+      test: populatedTest,
+    };
 
     // Increment free tests used if not subscribed
     if (!student.isSubscribed) {
-      await db.student.update({
-        where: { id: student.id },
-        data: { freeTestsUsed: { increment: 1 } },
-      });
+      await Student.findOneAndUpdate(
+        { id: student.id },
+        { $inc: { freeTestsUsed: 1 } }
+      );
       // Get updated student data
-      const updatedStudent = await db.student.findUnique({ where: { id: student.id } });
+      const updatedStudent = await Student.findOne({ id: student.id }).lean();
       student = updatedStudent || student;
     }
 
     return NextResponse.json({
-      attempt,
+      attempt: attemptResult,
       answerDetails,
       score,
       correctAnswers,
-      totalQuestions: test.questions.length,
+      totalQuestions: questions.length,
       updatedStudent: {
         id: student.id,
         name: student.name,
@@ -112,6 +121,8 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    await dbConnect();
+
     const { searchParams } = new URL(request.url);
     const deviceId = searchParams.get('deviceId');
     const studentId = searchParams.get('studentId');
@@ -120,23 +131,18 @@ export async function GET(request: Request) {
 
     // Ranking endpoint: /api/attempts?rankings=true&testId=xxx
     if (rankings === 'true' && testId) {
-      const attempts = await db.testAttempt.findMany({
-        where: { testId, completed: true },
-        include: {
-          student: { select: { id: true, name: true } },
-        },
-        orderBy: [
-          { score: 'desc' },
-          { timeTaken: 'asc' },
-        ],
-      });
+      const attempts = await TestAttempt.find({ testId, completed: true })
+        .populate('studentId')
+        .sort({ score: -1, timeTaken: 1 })
+        .lean();
 
       // Deduplicate: keep only best attempt per student (no conflicts)
-      const bestByStudent = new Map<string, (typeof attempts)[0]>();
+      const bestByStudent = new Map<string, any>();
       for (const attempt of attempts) {
-        const existing = bestByStudent.get(attempt.studentId);
+        const studentIdVal = attempt.studentId?.id || attempt.studentId;
+        const existing = bestByStudent.get(studentIdVal);
         if (!existing || attempt.score > existing.score || (attempt.score === existing.score && attempt.timeTaken < existing.timeTaken)) {
-          bestByStudent.set(attempt.studentId, attempt);
+          bestByStudent.set(studentIdVal, attempt);
         }
       }
 
@@ -147,12 +153,12 @@ export async function GET(request: Request) {
       });
 
       const rankingsData = sorted.map((attempt, index) => ({
-        studentId: attempt.studentId,
-        studentName: attempt.student.name,
+        studentId: attempt.studentId?.id || attempt.studentId,
+        studentName: attempt.studentId?.name || 'Unknown',
         score: attempt.score,
         timeTaken: attempt.timeTaken,
         rank: index + 1,
-        createdAt: attempt.createdAt.toISOString(),
+        createdAt: new Date(attempt.createdAt).toISOString(),
       }));
 
       return NextResponse.json({ rankings: rankingsData, total: rankingsData.length });
@@ -163,21 +169,33 @@ export async function GET(request: Request) {
     if (studentId) {
       whereClause.studentId = studentId;
     } else if (deviceId) {
-      whereClause.student = { deviceId };
+      // Find student by deviceId first, then use their id
+      const student = await Student.findOne({ deviceId }).lean();
+      if (!student) {
+        return NextResponse.json({ error: 'deviceId or studentId is required' }, { status: 400 });
+      }
+      whereClause.studentId = student.id;
     } else {
       return NextResponse.json({ error: 'deviceId or studentId is required' }, { status: 400 });
     }
 
-    const attempts = await db.testAttempt.findMany({
-      where: whereClause,
-      include: {
-        test: { include: { category: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    });
+    const attempts = await TestAttempt.find(whereClause)
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
 
-    return NextResponse.json(attempts);
+    // Populate test with category for each attempt
+    const populatedAttempts = await Promise.all(
+      attempts.map(async (attempt: any) => {
+        const test = await Test.findOne({ id: attempt.testId }).populate('categoryId').lean();
+        return {
+          ...attempt,
+          test,
+        };
+      })
+    );
+
+    return NextResponse.json(populatedAttempts);
   } catch (error) {
     console.error('Fetch attempts error:', error);
     return NextResponse.json({ error: 'Failed to fetch attempts' }, { status: 500 });

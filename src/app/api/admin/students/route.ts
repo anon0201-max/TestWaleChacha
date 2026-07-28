@@ -1,9 +1,12 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student, TestAttempt, Payment } from '@/models';
 import { NextResponse } from 'next/server';
 
 // GET /api/admin/students?filter=all|free|paid&search=xxx
 export async function GET(request: Request) {
   try {
+    await dbConnect();
+
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get('filter') || 'all';
     const search = searchParams.get('search') || '';
@@ -17,34 +20,46 @@ export async function GET(request: Request) {
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
+      where.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
       ];
     }
 
-    // Fetch students with their attempt count and payment info
-    const students = await db.student.findMany({
-      where,
-      include: {
-        _count: { select: { testAttempts: true, payments: true } },
-        payments: {
-          where: { status: 'completed' },
-          select: { id: true, amount: true, currency: true, status: true, createdAt: true },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 500,
-    });
+    // Fetch students
+    const students = await Student.find(where)
+      .sort({ createdAt: -1 })
+      .limit(500)
+      .lean();
+
+    // Get attempt counts per student
+    const attemptCounts = await TestAttempt.aggregate([
+      { $group: { _id: '$studentId', count: { $sum: 1 } } },
+    ]);
+    const attemptCountMap = new Map(attemptCounts.map((ac) => [ac._id, ac.count]));
+
+    // Get payment counts and last payment per student
+    const payments = await Payment.find({ status: 'completed' })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const paymentCountsMap = new Map<string, number>();
+    const lastPaymentMap = new Map<string, any>();
+
+    for (const payment of payments) {
+      const sid = payment.studentId;
+      paymentCountsMap.set(sid, (paymentCountsMap.get(sid) || 0) + 1);
+      if (!lastPaymentMap.has(sid)) {
+        lastPaymentMap.set(sid, payment);
+      }
+    }
 
     // Get summary counts
     const [totalStudents, totalPaid, totalFree] = await Promise.all([
-      db.student.count(),
-      db.student.count({ where: { isSubscribed: true } }),
-      db.student.count({ where: { isSubscribed: false } }),
+      Student.countDocuments(),
+      Student.countDocuments({ isSubscribed: true }),
+      Student.countDocuments({ isSubscribed: false }),
     ]);
 
     return NextResponse.json({
@@ -58,9 +73,9 @@ export async function GET(request: Request) {
         isSubscribed: s.isSubscribed,
         subscriptionAt: s.subscriptionAt,
         createdAt: s.createdAt,
-        totalAttempts: s._count.testAttempts,
-        totalPayments: s._count.payments,
-        lastPayment: s.payments[0] || null,
+        totalAttempts: attemptCountMap.get(s.id) || 0,
+        totalPayments: paymentCountsMap.get(s.id) || 0,
+        lastPayment: lastPaymentMap.get(s.id) || null,
       })),
       summary: { totalStudents, totalPaid, totalFree },
     });
@@ -73,15 +88,17 @@ export async function GET(request: Request) {
 // DELETE /api/admin/students — delete a student
 export async function DELETE(request: Request) {
   try {
+    await dbConnect();
+
     const { id } = await request.json();
     if (!id) {
       return NextResponse.json({ error: 'Student ID required' }, { status: 400 });
     }
 
     // Delete related records first, then student
-    await db.testAttempt.deleteMany({ where: { studentId: id } });
-    await db.payment.deleteMany({ where: { studentId: id } });
-    await db.student.delete({ where: { id } });
+    await TestAttempt.deleteMany({ studentId: id });
+    await Payment.deleteMany({ studentId: id });
+    await Student.findOneAndDelete({ id });
 
     return NextResponse.json({ success: true });
   } catch (error) {

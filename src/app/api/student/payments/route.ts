@@ -1,9 +1,12 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Payment } from '@/models';
 import { NextResponse } from 'next/server';
 
 // GET /api/student/payments?studentId=xxx — current user's payment history/bill
 export async function GET(request: Request) {
   try {
+    await dbConnect();
+
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get('studentId');
 
@@ -11,10 +14,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Student ID required' }, { status: 400 });
     }
 
-    const payments = await db.payment.findMany({
-      where: { studentId, status: 'completed' },
-      orderBy: { createdAt: 'desc' },
-    });
+    const payments = await Payment.find({ studentId, status: 'completed' })
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json(payments);
   } catch (error) {

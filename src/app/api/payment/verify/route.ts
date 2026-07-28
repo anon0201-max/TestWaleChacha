@@ -1,8 +1,11 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student, Payment } from '@/models';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
+
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature, studentId, deviceId, amount } = await request.json();
 
     if (!studentId && !deviceId) {
@@ -12,9 +15,9 @@ export async function POST(request: Request) {
     // Find or create student
     let student;
     if (studentId) {
-      student = await db.student.findUnique({ where: { id: studentId } });
+      student = await Student.findOne({ id: studentId }).lean();
     } else if (deviceId) {
-      student = await db.student.findUnique({ where: { deviceId } });
+      student = await Student.findOne({ deviceId }).lean();
     }
 
     if (!student) {
@@ -22,23 +25,22 @@ export async function POST(request: Request) {
     }
 
     // Create payment record
-    await db.payment.create({
-      data: {
-        studentId: student.id,
-        razorpayOrderId: razorpayOrderId || `order_sim_${Date.now()}`,
-        razorpayPaymentId: razorpayPaymentId || `pay_sim_${Date.now()}`,
-        razorpaySignature: razorpaySignature || `sig_sim_${Date.now()}`,
-        amount: amount || 10000,
-        status: 'completed',
-        currency: 'INR',
-      },
+    await Payment.create({
+      studentId: student.id,
+      razorpayOrderId: razorpayOrderId || `order_sim_${Date.now()}`,
+      razorpayPaymentId: razorpayPaymentId || `pay_sim_${Date.now()}`,
+      razorpaySignature: razorpaySignature || `sig_sim_${Date.now()}`,
+      amount: amount || 10000,
+      status: 'completed',
+      currency: 'INR',
     });
 
     // Activate subscription
-    const updated = await db.student.update({
-      where: { id: student.id },
-      data: { isSubscribed: true, subscriptionAt: new Date() },
-    });
+    const updated = await Student.findOneAndUpdate(
+      { id: student.id },
+      { isSubscribed: true, subscriptionAt: new Date() },
+      { new: true }
+    ).lean();
 
     return NextResponse.json({
       success: true,

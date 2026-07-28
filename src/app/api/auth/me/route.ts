@@ -1,14 +1,17 @@
-import { db } from '@/lib/db';
+import { dbConnect } from '@/lib/mongodb';
+import { Student } from '@/models';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   try {
+    await dbConnect();
+
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get('studentId');
     const email = searchParams.get('email');
 
     if (studentId) {
-      const student = await db.student.findUnique({ where: { id: studentId } });
+      const student = await Student.findOne({ id: studentId }).lean();
       if (student) {
         return NextResponse.json({
           id: student.id,
@@ -24,7 +27,7 @@ export async function GET(request: Request) {
     }
 
     if (email) {
-      const student = await db.student.findFirst({ where: { email } });
+      const student = await Student.findOne({ email }).lean();
       if (student) {
         return NextResponse.json({
           id: student.id,
