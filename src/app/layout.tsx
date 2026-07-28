@@ -86,7 +86,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "your-google-verification-code",
+    google: "googleabb88179bbb562dd",
   },
 };
 
@@ -105,6 +105,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
         {children}

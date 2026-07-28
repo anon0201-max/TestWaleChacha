@@ -1,6 +1,7 @@
 import { dbConnect } from '@/lib/mongodb';
 import { Test, Question } from '@/models';
 import { NextRequest, NextResponse } from 'next/server';
+import { clearCacheByPrefix } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    clearCacheByPrefix('tests:');
     return NextResponse.json({ success: true, updated });
   } catch (error) {
     console.error('Error importing answers:', error);

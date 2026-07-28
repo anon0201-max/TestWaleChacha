@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Category, Test } from '@/models';
-import { stripMongoFields } from '@/lib/api-utils';
+import { stripMongoFields, clearCacheByPrefix } from '@/lib/api-utils';
 
 export async function GET() {
   try {
@@ -59,6 +59,10 @@ export async function POST(request: NextRequest) {
       examType: examType || 'General',
     });
 
+    // Invalidate caches
+    clearCacheByPrefix('categories:');
+    clearCacheByPrefix('tests:');
+
     return NextResponse.json({
       success: true,
       message: 'Category created successfully',
@@ -106,6 +110,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Invalidate caches
+    clearCacheByPrefix('categories:');
+    clearCacheByPrefix('tests:');
+
     return NextResponse.json({
       success: true,
       message: 'Category updated successfully',
@@ -150,6 +158,9 @@ export async function DELETE(request: NextRequest) {
     }
 
     await Category.findOneAndDelete({ id });
+
+    // Invalidate caches
+    clearCacheByPrefix('categories:');
 
     return NextResponse.json({
       success: true,

@@ -23,8 +23,75 @@ export function stripMongoFields<T>(data: T): T {
 
 /**
  * Standard cache control headers for read-only GET endpoints.
- * 60s edge cache, 300s stale-while-revalidate.
+ * 120s edge cache, 600s stale-while-revalidate.
  */
 export const CACHE_HEADERS: Record<string, string> = {
-  'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+  'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=600',
 };
+
+/**
+ * Cache headers for rarely-changing data (categories, static lists).
+ * 300s edge cache (5 min), 1hr stale-while-revalidate.
+ */
+export const LONG_CACHE_HEADERS: Record<string, string> = {
+  'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
+};
+
+// ─── In-Memory Response Cache ────────────────────────────────────────
+// Reduces repeated MongoDB Atlas calls within the same server process.
+
+interface CacheEntry<T = unknown> {
+  data: T;
+  expiresAt: number;
+}
+
+const memoryCache = new Map<string, CacheEntry>();
+
+/**
+ * Get cached data if still fresh.
+ */
+export function getFromCache<T>(key: string): T | null {
+  const entry = memoryCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+/**
+ * Store data in memory cache with a TTL (in seconds).
+ */
+export function setCache<T>(key: string, data: T, ttlSeconds: number): void {
+  memoryCache.set(key, {
+    data,
+    expiresAt: Date.now() + ttlSeconds * 1000,
+  });
+  // Prevent unbounded growth — evict oldest entries when cache is too large
+  if (memoryCache.size > 200) {
+    const oldest = memoryCache.keys().next().value;
+    if (oldest) memoryCache.delete(oldest);
+  }
+}
+
+/**
+ * Clear cache entries matching a prefix. Useful after admin mutations.
+ */
+export function clearCacheByPrefix(prefix: string): void {
+  for (const key of memoryCache.keys()) {
+    if (key.startsWith(prefix)) memoryCache.delete(key);
+  }
+}
+
+/**
+ * Build a cache key from a path + sorted query params.
+ */
+export function buildCacheKey(path: string, params?: Record<string, string>): string {
+  if (!params || Object.keys(params).length === 0) return path;
+  const sorted = Object.entries(params)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join('&');
+  return `${path}?${sorted}`;
+}

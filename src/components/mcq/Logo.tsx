@@ -33,7 +33,7 @@ export function Logo({ size = 'md', showText = true, variant = 'dark', className
           alt="TestWaleChacha logo"
           fill
           sizes="(max-width: 768px) 36px, 48px"
-          className="object-cover"
+          className="object-cover pointer-events-none"
           priority
         />
       </span>

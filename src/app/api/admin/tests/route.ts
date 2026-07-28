@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Category, Test, Question, TestAttempt } from '@/models';
-import { stripMongoFields } from '@/lib/api-utils';
+import { stripMongoFields, clearCacheByPrefix } from '@/lib/api-utils';
 
 export async function GET() {
   try {
@@ -70,6 +70,10 @@ export async function POST(request: NextRequest) {
       isActive: isActive !== undefined ? isActive : true,
     });
 
+    // Invalidate caches
+    clearCacheByPrefix('categories:');
+    clearCacheByPrefix('tests:');
+
     return NextResponse.json({
       success: true,
       message: 'Test created successfully',
@@ -99,6 +103,10 @@ export async function DELETE(request: NextRequest) {
     await Question.deleteMany({ testId: id });
     await TestAttempt.deleteMany({ testId: id });
     await Test.findOneAndDelete({ id });
+
+    // Invalidate caches
+    clearCacheByPrefix('categories:');
+    clearCacheByPrefix('tests:');
 
     return NextResponse.json({
       success: true,

@@ -4,6 +4,7 @@ import { useAppStore, handleSubscribeClick } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import {
   Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle, History,
@@ -11,8 +12,30 @@ import {
 
 const examTypes = ['SSC', 'UPSC', 'Banking', 'Railways', 'General'];
 
+// Skeleton for categories grid
+function CategoriesSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i}>
+          <Card className="border-0 shadow-sm">
+            <Skeleton className="h-1.5 w-full" />
+            <CardContent className="p-4">
+              <Skeleton className="w-9 h-9 rounded-lg mb-2" />
+              <Skeleton className="h-4 w-20 mb-1" />
+              <Skeleton className="h-3 w-16" />
+            </CardContent>
+          </Card>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function HomePage() {
   const { setView, categories, freeTestsRemaining, isSubscribed, isLoggedIn, setShowAuthModal } = useAppStore();
+
+  const isDataLoaded = categories.length > 0;
 
   return (
     <div className="space-y-8">
@@ -84,25 +107,29 @@ export function HomePage() {
           <h2 className="text-xl font-bold">Popular Exam Categories</h2>
           <Button variant="ghost" size="sm" onClick={() => setView('tests')}>View All <ArrowRight className="w-4 h-4 ml-1" /></Button>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {categories.map((cat) => (
-            <button key={cat.id}
-              onClick={() => { useAppStore.getState().setSelectedCategory(cat.id); setView('tests'); }}
-              className="text-left group card-hover-transform"
-            >
-              <Card className="border-0 shadow-sm hover:shadow-lg transition-all overflow-hidden">
-                <div className="h-1.5" style={{ backgroundColor: cat.color }} />
-                <CardContent className="p-4">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2 text-white text-sm font-bold" style={{ backgroundColor: cat.color }}>
-                    {cat.name.charAt(0)}
-                  </div>
-                  <h3 className="font-semibold text-sm leading-tight group-hover:text-blue-600 transition-colors truncate">{cat.name}</h3>
-                  <p className="text-[11px] text-muted-foreground mt-1">{cat.examType} · {cat._count.tests} tests</p>
-                </CardContent>
-              </Card>
-            </button>
-          ))}
-        </div>
+        {isDataLoaded ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {categories.map((cat) => (
+              <button key={cat.id}
+                onClick={() => { useAppStore.getState().setSelectedCategory(cat.id); setView('tests'); }}
+                className="text-left group card-hover-transform"
+              >
+                <Card className="border-0 shadow-sm hover:shadow-lg transition-all overflow-hidden">
+                  <div className="h-1.5" style={{ backgroundColor: cat.color }} />
+                  <CardContent className="p-4">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2 text-white text-sm font-bold" style={{ backgroundColor: cat.color }}>
+                      {cat.name.charAt(0)}
+                    </div>
+                    <h3 className="font-semibold text-sm leading-tight group-hover:text-blue-600 transition-colors truncate">{cat.name}</h3>
+                    <p className="text-[11px] text-muted-foreground mt-1">{cat.examType} · {cat._count.tests} tests</p>
+                  </CardContent>
+                </Card>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <CategoriesSkeleton />
+        )}
       </section>
 
       {/* Features */}

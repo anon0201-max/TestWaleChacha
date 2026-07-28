@@ -807,3 +807,46 @@ Stage Summary:
 - Website significantly faster: lazy loading, CSS animations, API caching, parallel queries
 - Bug fixes: race conditions, test count accuracy, inactive test filtering
 - All lint errors resolved (except one-time seed script)
+
+---
+Task ID: 2c (continued from previous session)
+Agent: Main Agent
+Task: Performance optimization, Google Search Console setup, full website testing and bug fixing
+
+Work Log:
+- **Google Search Console**: Created `public/googleabb88179bbb562dd.html` verification file. Added Google verification meta tag (`googleabb88179bbb562dd`) to layout.tsx metadata.
+- **Server-side in-memory cache**: Added cache utility to `api-utils.ts` with `getFromCache()`, `setCache()`, `clearCacheByPrefix()`, `buildCacheKey()` functions. TTL-based with max 200 entries.
+- **API caching**: Updated `/api/categories` (120s TTL) and `/api/tests` (60s TTL) to use in-memory cache. Added cache invalidation to all admin mutation routes (create/delete test, create/delete category, import answers/explanations, add/delete questions).
+- **Cache headers**: Increased CDN cache from 60s to 120s (s-maxage=120, stale-while-revalidate=600). Added LONG_CACHE_HEADERS for categories (300s s-maxage).
+- **Projections**: Added field exclusions to categories API (`-description -createdAt -updatedAt`) and tests API (`-explanation -questionImages`) to reduce response payload.
+- **Preconnect**: Added `<link rel="preconnect">` for fonts.googleapis.com and fonts.gstatic.com in layout.tsx.
+- **Loading skeletons**: Added `CategoriesSkeleton` component to HomePage that shows skeleton cards while categories load.
+- **Logo click fix**: Added `pointer-events-none` to Logo image to prevent absolute-positioned image from blocking adjacent button clicks.
+- **Comprehensive testing**:
+  - Categories API: 11 categories ✅
+  - Tests API: 26 tests ✅
+  - Test Detail API: Working ✅ (some tests have 0 questions by design)
+  - Signup API: Success ✅
+  - Login API: Success ✅
+  - Admin Login API: Working (requires username+password) ✅
+  - Admin Stats API: 47 students, 26 tests, 145 questions, 4 attempts ✅
+  - Homepage rendering: Professional, all categories visible ✅
+  - Sign Up modal: Working correctly ✅
+  - Footer: Properly positioned with full content ✅
+  - Mobile responsive: Good layout on 375px viewport ✅
+  - No console errors ✅
+
+Performance improvements measured:
+- Categories API: 573ms (first) → 7ms (cached) — **81x faster**
+- Tests API: 80ms (first) → 37ms (cached) — **2x faster**
+- Student API: 53ms
+- Login API: 84ms
+
+Stage Summary:
+- Google Search Console verification file created at `public/googleabb88179bbb562dd.html`
+- In-memory response cache implemented with automatic invalidation on admin mutations
+- CDN cache headers increased for better edge caching
+- API response sizes reduced with field projections
+- Loading skeletons added for better perceived performance
+- Logo click-through bug fixed with pointer-events-none
+- All 11 categories, 26 tests, signup/login/admin APIs verified working

@@ -1,6 +1,7 @@
 import { dbConnect } from '@/lib/mongodb';
 import { Test, Question } from '@/models';
 import { NextResponse } from 'next/server';
+import { clearCacheByPrefix } from '@/lib/api-utils';
 
 export async function POST(request: Request) {
   try {
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
       }
     }
 
+    clearCacheByPrefix('tests:');
     return NextResponse.json({ updated, errors });
   } catch (error) {
     console.error('Import explanations error:', error);

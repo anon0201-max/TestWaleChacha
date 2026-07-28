@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Test, Question } from '@/models';
+import { clearCacheByPrefix } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
       { totalQuestions: updatedCount }
     );
 
+    clearCacheByPrefix('tests:');
     return NextResponse.json({
       success: true,
       message: `Created ${questionsData.length} questions`,
@@ -85,6 +87,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    clearCacheByPrefix('tests:');
     return NextResponse.json({
       success: true,
       message: 'Question deleted successfully',
