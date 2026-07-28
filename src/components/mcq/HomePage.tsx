@@ -12,7 +12,7 @@ import {
 const examTypes = ['SSC', 'UPSC', 'Banking', 'Railways', 'General'];
 
 export function HomePage() {
-  const { setView, categories, freeTestsRemaining, isSubscribed, isLoggedIn, setShowSubscriptionModal, setShowAuthModal } = useAppStore();
+  const { setView, categories, freeTestsRemaining, isSubscribed, isLoggedIn, handleSubscribeClick, setShowAuthModal } = useAppStore();
 
   return (
     <div className="space-y-8">
@@ -148,7 +148,7 @@ export function HomePage() {
                 Sign Up Free
               </Button>
             )}
-            <Button size="lg" className="theme-btn text-white font-semibold px-8" onClick={() => setShowSubscriptionModal(true)}>
+            <Button size="lg" className="theme-btn text-white font-semibold px-8" onClick={handleSubscribeClick}>
               Subscribe Now — ₹100 <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>

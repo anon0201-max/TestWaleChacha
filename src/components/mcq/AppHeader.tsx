@@ -182,7 +182,7 @@ export function AppHeader() {
                             </div>
                           </div>
                           <button
-                            onClick={() => { setShowProfile(false); useAppStore.getState().setShowSubscriptionModal(true); }}
+                            onClick={() => { setShowProfile(false); useAppStore.getState().handleSubscribeClick(); }}
                             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all"
                           >
                             <Crown className="w-3.5 h-3.5" /> Subscribe Now — ₹100

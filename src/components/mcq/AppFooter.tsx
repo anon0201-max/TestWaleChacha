@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { Logo } from './Logo';
 
 export function AppFooter() {
-  const { isSubscribed, isLoggedIn, setShowSubscriptionModal, setShowAuthModal, setView } = useAppStore();
+  const { isSubscribed, isLoggedIn, handleSubscribeClick, setShowAuthModal, setView } = useAppStore();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -32,7 +32,7 @@ export function AppFooter() {
               </button>
             ) : !isSubscribed ? (
               <button
-                onClick={() => setShowSubscriptionModal(true)}
+                onClick={handleSubscribeClick}
                 className="bg-amber-400 text-amber-900 px-5 py-2 rounded-lg font-semibold text-sm hover:bg-amber-300 transition-all hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1.5"
               >
                 <Crown className="w-4 h-4" /> Get Pro — ₹100
@@ -134,7 +134,7 @@ export function AppFooter() {
                 ) : !isSubscribed ? (
                   <li
                     className="hover:text-amber-400 transition-colors cursor-pointer flex items-center gap-2.5 group"
-                    onClick={() => setShowSubscriptionModal(true)}
+                    onClick={handleSubscribeClick}
                   >
                     <Crown className="w-4 h-4 text-amber-500" />
                     <span className="text-amber-400 font-medium">Upgrade to Pro — ₹100</span>

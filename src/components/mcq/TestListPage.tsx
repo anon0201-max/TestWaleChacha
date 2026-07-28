@@ -71,7 +71,7 @@ export function TestListPage() {
     }
     // Subscription check for logged-in users
     if (!isSubscribed && freeTestsRemaining <= 0) {
-      useAppStore.getState().setShowSubscriptionModal(true);
+      useAppStore.getState().handleSubscribeClick();
       return;
     }
     handleStartTest(test);
