@@ -606,3 +606,23 @@ Stage Summary:
 - User sees real Razorpay popup with UPI, Cards, Wallets, Net Banking options
 - All 3 files modified: create-order/route.ts, verify/route.ts, SubscriptionModal.tsx
 ---
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix login-before-subscription + make Razorpay payment gateway work
+
+Work Log:
+- Fixed handleSubscribeClick: moved from store method to standalone exported function
+- Standalone function properly calls getState().setShowAuthModal/login or setShowSubscriptionModal
+- Updated all 4 call sites: HomePage, AppFooter, AppHeader, TestListPage
+- Tested NOT logged in: Subscribe → Login modal opens (not subscription)
+- Tested logged in: Subscribe → Subscription modal opens with Pay ₹100 button
+- Verified Razorpay order creation API returns real order IDs
+- ESLint clean
+- Pushed to GitHub
+
+Stage Summary:
+- Login required before subscription — working correctly
+- Razorpay payment gateway fully integrated (create-order + verify)
+- Vercel deployment will use environment variables set by user
+---
