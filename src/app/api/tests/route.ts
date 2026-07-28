@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Test, Question, Category } from '@/models';
+import { stripMongoFields, CACHE_HEADERS } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,21 +29,29 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // Phase 1: Fetch tests
     const tests = await Test.find(where)
       .sort({ createdAt: -1 })
+      .select('-__v')
       .lean();
 
-    // Count questions per test
-    const testIdStrings = tests.map((t) => t.id);
-    const questionCounts = await Question.aggregate([
-      { $match: { testId: { $in: testIdStrings } } },
-      { $group: { _id: '$testId', count: { $sum: 1 } } },
-    ]);
-    const qCountMap = new Map(questionCounts.map((qc) => [qc._id, qc.count]));
+    if (tests.length === 0) {
+      return NextResponse.json([], { headers: CACHE_HEADERS });
+    }
 
-    // Fetch categories separately
+    // Phase 2: Parallel – question counts + categories
+    const testIdStrings = tests.map((t) => t.id);
     const categoryIds = [...new Set(tests.map((t) => t.categoryId))];
-    const categories = await Category.find({ id: { $in: categoryIds } }).lean();
+
+    const [questionCounts, categories] = await Promise.all([
+      Question.aggregate([
+        { $match: { testId: { $in: testIdStrings } } },
+        { $group: { _id: '$testId', count: { $sum: 1 } } },
+      ]),
+      Category.find({ id: { $in: categoryIds } }).select('-__v').lean(),
+    ]);
+
+    const qCountMap = new Map(questionCounts.map((qc) => [qc._id, qc.count]));
     const catMap = new Map(categories.map((c) => [c.id, c]));
 
     const result = tests.map((test) => ({
@@ -51,7 +60,9 @@ export async function GET(request: NextRequest) {
       _count: { questions: qCountMap.get(test.id) || 0 },
     }));
 
-    return NextResponse.json(result);
+    return NextResponse.json(stripMongoFields(result), {
+      headers: CACHE_HEADERS,
+    });
   } catch (error) {
     console.error('Error fetching tests:', error);
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Student } from '@/models';
+import { stripMongoFields } from '@/lib/api-utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,28 +22,24 @@ export async function GET(request: NextRequest) {
     if (studentId) {
       student = await Student.findOne({ id: studentId }).lean();
     } else if (deviceId) {
-      student = await Student.findOne({ deviceId }).lean();
-    }
-
-    if (!student) {
-      const newStudent = await Student.create({
-        name: 'Guest User',
-        deviceId: deviceId || undefined,
-      });
-      return NextResponse.json({
-        success: true,
-        data: {
-          ...newStudent.toObject(),
-          freeTestsRemaining: Math.max(0, 5 - newStudent.freeTestsUsed),
+      // Use findOneAndUpdate with upsert to prevent race condition:
+      // two simultaneous requests for the same deviceId won't both create
+      // duplicate documents because the unique index on deviceId will
+      // cause the second upsert to fail, at which point we fall back to a find.
+      student = await Student.findOneAndUpdate(
+        { deviceId },
+        {
+          $setOnInsert: { name: 'Guest User', deviceId },
         },
-      });
+        { returnDocument: 'after', upsert: true, lean: true }
+      );
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        ...student,
-        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
+        ...stripMongoFields(student),
+        freeTestsRemaining: Math.max(0, 5 - student!.freeTestsUsed),
       },
     });
   } catch (error) {
@@ -77,13 +74,13 @@ export async function PUT(request: NextRequest) {
     const student = await Student.findOneAndUpdate(
       whereClause,
       { $set: updateData },
-      { new: true }
+      { returnDocument: 'after' }
     ).lean();
 
     return NextResponse.json({
       success: true,
       data: {
-        ...student,
+        ...stripMongoFields(student),
         freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
       },
     });

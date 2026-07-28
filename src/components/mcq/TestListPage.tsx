@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { motion } from 'framer-motion';
 import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, RotateCcw } from 'lucide-react';
 
 export function TestListPage() {
@@ -108,7 +107,7 @@ export function TestListPage() {
       </div>
 
       {showFilters && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3">
+        <div className="space-y-3 animate-slide-down">
           <div className="flex flex-wrap gap-1.5">
             <Button variant={selectedCategory === null ? 'default' : 'outline'} size="sm" className="text-xs h-7" onClick={() => setSelectedCategory(null)}>All</Button>
             {categories.map((cat) => (
@@ -125,13 +124,13 @@ export function TestListPage() {
               </Button>
             ))}
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Test Cards - Testbook Style */}
       <div className="space-y-3">
-        {filteredTests.map((test, i) => (
-          <motion.div key={test.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.2) }}>
+        {filteredTests.map((test) => (
+          <div key={test.id} className="animate-fade-in card-hover-transform">
             <Card className="hover:shadow-md transition-all border-0 shadow-sm relative">
               {/* Lock overlay for non-logged-in users */}
               {!isLoggedIn && (
@@ -152,7 +151,7 @@ export function TestListPage() {
                     <h3 className="font-semibold text-sm md:text-base truncate">{test.title}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{test.description}</p>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{test.totalQuestions || test._count?.questions || 0} Qs</span>
+                      <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{test._count?.questions || test.totalQuestions || 0} Qs</span>
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{Math.floor(test.timeLimit / 60)} min</span>
                     </div>
                   </div>
@@ -180,7 +179,7 @@ export function TestListPage() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
       </div>
 

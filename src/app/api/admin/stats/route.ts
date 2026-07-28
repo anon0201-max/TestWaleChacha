@@ -6,9 +6,10 @@ export async function GET() {
   try {
     await dbConnect();
 
-    const [totalStudents, totalTests, totalQuestions, totalAttempts, totalPayments, totalPaidStudents] = await Promise.all([
+    const [totalStudents, totalTests, totalActiveTests, totalQuestions, totalAttempts, totalPayments, totalPaidStudents] = await Promise.all([
       Student.countDocuments(),
       Test.countDocuments(),
+      Test.countDocuments({ isActive: true }),
       Question.countDocuments(),
       TestAttempt.countDocuments({ completed: true }),
       Payment.countDocuments({ status: 'completed' }),
@@ -18,6 +19,7 @@ export async function GET() {
     return NextResponse.json({
       totalStudents,
       totalTests,
+      totalActiveTests,
       totalQuestions,
       totalAttempts,
       totalPayments,

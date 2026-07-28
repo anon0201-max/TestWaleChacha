@@ -60,13 +60,20 @@ const TestSchema = new Schema<ITest>(
   },
   {
     id: false,
+    versionKey: false,
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
 
+TestSchema.index({ id: 1 }, { unique: true });
+TestSchema.index({ categoryId: 1 });
+TestSchema.index({ isActive: 1, createdAt: -1 });
+
 export const Test =
   mongoose.models.Test || mongoose.model<ITest>('Test', TestSchema);
+
+Test.syncIndexes();
 
 export default Test;

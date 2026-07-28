@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Test, Question, Category } from '@/models';
+import { stripMongoFields, CACHE_HEADERS } from '@/lib/api-utils';
 
 export async function GET(
   request: NextRequest,
@@ -10,7 +11,8 @@ export async function GET(
     const { id } = await params;
     await dbConnect();
 
-    const test = await Test.findOne({ id }).lean();
+    // Fetch test first (needed to check existence and get categoryId)
+    const test = await Test.findOne({ id }).select('-__v').lean();
 
     if (!test) {
       return NextResponse.json(
@@ -19,15 +21,16 @@ export async function GET(
       );
     }
 
-    // Fetch category separately
-    const category = test.categoryId
-      ? await Category.findOne({ id: test.categoryId }).lean()
-      : null;
-
-    // Fetch questions separately
-    const questions = await Question.find({ testId: id })
-      .sort({ order: 1 })
-      .lean();
+    // Parallel: fetch category + questions concurrently
+    const [category, questions] = await Promise.all([
+      test.categoryId
+        ? Category.findOne({ id: test.categoryId }).select('-__v').lean()
+        : Promise.resolve(null),
+      Question.find({ testId: id })
+        .sort({ order: 1 })
+        .select('-__v')
+        .lean(),
+    ]);
 
     const result = {
       ...test,
@@ -35,7 +38,9 @@ export async function GET(
       questions,
     };
 
-    return NextResponse.json(result);
+    return NextResponse.json(stripMongoFields(result), {
+      headers: CACHE_HEADERS,
+    });
   } catch (error) {
     console.error('Error fetching test:', error);
     return NextResponse.json(

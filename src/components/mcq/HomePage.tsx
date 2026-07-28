@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import {
-  GraduationCap, Trophy, Zap, ArrowRight, BookOpen, Shield, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle, History,
+  Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle, History,
 } from 'lucide-react';
 
 const examTypes = ['SSC', 'UPSC', 'Banking', 'Railways', 'General'];
@@ -66,15 +66,15 @@ export function HomePage() {
           { icon: BookOpen, label: 'Questions', value: '100+', color: 'bg-green-100 text-green-700' },
           { icon: Users, label: 'Exam Types', value: '5+', color: 'bg-purple-100 text-purple-700' },
           { icon: Star, label: 'Free Tests', value: freeTestsRemaining, color: 'bg-amber-100 text-amber-700' },
-        ].map((stat, i) => (
-          <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+        ].map((stat) => (
+          <div key={stat.label} className="animate-fade-in">
             <Card className="hover:shadow-md transition-shadow border-0 shadow-sm">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className={`p-2.5 rounded-xl ${stat.color}`}><stat.icon className="w-5 h-5" /></div>
                 <div><p className="text-xl font-bold">{stat.value}</p><p className="text-xs text-muted-foreground">{stat.label}</p></div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
       </section>
 
@@ -85,11 +85,10 @@ export function HomePage() {
           <Button variant="ghost" size="sm" onClick={() => setView('tests')}>View All <ArrowRight className="w-4 h-4 ml-1" /></Button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {categories.map((cat, i) => (
-            <motion.button key={cat.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+          {categories.map((cat) => (
+            <button key={cat.id}
               onClick={() => { useAppStore.getState().setSelectedCategory(cat.id); setView('tests'); }}
-              className="text-left group"
+              className="text-left group card-hover-transform"
             >
               <Card className="border-0 shadow-sm hover:shadow-lg transition-all overflow-hidden">
                 <div className="h-1.5" style={{ backgroundColor: cat.color }} />
@@ -101,7 +100,7 @@ export function HomePage() {
                   <p className="text-[11px] text-muted-foreground mt-1">{cat.examType} · {cat._count.tests} tests</p>
                 </CardContent>
               </Card>
-            </motion.button>
+            </button>
           ))}
         </div>
       </section>
@@ -115,8 +114,8 @@ export function HomePage() {
             { icon: Trophy, title: 'Detailed Solutions', desc: 'Every question has explanations. Learn from your mistakes.' },
             { icon: Clock, title: 'Performance Tracking', desc: 'Track your attempts, scores, and improvement over time.' },
             { icon: History, title: 'Personal Dashboard', desc: 'Track all your test attempts, scores, and rankings in one place.' },
-          ].map((item, i) => (
-            <motion.div key={item.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.1 }}>
+          ].map((item) => (
+            <div key={item.title} className="animate-fade-in">
               <Card className="h-full border-0 shadow-sm">
                 <CardContent className="p-5">
                   <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
@@ -126,7 +125,7 @@ export function HomePage() {
                   <p className="text-sm text-muted-foreground">{item.desc}</p>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>

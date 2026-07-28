@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Category, Test } from '@/models';
+import { stripMongoFields } from '@/lib/api-utils';
 
 export async function GET() {
   try {
@@ -14,7 +15,7 @@ export async function GET() {
     const countMap = new Map(testCounts.map((tc: any) => [tc._id, tc.count]));
 
     const result = categories.map((cat: any) => ({
-      ...cat,
+      ...stripMongoFields(cat),
       _count: { tests: countMap.get(cat.id) || 0 },
     }));
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Category created successfully',
-      category,
+      category: stripMongoFields(category.toObject()),
     });
   } catch (error) {
     console.error('Create category error:', error);
@@ -95,7 +96,7 @@ export async function PUT(request: NextRequest) {
     const category = await Category.findOneAndUpdate(
       { id },
       update,
-      { new: true }
+      { returnDocument: 'after' }
     ).lean();
 
     if (!category) {
@@ -108,7 +109,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Category updated successfully',
-      category,
+      category: stripMongoFields(category),
     });
   } catch (error) {
     console.error('Update category error:', error);

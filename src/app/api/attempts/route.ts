@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { TestAttempt, Student, Test, Question, Category } from '@/models';
+import { stripMongoFields, CACHE_HEADERS } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,22 +13,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Find student
+    // Find or create student (use upsert to prevent race condition)
     let student;
     if (studentId) {
-      student = await Student.findOne({ id: studentId }).lean();
+      student = await Student.findOne({ id: studentId }).select('-__v').lean();
     } else if (deviceId) {
-      student = await Student.findOne({ deviceId }).lean();
+      // Use upsert to prevent duplicate creation on concurrent requests
+      student = await Student.findOneAndUpdate(
+        { deviceId },
+        { $setOnInsert: { name: 'Guest Student', deviceId, freeTestsUsed: 0 } },
+        { returnDocument: 'after', upsert: true, select: '-__v', lean: true }
+      );
     }
 
     if (!student) {
-      // Create guest student if deviceId provided
-      if (deviceId) {
-        const created = await Student.create({ name: 'Guest Student', deviceId, freeTestsUsed: 0 });
-        student = created.toObject();
-      } else {
-        return NextResponse.json({ error: 'Student identification required' }, { status: 400 });
-      }
+      return NextResponse.json({ error: 'Student identification required' }, { status: 400 });
     }
 
     // Check if can take test (free tests limit or subscribed)
@@ -38,17 +38,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch test with questions
-    const test = await Test.findOne({ id: testId }).lean();
+    // Fetch test with questions in parallel
+    const [test, questions] = await Promise.all([
+      Test.findOne({ id: testId }).select('-__v').lean(),
+      Question.find({ testId })
+        .sort({ order: 1 })
+        .select('-__v')
+        .lean(),
+    ]);
 
     if (!test) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
-
-    // Fetch questions separately
-    const questions = await Question.find({ testId })
-      .sort({ order: 1 })
-      .lean();
 
     // Calculate score
     const answersParsed = typeof answers === 'string' ? JSON.parse(answers) : answers;
@@ -88,8 +89,8 @@ export async function POST(request: NextRequest) {
       updatedStudent = await Student.findOneAndUpdate(
         { id: student.id },
         { $inc: { freeTestsUsed: 1 } },
-        { new: true }
-      ).lean();
+        { returnDocument: 'after' }
+      ).select('-__v').lean();
     }
 
     const attemptResult = {
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
       test: { ...test, questions },
     };
 
-    return NextResponse.json({
+    return NextResponse.json(stripMongoFields({
       attempt: attemptResult,
       answerDetails,
       score,
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
         freeTestsRemaining: Math.max(0, 5 - updatedStudent.freeTestsUsed),
         isSubscribed: updatedStudent.isSubscribed,
       },
-    });
+    }));
   } catch (error) {
     console.error('Submit attempt error:', error);
     return NextResponse.json({ error: 'Failed to submit test' }, { status: 500 });
@@ -131,12 +132,14 @@ export async function GET(request: NextRequest) {
     if (rankings === 'true' && testId) {
       const attempts = await TestAttempt.find({ testId, completed: true })
         .sort({ score: -1, timeTaken: 1 })
+        .select('-__v')
         .lean();
 
-      // Fetch students in batch
+      // Fetch students in batch (parallel)
       const studentIds = [...new Set(attempts.map(a => a.studentId))];
-      const students = await Student.find({ id: { $in: studentIds } }).lean();
-      const studentMap = new Map(students.map(s => [s.id, s]));
+      const studentsPromise = studentIds.length > 0
+        ? Student.find({ id: { $in: studentIds } }).select('-__v').lean()
+        : Promise.resolve([]);
 
       // Deduplicate: keep only best attempt per student
       const bestByStudent = new Map();
@@ -147,13 +150,19 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      const students = await studentsPromise;
+      const studentMap = new Map<string, Record<string, unknown>>();
+      for (const s of students) {
+        studentMap.set(s.id as string, s as Record<string, unknown>);
+      }
+
       const sorted = Array.from(bestByStudent.values()).sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.timeTaken - b.timeTaken;
       });
 
       const studentData = sorted.map((attempt, index) => {
-        const s = studentMap.get(attempt.studentId);
+        const s = studentMap.get(attempt.studentId) as Record<string, unknown> | undefined;
         return {
           studentId: s?.id || attempt.studentId,
           studentName: s?.name || 'Unknown',
@@ -164,7 +173,10 @@ export async function GET(request: NextRequest) {
         };
       });
 
-      return NextResponse.json({ rankings: studentData, total: studentData.length });
+      return NextResponse.json(
+        stripMongoFields({ rankings: studentData, total: studentData.length }),
+        { headers: CACHE_HEADERS }
+      );
     }
 
     if (!studentId && !deviceId) {
@@ -174,9 +186,9 @@ export async function GET(request: NextRequest) {
     // Find student
     let student;
     if (studentId) {
-      student = await Student.findOne({ id: studentId }).lean();
+      student = await Student.findOne({ id: studentId }).select('-__v').lean();
     } else if (deviceId) {
-      student = await Student.findOne({ deviceId }).lean();
+      student = await Student.findOne({ deviceId }).select('-__v').lean();
     }
 
     if (!student) {
@@ -186,15 +198,28 @@ export async function GET(request: NextRequest) {
     const attempts = await TestAttempt.find({ studentId: student.id, completed: true })
       .sort({ createdAt: -1 })
       .limit(20)
+      .select('-__v')
       .lean();
 
-    // Fetch tests and categories in batch
+    if (attempts.length === 0) {
+      return NextResponse.json(stripMongoFields([]), { headers: CACHE_HEADERS });
+    }
+
+    // Fetch tests and categories in parallel
     const testIds = [...new Set(attempts.map(a => a.testId))];
-    const tests = await Test.find({ id: { $in: testIds } }).lean();
+
+    const [tests] = await Promise.all([
+      Test.find({ id: { $in: testIds } }).select('-__v').lean(),
+    ]);
+
     const catIds = [...new Set(tests.map(t => t.categoryId).filter(Boolean))];
-    const categories = catIds.length > 0 ? await Category.find({ id: { $in: catIds } }).lean() : [];
+    let catMap = new Map<string, unknown>();
+    if (catIds.length > 0) {
+      const categories = await Category.find({ id: { $in: catIds } }).select('-__v').lean();
+      catMap = new Map(categories.map(c => [c.id, c]));
+    }
+
     const testMap = new Map(tests.map(t => [t.id, t]));
-    const catMap = new Map(categories.map(c => [c.id, c]));
 
     // Attach test and category to each attempt
     const result = attempts.map(attempt => {
@@ -206,7 +231,9 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json(stripMongoFields(result), {
+      headers: CACHE_HEADERS,
+    });
   } catch (error) {
     console.error('Fetch attempts error:', error);
     return NextResponse.json({ error: 'Failed to fetch attempts' }, { status: 500 });

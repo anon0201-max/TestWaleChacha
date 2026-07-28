@@ -45,14 +45,20 @@ const CategorySchema = new Schema<ICategory>(
   },
   {
     id: false,
+    versionKey: false,
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
 
+CategorySchema.index({ id: 1 }, { unique: true });
+
 export const Category =
   mongoose.models.Category ||
   mongoose.model<ICategory>('Category', CategorySchema);
+
+// Ensure indexes are created on model compilation
+Category.syncIndexes();
 
 export default Category;

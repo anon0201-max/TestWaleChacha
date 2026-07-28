@@ -61,6 +61,7 @@ const TestAttemptSchema = new Schema<ITestAttempt>(
   },
   {
     id: false,
+    versionKey: false,
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
@@ -70,9 +71,12 @@ const TestAttemptSchema = new Schema<ITestAttempt>(
 // Indexes for common queries
 TestAttemptSchema.index({ studentId: 1, createdAt: -1 });
 TestAttemptSchema.index({ studentId: 1, testId: 1 });
+TestAttemptSchema.index({ testId: 1, completed: 1, score: -1 });
 
 export const TestAttempt =
   mongoose.models.TestAttempt ||
   mongoose.model<ITestAttempt>('TestAttempt', TestAttemptSchema);
+
+TestAttempt.syncIndexes();
 
 export default TestAttempt;

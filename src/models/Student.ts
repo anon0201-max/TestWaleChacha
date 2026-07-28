@@ -58,14 +58,19 @@ const StudentSchema = new Schema<IStudent>(
   },
   {
     id: false,
+    versionKey: false,
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
 
+StudentSchema.index({ id: 1 }, { unique: true });
+
 export const Student =
   mongoose.models.Student ||
   mongoose.model<IStudent>('Student', StudentSchema);
+
+Student.syncIndexes();
 
 export default Student;

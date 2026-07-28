@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Category, Test, Question, TestAttempt } from '@/models';
+import { stripMongoFields } from '@/lib/api-utils';
 
 export async function GET() {
   try {
@@ -18,10 +19,10 @@ export async function GET() {
     // Fetch categories in batch
     const categoryIds = [...new Set(tests.map((t: any) => t.categoryId).filter(Boolean))];
     const categories = categoryIds.length > 0 ? await Category.find({ id: { $in: categoryIds } }).lean() : [];
-    const catMap = new Map(categories.map((c: any) => [c.id, c]));
+    const catMap = new Map(categories.map((c: any) => [c.id, stripMongoFields(c)]));
 
     const result = tests.map((test: any) => ({
-      ...test,
+      ...stripMongoFields(test),
       category: catMap.get(test.categoryId) || null,
       _count: { questions: countMap.get(test.id) || 0 },
     }));

@@ -362,7 +362,7 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
               {tests.slice(0, 4).map((t) => (
                 <div key={t.id} className="flex items-center justify-between text-xs">
                   <span className="truncate max-w-[120px] sm:max-w-[150px]">{t.title}</span>
-                  <span className="text-muted-foreground">{t.totalQuestions}Q</span>
+                  <span className="text-muted-foreground">{t._count?.questions || t.totalQuestions}Q</span>
                 </div>
               ))}
             </div>
@@ -401,7 +401,7 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{test.title}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{test.category?.name} · {test.totalQuestions}Q · {test.difficulty}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{test.category?.name} · {test._count?.questions || test.totalQuestions}Q · {test.difficulty}</p>
                     </div>
                   </div>
                   <Badge variant={test.isActive ? 'default' : 'secondary'} className="text-[10px] shrink-0">
@@ -570,7 +570,7 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Tests ({tests.length})</h3>
-        <Badge variant="secondary" className="text-[10px] shrink-0">{tests.reduce((s, t) => s + t.totalQuestions, 0)}Q</Badge>
+        <Badge variant="secondary" className="text-[10px] shrink-0">{tests.reduce((s, t) => s + (t._count?.questions || t.totalQuestions), 0)}Q</Badge>
       </div>
 
       {tests.length === 0 ? (
@@ -595,7 +595,7 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
                   <p className="text-sm font-medium truncate">{test.title}</p>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <Badge variant="secondary" className="text-[10px]">{test.category?.name}</Badge>
-                    <span className="text-[10px] text-muted-foreground">{test.totalQuestions}Q</span>
+                    <span className="text-[10px] text-muted-foreground">{test._count?.questions || test.totalQuestions}Q</span>
                     <span className="text-[10px] text-muted-foreground hidden sm:inline">{test.difficulty}</span>
                     <span className="text-[10px] text-muted-foreground">{Math.floor(test.timeLimit / 60)}m</span>
                   </div>

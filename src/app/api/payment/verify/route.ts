@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         isSubscribed: true,
         subscriptionAt: new Date(),
       },
-      { new: true },
+      { returnDocument: 'after' },
     );
 
     return NextResponse.json({

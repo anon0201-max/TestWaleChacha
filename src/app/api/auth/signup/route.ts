@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
             email,
             passwordHash: hashedPassword,
           },
-          { new: true }
+          { returnDocument: 'after' }
         );
       }
     }

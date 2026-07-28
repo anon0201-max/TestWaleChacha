@@ -78,6 +78,7 @@ const QuestionSchema = new Schema<IQuestion>(
   },
   {
     id: false,
+    versionKey: false,
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
@@ -90,5 +91,7 @@ QuestionSchema.index({ testId: 1, order: 1 });
 export const Question =
   mongoose.models.Question ||
   mongoose.model<IQuestion>('Question', QuestionSchema);
+
+Question.syncIndexes();
 
 export default Question;
