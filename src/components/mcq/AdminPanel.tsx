@@ -342,13 +342,13 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
               <span className="text-xs font-medium text-muted-foreground">Categories</span>
               <Badge variant="secondary" className="text-[10px]">{categories.length}</Badge>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {categories.slice(0, 6).map((cat) => (
-                <Badge key={cat.id} className="text-[10px] font-normal" style={{ backgroundColor: cat.color + '20', color: cat.color, border: 'none' }}>
+            <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-1.5 sm:flex-wrap pb-1 sm:pb-0">
+              {categories.slice(0, 8).map((cat) => (
+                <Badge key={cat.id} className="text-[10px] font-normal whitespace-nowrap shrink-0" style={{ backgroundColor: cat.color + '20', color: cat.color, border: 'none' }}>
                   {cat.name}
                 </Badge>
               ))}
-              {categories.length > 6 && <Badge variant="secondary" className="text-[10px]">+{categories.length - 6}</Badge>}
+              {categories.length > 8 && <Badge variant="secondary" className="text-[10px] shrink-0">+{categories.length - 8}</Badge>}
             </div>
           </CardContent>
         </Card>
