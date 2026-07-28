@@ -90,7 +90,7 @@ interface AttemptHistory {
 
 interface AdminData {
   isLoggedIn: boolean;
-  stats: { totalStudents: number; totalTests: number; totalQuestions: number; totalAttempts: number; totalPayments: number };
+  stats: { totalStudents: number; totalTests: number; totalQuestions: number; totalAttempts: number; totalPayments: number; totalPaidStudents: number; totalFreeStudents: number };
 }
 
 interface AppState {
@@ -239,7 +239,7 @@ export const useAppStore = create<AppState>()(
       pendingTestId: null,
       setPendingTestId: (id) => set({ pendingTestId: id }),
 
-      adminData: { isLoggedIn: false, stats: { totalStudents: 0, totalTests: 0, totalQuestions: 0, totalAttempts: 0, totalPayments: 0 } },
+      adminData: { isLoggedIn: false, stats: { totalStudents: 0, totalTests: 0, totalQuestions: 0, totalAttempts: 0, totalPayments: 0, totalPaidStudents: 0, totalFreeStudents: 0 } },
       setAdminData: (data) => set((state) => ({ adminData: { ...state.adminData, ...data } })),
 
       // Theme
