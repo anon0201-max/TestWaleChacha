@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Zap, LogIn, LogOut, UserCircle, History, Receipt, CheckCircle2 } from 'lucide-react';
+import { Crown, Zap, LogIn, LogOut, UserCircle, History, Receipt, CheckCircle2, Menu, X } from 'lucide-react';
 import { Logo } from './Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -25,6 +25,7 @@ export function AppHeader() {
   const [showProfile, setShowProfile] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const [payment, setPayment] = useState<PaymentInfo | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Fetch payment when profile opens
   useEffect(() => {
@@ -53,14 +54,21 @@ export function AppHeader() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close mobile menu on view change
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMobileMenuOpen(false);
+  }, [currentView]);
+
   return (
     <header className="sticky top-0 z-30 border-b border-[#1C1C84]/20 relative" style={{ backgroundColor: '#1C1C84' }}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <button onClick={() => setView('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity relative z-10 text-white">
+        <button onClick={() => { setView('home'); setMobileMenuOpen(false); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity relative z-10 text-white">
           <Logo size="sm" variant="light" />
         </button>
 
-        <nav className="flex items-center gap-1 sm:gap-2 relative z-10">
+        {/* Desktop Nav (sm and above) */}
+        <nav className="hidden sm:flex items-center gap-2 relative z-10">
           {/* Mock Tests - show on home page */}
           {currentView === 'home' && (
             <Button variant="ghost" size="sm" className="text-sm text-white hover:bg-white/10" onClick={() => setView('tests')}>Mock Tests</Button>
@@ -73,9 +81,9 @@ export function AppHeader() {
 
           {/* My Tests - logged in users */}
           {isLoggedIn && currentView !== 'test-taking' && currentView !== 'admin' && currentView !== 'my-attempts' && (
-            <Button variant="ghost" size="sm" className="text-xs sm:text-sm gap-1 text-white hover:bg-white/10" onClick={() => setView('my-attempts')}>
+            <Button variant="ghost" size="sm" className="text-sm gap-1 text-white hover:bg-white/10" onClick={() => setView('my-attempts')}>
               <History className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">My Tests</span>
+              My Tests
             </Button>
           )}
 
@@ -99,7 +107,7 @@ export function AppHeader() {
                     }`}>
                       {user.name.charAt(0).toUpperCase()}
                     </div>
-                    <span className="hidden sm:inline text-sm font-medium max-w-[100px] truncate text-white">{user.name}</span>
+                    <span className="text-sm font-medium max-w-[100px] truncate text-white">{user.name}</span>
                   </button>
 
                   {showProfile && (
@@ -210,22 +218,105 @@ export function AppHeader() {
               ) : (
                 <>
                   {!isSubscribed && (
-                    <Badge className="gap-1 text-xs hidden sm:flex bg-white/20 text-white border-0 hover:bg-white/30"><Zap className="w-3 h-3" />{freeTestsRemaining} free</Badge>
+                    <Badge className="gap-1 text-xs flex bg-white/20 text-white border-0 hover:bg-white/30"><Zap className="w-3 h-3" />{freeTestsRemaining} free</Badge>
                   )}
                   <Button size="sm" className="text-xs bg-transparent border-2 border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-[#1C1C84] font-semibold transition-all" onClick={() => setShowAuthModal('login')}>
                     <LogIn className="w-3.5 h-3.5 mr-1" />
-                    <span className="hidden sm:inline">Login</span>
+                    Login
                   </Button>
                   <Button size="sm" className="text-xs bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600 font-semibold shadow-lg shadow-amber-500/20 transition-all" onClick={() => setShowAuthModal('signup')}>
                     <UserCircle className="w-3.5 h-3.5 mr-1" />
-                    <span className="hidden sm:inline">Sign Up</span>
+                    Sign Up
                   </Button>
                 </>
               )}
             </>
           )}
         </nav>
+
+        {/* Mobile Hamburger Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="sm:hidden flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 text-white transition-colors relative z-10"
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {mobileMenuOpen && currentView !== 'test-taking' && (
+        <div className="sm:hidden bg-[#15156a] border-t border-white/10 px-4 py-3 z-40">
+          <div className="flex flex-col gap-1">
+            {/* Navigation Links */}
+            {currentView !== 'home' && currentView !== 'admin' && (
+              <button onClick={() => setView('home')} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 text-sm font-medium transition-colors">
+                Mock Tests
+              </button>
+            )}
+            {currentView !== 'home' && currentView !== 'admin' && (
+              <button onClick={() => setView('home')} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 text-sm font-medium transition-colors">
+                Home
+              </button>
+            )}
+            {currentView === 'home' && (
+              <button onClick={() => setView('tests')} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 text-sm font-medium transition-colors">
+                Mock Tests
+              </button>
+            )}
+            {isLoggedIn && currentView !== 'admin' && currentView !== 'my-attempts' && (
+              <button onClick={() => setView('my-attempts')} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 text-sm font-medium transition-colors">
+                <History className="w-4 h-4" /> My Tests
+              </button>
+            )}
+            {currentView === 'admin' && (
+              <button onClick={() => setView('home')} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white hover:bg-white/10 text-sm font-medium transition-colors">
+                ← Back to Site
+              </button>
+            )}
+
+            {/* Divider */}
+            <div className="border-t border-white/10 my-1.5" />
+
+            {/* Theme Toggle in mobile */}
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <ThemeToggle />
+              <span className="text-xs text-white/70">Theme</span>
+              {!isSubscribed && (
+                <Badge className="gap-1 text-[10px] ml-auto bg-white/20 text-white border-0"><Zap className="w-2.5 h-2.5" />{freeTestsRemaining} free</Badge>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-white/10 my-1.5" />
+
+            {/* Auth Buttons / Profile */}
+            {isLoggedIn && user ? (
+              <div className="flex items-center gap-3 px-3 py-2">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${
+                  isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-blue-600 text-white'
+                }`}>
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                  <p className="text-[11px] text-white/60">{isSubscribed ? 'PRO Member' : `Free Plan`}</p>
+                </div>
+                {isSubscribed && <Crown className="w-4 h-4 text-amber-400" />}
+              </div>
+            ) : (
+              <div className="flex gap-2 px-3">
+                <Button size="sm" className="flex-1 text-xs bg-transparent border-2 border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-[#1C1C84] font-semibold transition-all" onClick={() => { setMobileMenuOpen(false); setShowAuthModal('login'); }}>
+                  <LogIn className="w-3.5 h-3.5 mr-1" /> Login
+                </Button>
+                <Button size="sm" className="flex-1 text-xs bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600 font-semibold shadow-lg shadow-amber-500/20 transition-all" onClick={() => { setMobileMenuOpen(false); setShowAuthModal('signup'); }}>
+                  <UserCircle className="w-3.5 h-3.5 mr-1" /> Sign Up
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

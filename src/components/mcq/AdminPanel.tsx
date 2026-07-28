@@ -88,9 +88,9 @@ function AdminLogin() {
   }
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <Card className="w-full max-w-sm shadow-xl border-0">
+    <div className="min-h-[70vh] flex items-center justify-center px-4 pt-12">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
+        <Card className="w-full max-w-md mx-auto shadow-xl border-0">
           <CardContent className="p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-2xl bg-blue-700 flex items-center justify-center mx-auto mb-4">
