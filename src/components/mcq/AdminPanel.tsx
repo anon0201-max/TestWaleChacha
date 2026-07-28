@@ -28,11 +28,12 @@ function AdminLogin() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [adminForgotOpen, setAdminForgotOpen] = useState(false);
-  const [forgotNewPassword, setForgotNewPassword] = useState('');
-  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotMsg, setForgotMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [cpCurrentPassword, setCpCurrentPassword] = useState('');
+  const [cpNewPassword, setCpNewPassword] = useState('');
+  const [cpConfirmPassword, setCpConfirmPassword] = useState('');
+  const [cpLoading, setCpLoading] = useState(false);
+  const [cpMsg, setCpMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   async function handleLogin() {
     setLoading(true);
@@ -53,39 +54,40 @@ function AdminLogin() {
     setLoading(false);
   }
 
-  async function handleAdminForgotPassword() {
-    setForgotMsg(null);
-    if (!forgotNewPassword || !forgotConfirmPassword) {
-      setForgotMsg({ type: 'error', text: 'All fields are required' });
+  async function handleChangePassword() {
+    setCpMsg(null);
+    if (!cpCurrentPassword || !cpNewPassword || !cpConfirmPassword) {
+      setCpMsg({ type: 'error', text: 'All fields are required' });
       return;
     }
-    if (forgotNewPassword !== forgotConfirmPassword) {
-      setForgotMsg({ type: 'error', text: 'Passwords do not match' });
+    if (cpNewPassword !== cpConfirmPassword) {
+      setCpMsg({ type: 'error', text: 'New password and confirm password do not match' });
       return;
     }
-    if (forgotNewPassword.length < 4) {
-      setForgotMsg({ type: 'error', text: 'Password must be at least 4 characters' });
+    if (cpNewPassword.length < 4) {
+      setCpMsg({ type: 'error', text: 'New password must be at least 4 characters' });
       return;
     }
-    setForgotLoading(true);
+    setCpLoading(true);
     try {
       const res = await fetch('/api/admin/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword: '', newPassword: forgotNewPassword }),
+        body: JSON.stringify({ currentPassword: cpCurrentPassword, newPassword: cpNewPassword }),
       });
       const data = await res.json();
       if (data.success) {
-        setForgotMsg({ type: 'success', text: 'Admin password reset successfully! You can now login with the new password.' });
-        setForgotNewPassword('');
-        setForgotConfirmPassword('');
+        setCpMsg({ type: 'success', text: 'Password updated successfully! Use new password to login next time.' });
+        setCpCurrentPassword('');
+        setCpNewPassword('');
+        setCpConfirmPassword('');
       } else {
-        setForgotMsg({ type: 'error', text: data.error || 'Failed to reset password' });
+        setCpMsg({ type: 'error', text: data.error || 'Failed to update password' });
       }
     } catch {
-      setForgotMsg({ type: 'error', text: 'Server error. Please try again.' });
+      setCpMsg({ type: 'error', text: 'Server error. Please try again.' });
     }
-    setForgotLoading(false);
+    setCpLoading(false);
   }
 
   return (
@@ -126,7 +128,7 @@ function AdminLogin() {
                 </div>
               </div>
               <p className="text-right">
-                <button onClick={() => setAdminForgotOpen(true)} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Forgot Password?</button>
+                <button onClick={() => setChangePasswordOpen(true)} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Change Password?</button>
               </p>
               {error && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 flex items-center gap-2">
@@ -140,37 +142,41 @@ function AdminLogin() {
           </CardContent>
         </Card>
 
-        {/* Admin Forgot Password Dialog */}
-        <Dialog open={adminForgotOpen} onOpenChange={(open) => { if (!open) { setAdminForgotOpen(false); setForgotMsg(null); } }}>
+        {/* Admin Change Password Dialog */}
+        <Dialog open={changePasswordOpen} onOpenChange={(open) => { if (!open) { setChangePasswordOpen(false); setCpMsg(null); setCpCurrentPassword(''); setCpNewPassword(''); setCpConfirmPassword(''); } }}>
           <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-base"><Shield className="w-5 h-5 text-blue-600" />Reset Admin Password</DialogTitle>
-              <DialogDescription className="text-xs">Set a new password for admin login</DialogDescription>
+              <DialogTitle className="flex items-center gap-2 text-base"><Shield className="w-5 h-5 text-blue-600" />Change Admin Password</DialogTitle>
+              <DialogDescription className="text-xs">Enter current password, then set new password</DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
-              {forgotMsg && (
+              {cpMsg && (
                 <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
                   className={`p-3 rounded-xl text-sm flex items-center gap-2 border ${
-                    forgotMsg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+                    cpMsg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
                   }`}>
-                  {forgotMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
-                  {forgotMsg.text}
+                  {cpMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+                  {cpMsg.text}
                 </motion.div>
               )}
               <div>
+                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Current Password</Label>
+                <Input type="password" value={cpCurrentPassword} onChange={(e) => setCpCurrentPassword(e.target.value)} placeholder="Enter current password" className="h-11" />
+              </div>
+              <div>
                 <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
-                <Input type="password" value={forgotNewPassword} onChange={(e) => setForgotNewPassword(e.target.value)} placeholder="Enter new password (min 4 chars)" className="h-11" />
+                <Input type="password" value={cpNewPassword} onChange={(e) => setCpNewPassword(e.target.value)} placeholder="Enter new password (min 4 chars)" className="h-11" />
               </div>
               <div>
                 <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
-                <Input type="password" value={forgotConfirmPassword} onChange={(e) => setForgotConfirmPassword(e.target.value)} placeholder="Confirm new password" className="h-11" onKeyDown={(e) => e.key === 'Enter' && handleAdminForgotPassword()} />
+                <Input type="password" value={cpConfirmPassword} onChange={(e) => setCpConfirmPassword(e.target.value)} placeholder="Confirm new password" className="h-11" onKeyDown={(e) => e.key === 'Enter' && handleChangePassword()} />
               </div>
               <div className="flex gap-2">
                 <DialogClose asChild>
                   <Button variant="outline" className="flex-1 h-11">Cancel</Button>
                 </DialogClose>
-                <Button className="flex-1 h-11 bg-blue-700 hover:bg-blue-800 font-semibold" onClick={handleAdminForgotPassword} disabled={forgotLoading || !forgotNewPassword || !forgotConfirmPassword}>
-                  {forgotLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Resetting...</> : <><Save className="w-4 h-4 mr-2" />Reset Password</>}
+                <Button className="flex-1 h-11 bg-blue-700 hover:bg-blue-800 font-semibold" onClick={handleChangePassword} disabled={cpLoading || !cpCurrentPassword || !cpNewPassword || !cpConfirmPassword}>
+                  {cpLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : <><Save className="w-4 h-4 mr-2" />Update Password</>}
                 </Button>
               </div>
             </div>

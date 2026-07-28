@@ -533,3 +533,31 @@ Stage Summary:
 - Icon-only tab navigation on mobile, icon+text on desktop
 - Lint passes clean, no console errors
 - Files modified: AdminPanel.tsx, globals.css
+
+---
+Task ID: admin-tabs-fix-change-password
+Agent: main (Z.ai Code)
+Task: Fix mobile tabs overflow + Change "Forgot Password" to "Change Password"
+
+Work Log:
+- User reported: Mobile admin panel tabs overflow on Vercel deployment (old code)
+- Verified: Local code already has icon-only tabs on mobile (fixed in previous session)
+- Confirmed via agent-browser: 7 tabs show as icons only on 375px, all fit within screen, no overflow
+
+- Changed "Forgot Password?" → "Change Password?" in AdminLogin component
+- Replaced old 2-field dialog (New Password + Confirm) with 3-field dialog:
+  - Field 1: Current Password
+  - Field 2: New Password (min 4 chars)
+  - Field 3: Confirm New Password
+  - Button: "Update Password" (disabled until all 3 fields filled)
+- API call uses POST /api/admin/reset-password with currentPassword + newPassword
+- Success message: "Password updated successfully! Use new password to login next time."
+- Dialog clears all fields on close
+- Verified: API returns {"success":true} for correct credentials
+
+Stage Summary:
+- Tabs already fixed from previous session (icon-only on mobile)
+- "Forgot Password?" renamed to "Change Password?"
+- 3-field change password form working (Current → New → Confirm → Update)
+- Lint passes, no console errors
+- Files modified: AdminPanel.tsx
