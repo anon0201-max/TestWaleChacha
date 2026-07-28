@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Crown, CheckCircle2, Zap, BookOpen, Shield, Star, X, Sparkles, ArrowRight, Loader2,
+  Crown, CheckCircle2, Zap, BookOpen, Shield, Star, X, Sparkles, ArrowRight, Loader2, AlertCircle,
 } from 'lucide-react';
 
 declare global {
@@ -17,6 +17,7 @@ declare global {
 export function SubscriptionModal() {
   const { showSubscriptionModal, setShowSubscriptionModal, deviceId, user, setUser, setStudentData } = useAppStore();
   const [step, setStep] = useState<'form' | 'processing' | 'success'>('form');
+  const [paymentError, setPaymentError] = useState('');
 
   const studentId = user?.id || null;
 
@@ -28,6 +29,9 @@ export function SubscriptionModal() {
       script.id = 'razorpay-script';
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.async = true;
+      script.onerror = () => {
+        setPaymentError('Payment gateway failed to load. Please check your internet connection and try again.');
+      };
       document.body.appendChild(script);
     }
   }, [showSubscriptionModal]);
@@ -36,10 +40,12 @@ export function SubscriptionModal() {
 
   function handleClose() {
     setShowSubscriptionModal(false);
+    setPaymentError('');
     setTimeout(() => setStep('form'), 200);
   }
 
   async function handlePay() {
+    setPaymentError('');
     setStep('processing');
 
     try {
@@ -53,7 +59,7 @@ export function SubscriptionModal() {
       if (!orderRes.ok) {
         const errData = await orderRes.json().catch(() => ({}));
         setStep('form');
-        alert(errData.error || errData.message || 'Failed to create payment order. Please try again.');
+        setPaymentError(errData.error || errData.message || 'Failed to create payment order. Please try again.');
         return;
       }
 
@@ -61,7 +67,7 @@ export function SubscriptionModal() {
 
       if (!orderData.id) {
         setStep('form');
-        alert('Invalid payment response. Please try again.');
+        setPaymentError('Invalid payment response from server. Please try again later.');
         return;
       }
 
@@ -97,14 +103,15 @@ export function SubscriptionModal() {
               } else {
                 setStudentData({ freeTestsUsed: 0, isSubscribed: true });
               }
+              setPaymentError('');
               setStep('success');
             } else {
               setStep('form');
-              alert('Payment verification failed. Contact support.');
+              setPaymentError('Payment verification failed. Please contact support if amount was deducted.');
             }
           } catch {
             setStep('form');
-            alert('Error verifying payment. Please try again.');
+            setPaymentError('Error verifying payment. Please contact support if amount was deducted.');
           }
         },
         prefill: {
@@ -128,20 +135,20 @@ export function SubscriptionModal() {
 
       if (typeof window.Razorpay === 'undefined') {
         setStep('form');
-        alert('Payment gateway is loading. Please try again in a few seconds.');
+        setPaymentError('Payment gateway is loading. Please try again in a few seconds.');
         return;
       }
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', function (_response: any) {
         setStep('form');
-        alert('Payment failed. Please try again.');
+        setPaymentError('Payment failed. Please try again or use a different payment method.');
       });
       rzp.open();
     } catch (error) {
       console.error('Payment error:', error);
       setStep('form');
-      alert('Payment error. Please try again.');
+      setPaymentError('Something went wrong. Please try again.');
     }
   }
 
@@ -181,6 +188,15 @@ export function SubscriptionModal() {
               </div>
               <div className="p-5 space-y-4">
                 <div className="text-center"><span className="text-3xl font-bold">₹100</span><span className="text-muted-foreground text-sm ml-1">one-time</span></div>
+
+                {/* Error Display */}
+                {paymentError && (
+                  <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{paymentError}</span>
+                  </motion.div>
+                )}
+
                 <div className="space-y-2.5">
                   {[
                     { icon: BookOpen, text: 'Unlimited mock test attempts' },
@@ -202,7 +218,6 @@ export function SubscriptionModal() {
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <span className="text-xs">Powered by</span>
                     <span className="text-xs font-semibold text-gray-700">Razorpay</span>
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2zm4 8h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                   </div>
                 </div>
                 {user?.email && (

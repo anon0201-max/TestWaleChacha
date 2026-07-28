@@ -100,7 +100,7 @@ export function AuthModal() {
         handleClose();
         if (pendingTestId) startPendingTest();
       } else {
-        setError(data.error || 'Login failed');
+        setError(data.message || data.error || 'Login failed');
       }
     } catch { setError('Server error. Please try again.'); }
     setLoading(false);
@@ -137,7 +137,7 @@ export function AuthModal() {
         setNewPassword('');
         setConfirmNewPassword('');
       } else {
-        setError(data.error || 'Failed to reset password');
+        setError(data.message || data.error || 'Failed to reset password');
       }
     } catch { setError('Server error. Please try again.'); }
     setLoading(false);
@@ -164,7 +164,7 @@ export function AuthModal() {
         handleClose();
         if (pendingTestId) startPendingTest();
       } else {
-        setError(data.error || 'Signup failed');
+        setError(data.message || data.error || 'Signup failed');
       }
     } catch { setError('Server error. Please try again.'); }
     setLoading(false);
