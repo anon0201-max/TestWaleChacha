@@ -1,60 +1,63 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Student } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { db } from '@/lib/db';
 
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password + '_quizmaster_salt').digest('hex');
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    const { name, email, password, deviceId } = await request.json();
 
-    const { name, email, password, phone, deviceId } = await request.json();
-
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 });
+    if (!email || !password || !name) {
+      return NextResponse.json(
+        { success: false, message: 'Name, email, and password are required' },
+        { status: 400 }
+      );
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
-    }
+    const existingStudent = await db.student.findUnique({
+      where: { email },
+    });
 
-    // Check if email already exists
-    const existingByEmail = await Student.findOne({ email }).lean();
-    if (existingByEmail) {
-      return NextResponse.json({ error: 'Email already registered. Please login.' }, { status: 409 });
+    if (existingStudent) {
+      return NextResponse.json(
+        { success: false, message: 'Email already registered' },
+        { status: 409 }
+      );
     }
-
-    // Check if deviceId already exists (guest student) — upgrade it
-    const existingByDevice = deviceId ? await Student.findOne({ deviceId }).lean() : null;
 
     let student;
 
-    if (existingByDevice) {
-      // Upgrade existing guest student to registered account
-      student = await Student.findOneAndUpdate(
-        { id: existingByDevice.id },
-        {
+    if (deviceId) {
+      const guestStudent = await db.student.findUnique({
+        where: { deviceId },
+      });
+
+      if (guestStudent) {
+        const hashedPassword = hashPassword(password);
+        student = await db.student.update({
+          where: { id: guestStudent.id },
+          data: {
+            name,
+            email,
+            passwordHash: hashedPassword,
+          },
+        });
+      }
+    }
+
+    if (!student) {
+      const hashedPassword = hashPassword(password);
+      student = await db.student.create({
+        data: {
           name,
           email,
-          passwordHash: hashPassword(password),
-          phone: phone || null,
+          passwordHash: hashedPassword,
+          deviceId: deviceId || null,
         },
-        { new: true }
-      ).lean();
-    } else {
-      // Create new student with auth
-      student = await Student.create({
-        name,
-        email,
-        passwordHash: hashPassword(password),
-        phone: phone || null,
-        deviceId: deviceId || null,
-        freeTestsUsed: 0,
       });
-      student = student.toObject();
     }
 
     return NextResponse.json({
@@ -63,13 +66,19 @@ export async function POST(request: Request) {
         id: student.id,
         name: student.name,
         email: student.email,
+        phone: student.phone,
+        deviceId: student.deviceId,
         freeTestsUsed: student.freeTestsUsed,
-        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
         isSubscribed: student.isSubscribed,
+        subscriptionAt: student.subscriptionAt,
+        createdAt: student.createdAt,
       },
     });
   } catch (error) {
     console.error('Signup error:', error);
-    return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

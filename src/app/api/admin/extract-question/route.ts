@@ -1,5 +1,3 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Test, Question } from '@/models';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Allow up to 5 minutes for VLM processing (large images take 30-60 seconds)
@@ -8,8 +6,6 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
-
     const formData = await request.formData();
     const imageFile = formData.get('image') as File | null;
 

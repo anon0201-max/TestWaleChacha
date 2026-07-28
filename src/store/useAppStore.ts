@@ -179,7 +179,7 @@ export const useAppStore = create<AppState>()(
         user,
         isLoggedIn: !!user,
         freeTestsUsed: user?.freeTestsUsed ?? 0,
-        freeTestsRemaining: user?.freeTestsRemaining ?? 5,
+        freeTestsRemaining: Math.max(0, user?.freeTestsRemaining ?? 5),
         isSubscribed: user?.isSubscribed ?? false,
       }),
       logout: () => set({
@@ -196,9 +196,9 @@ export const useAppStore = create<AppState>()(
       freeTestsRemaining: 5,
       isSubscribed: false,
       setStudentData: (data) => set({
-        freeTestsUsed: data.freeTestsUsed,
-        freeTestsRemaining: Math.max(0, 5 - data.freeTestsUsed),
-        isSubscribed: data.isSubscribed,
+        freeTestsUsed: data.freeTestsUsed ?? 0,
+        freeTestsRemaining: Math.max(0, 5 - (data.freeTestsUsed ?? 0)),
+        isSubscribed: data.isSubscribed ?? false,
       }),
 
       categories: [],
@@ -256,6 +256,12 @@ export const useAppStore = create<AppState>()(
         freeTestsRemaining: state.freeTestsRemaining,
         isSubscribed: state.isSubscribed,
         themeColor: state.themeColor,
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as object),
+        freeTestsUsed: Number((persisted as any).freeTestsUsed) || 0,
+        freeTestsRemaining: Number((persisted as any).freeTestsRemaining) || 5,
       }),
     }
   )

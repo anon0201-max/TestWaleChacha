@@ -1,59 +1,125 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Category, Test } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    await dbConnect();
+    const categories = await db.category.findMany({
+      orderBy: { name: 'asc' },
+    });
 
-    const categories = await Category.find()
-      .sort({ name: 1 })
-      .lean();
+    const testCounts = await db.test.groupBy({
+      by: ['categoryId'],
+      _count: { id: true },
+    });
 
-    // Get test counts per category
-    const testCounts = await Test.aggregate([
-      { $group: { _id: '$categoryId', count: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(testCounts.map((tc) => [tc._id, tc.count]));
+    const countMap = new Map<string, number>();
+    for (const tc of testCounts) {
+      countMap.set(tc.categoryId, tc._count.id);
+    }
 
-    const result = categories.map((cat: any) => ({
+    const result = categories.map((cat) => ({
       ...cat,
       _count: { tests: countMap.get(cat.id) || 0 },
     }));
 
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  } catch (error) {
+    console.error('Get categories error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    const body = await request.json();
+    const { name, slug, icon, color, examType } = body;
 
-    const { name, slug, icon, color, examType } = await request.json();
-    if (!name || !slug) return NextResponse.json({ error: 'Name and slug required' }, { status: 400 });
-    const cat = await Category.create({
-      name,
-      slug,
-      icon: icon || 'BookOpen',
-      color: color || '#1e40af',
-      examType: examType || 'General',
+    if (!name || !slug) {
+      return NextResponse.json(
+        { success: false, message: 'Name and slug are required' },
+        { status: 400 }
+      );
+    }
+
+    const existing = await db.category.findUnique({
+      where: { slug },
     });
-    return NextResponse.json(cat.toObject());
-  } catch {
-    return NextResponse.json({ error: 'Failed to create' }, { status: 500 });
+
+    if (existing) {
+      return NextResponse.json(
+        { success: false, message: 'Category with this slug already exists' },
+        { status: 409 }
+      );
+    }
+
+    const category = await db.category.create({
+      data: {
+        name,
+        slug,
+        icon: icon || 'BookOpen',
+        color: color || '#1e40af',
+        examType: examType || 'General',
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Category created successfully',
+      category,
+    });
+  } catch (error) {
+    console.error('Create category error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
-    await dbConnect();
-
     const { id } = await request.json();
-    await Category.findOneAndDelete({ id });
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: 'Category ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const category = await db.category.findUnique({
+      where: { id },
+      include: { _count: { select: { tests: true } } },
+    });
+
+    if (!category) {
+      return NextResponse.json(
+        { success: false, message: 'Category not found' },
+        { status: 404 }
+      );
+    }
+
+    if (category._count.tests > 0) {
+      return NextResponse.json(
+        { success: false, message: 'Cannot delete category with existing tests' },
+        { status: 400 }
+      );
+    }
+
+    await db.category.delete({ where: { id } });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Category deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete category error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

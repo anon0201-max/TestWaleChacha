@@ -1,66 +1,102 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Test, Question } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    await dbConnect();
-
-    const tests = await Test.find()
-      .populate({ path: 'categoryId', foreignField: 'id' })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    // Get question counts per test
-    const questionCounts = await Question.aggregate([
-      { $group: { _id: '$testId', count: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(questionCounts.map((qc) => [qc._id, qc.count]));
-
-    const result = tests.map((test: any) => ({
-      ...test,
-      category: test.categoryId,
-      categoryId: test.categoryId?.id || test.categoryId,
-      _count: { questions: countMap.get(test.id) || 0 },
-    }));
-
-    return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
-  try {
-    await dbConnect();
-
-    const { title, description, categoryId, difficulty, timeLimit, examName } = await request.json();
-    if (!title || !categoryId) return NextResponse.json({ error: 'Title and categoryId required' }, { status: 400 });
-
-    const test = await Test.create({
-      title,
-      description: description || '',
-      categoryId,
-      difficulty: difficulty || 'medium',
-      timeLimit: timeLimit || 600,
-      totalQuestions: 0,
-      examName: examName || 'Practice Test',
+    const tests = await db.test.findMany({
+      include: {
+        category: true,
+        _count: {
+          select: { questions: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(test.toObject());
-  } catch {
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return NextResponse.json(tests);
+  } catch (error) {
+    console.error('Get tests error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    const body = await request.json();
+    const { title, description, categoryId, difficulty, timeLimit, examName, isActive } = body;
 
+    if (!title || !categoryId) {
+      return NextResponse.json(
+        { success: false, message: 'Title and categoryId are required' },
+        { status: 400 }
+      );
+    }
+
+    const category = await db.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      return NextResponse.json(
+        { success: false, message: 'Category not found' },
+        { status: 404 }
+      );
+    }
+
+    const test = await db.test.create({
+      data: {
+        title,
+        description: description || '',
+        categoryId,
+        difficulty: difficulty || 'medium',
+        timeLimit: timeLimit || 600,
+        totalQuestions: 0,
+        examName: examName || 'Practice Test',
+        isActive: isActive !== undefined ? isActive : true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Test created successfully',
+      test,
+    });
+  } catch (error) {
+    console.error('Create test error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
     const { id } = await request.json();
-    await Test.findOneAndDelete({ id });
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: 'Test ID is required' },
+        { status: 400 }
+      );
+    }
+
+    await db.question.deleteMany({ where: { testId: id } });
+    await db.testAttempt.deleteMany({ where: { testId: id } });
+    await db.test.delete({ where: { id } });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Test deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete test error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

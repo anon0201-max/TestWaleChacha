@@ -1,50 +1,57 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Student } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
     const studentId = searchParams.get('studentId');
     const email = searchParams.get('email');
 
+    if (!studentId && !email) {
+      return NextResponse.json(
+        { success: false, message: 'studentId or email is required' },
+        { status: 400 }
+      );
+    }
+
+    let student;
+
     if (studentId) {
-      const student = await Student.findOne({ id: studentId }).lean();
-      if (student) {
-        return NextResponse.json({
-          id: student.id,
-          name: student.name,
-          email: student.email,
-          phone: student.phone,
-          freeTestsUsed: student.freeTestsUsed,
-          freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
-          isSubscribed: student.isSubscribed,
-          subscriptionAt: student.subscriptionAt,
-        });
-      }
+      student = await db.student.findUnique({
+        where: { id: studentId },
+      });
+    } else if (email) {
+      student = await db.student.findUnique({
+        where: { email: email! },
+      });
     }
 
-    if (email) {
-      const student = await Student.findOne({ email }).lean();
-      if (student) {
-        return NextResponse.json({
-          id: student.id,
-          name: student.name,
-          email: student.email,
-          phone: student.phone,
-          freeTestsUsed: student.freeTestsUsed,
-          freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
-          isSubscribed: student.isSubscribed,
-          subscriptionAt: student.subscriptionAt,
-        });
-      }
+    if (!student) {
+      return NextResponse.json(
+        { success: false, message: 'Student not found' },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+    return NextResponse.json({
+      success: true,
+      student: {
+        id: student.id,
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        deviceId: student.deviceId,
+        freeTestsUsed: student.freeTestsUsed,
+        isSubscribed: student.isSubscribed,
+        subscriptionAt: student.subscriptionAt,
+        createdAt: student.createdAt,
+      },
+    });
   } catch (error) {
-    console.error('Auth me error:', error);
-    return NextResponse.json({ error: 'Failed to fetch student' }, { status: 500 });
+    console.error('Fetch student error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

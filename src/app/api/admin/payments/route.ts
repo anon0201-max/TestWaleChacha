@@ -1,22 +1,21 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Payment, Student } from '@/models';
+import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 // GET /api/admin/payments — list all payments with student info
 export async function GET() {
   try {
-    await dbConnect();
-
-    const payments = await Payment.find()
-      .sort({ createdAt: -1 })
-      .limit(200)
-      .lean();
+    const payments = await db.payment.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
 
     // Get all unique student IDs
     const studentIds = [...new Set(payments.map(p => p.studentId))];
 
     // Batch fetch students
-    const students = await Student.find({ id: { $in: studentIds } }).lean();
+    const students = await db.student.findMany({
+      where: { id: { in: studentIds } },
+    });
     const studentMap = new Map(students.map(s => [s.id, s]));
 
     return NextResponse.json(

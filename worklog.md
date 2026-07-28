@@ -626,3 +626,80 @@ Stage Summary:
 - Razorpay payment gateway fully integrated (create-order + verify)
 - Vercel deployment will use environment variables set by user
 ---
+
+---
+Task ID: 5
+Agent: Migration Agent
+Task: Migrate payment/verify and subscribe API routes from MongoDB/Mongoose to Prisma/SQLite
+
+Work Log:
+- Verified /api/payment/create-order/route.ts — uses only Razorpay SDK, no MongoDB. No changes needed.
+- Rewrote /api/payment/verify/route.ts:
+  - Removed `import { dbConnect } from '@/lib/mongodb'` and `import { Student, Payment } from '@/models'`
+  - Added `import { db } from '@/lib/db'`
+  - Removed `await dbConnect()` call
+  - Replaced `Student.findOne({ id: x }).lean()` → `db.student.findUnique({ where: { id: x } })`
+  - Replaced `Student.findOne({ deviceId: x }).lean()` → `db.student.findUnique({ where: { deviceId: x } })`
+  - Replaced `Payment.create({...})` → `db.payment.create({ data: {...} })`
+  - Replaced `Student.findOneAndUpdate({ id: x }, data, { new: true }).lean()` → `db.student.update({ where: { id: x }, data })`
+  - Removed all `.toObject()` / `.lean()` calls
+  - HMAC signature verification logic unchanged (uses crypto module, not database)
+- Rewrote /api/subscribe/route.ts:
+  - Same MongoDB → Prisma migration patterns as verify route
+  - Replaced student lookup with `db.student.findUnique`
+  - Replaced `findOneAndUpdate` with `db.student.update`
+  - Removed `.lean()` calls
+
+Stage Summary:
+- 2 API routes migrated from MongoDB/Mongoose to Prisma/SQLite
+- 1 API route (create-order) verified as MongoDB-free — no changes needed
+- All payment and subscription functionality now uses Prisma ORM with SQLite
+
+---
+Task ID: 4
+Agent: Auth Routes Migration Agent
+Task: Migrate 4 auth API routes from MongoDB/Mongoose to Prisma/SQLite
+
+Work Log:
+- Rewrote /api/auth/login/route.ts: replaced dbConnect/Mongoose with db.student.findUnique/update from Prisma; kept SHA256+salt hash verification; links deviceId on login
+- Rewrote /api/auth/signup/route.ts: replaced dbConnect/Mongoose with db.student.findUnique/create/update from Prisma; checks email uniqueness; upgrades guest by deviceId; creates new student
+- Rewrote /api/auth/me/route.ts: replaced dbConnect/Mongoose with db.student.findUnique from Prisma; looks up by studentId or email query param
+- Rewrote /api/auth/reset-password/route.ts: replaced dbConnect/Mongoose with db.student.findUnique/update from Prisma; finds by email, updates passwordHash
+- Removed all MongoDB imports (dbConnect, Student model), added Prisma db import
+- Password hashing function kept identical (SHA256 with '_quizmaster_salt' suffix)
+- API response format preserved exactly (success/message/student fields)
+- Lint passes cleanly
+
+Stage Summary:
+All 4 auth API routes successfully migrated from MongoDB/Mongoose to Prisma/SQLite. No breaking changes to API contracts.
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix disappeared mock tests - Migrate all 23 API routes from MongoDB/Mongoose to Prisma/SQLite
+
+Work Log:
+- Diagnosed root cause: All 23 API routes were importing from `@/lib/mongodb` and `@/models` (MongoDB/Mongoose) but the project uses Prisma/SQLite (Prisma client at `@/lib/db`, SQLite at `db/custom.db`). MongoDB connection was failing silently.
+- Fixed `.env` - added `DATABASE_URL=file:/home/z/my-project/db/custom.db`
+- Created missing `src/components/JsonLd.tsx` component (was causing layout.tsx crash)
+- Migrated all 23 API routes from MongoDB to Prisma:
+  - Public: /api/categories, /api/tests, /api/tests/[id], /api/student, /api/student/payments, /api/attempts
+  - Auth: /api/auth/login, /api/auth/signup, /api/auth/me, /api/auth/reset-password
+  - Payment: /api/payment/verify, /api/subscribe (create-order didn't use DB)
+  - Admin: /api/admin/login, /api/admin/reset-password, /api/admin/stats, /api/admin/tests, /api/admin/tests/questions, /api/admin/categories, /api/admin/students, /api/admin/payments, /api/admin/import-answers, /api/admin/import-explanations
+  - /api/admin/extract-question (removed unused MongoDB imports, only uses VLM)
+- Fixed API response format mismatches between migrated routes and frontend expectations:
+  - Categories/tests routes returned `{success, data}` wrapper but frontend expects raw arrays
+  - Categories used `testCount` but frontend expects `_count.tests`
+  - Tests used `questionCount` but frontend expects `_count.questions`
+  - Stats route wrapped response but frontend expects flat object
+  - Admin login returned `message` but frontend checks `error`
+  - Attempts POST missing FREE_LIMIT_REACHED check
+  - Attempts GET wrapped response but frontend expects raw arrays
+- Fixed NaN `freeTestsRemaining` issue in Zustand store (added merge strategy for persisted state)
+
+Stage Summary:
+- All 23 API routes migrated to Prisma/SQLite successfully
+- 11 categories with test counts, 26 mock tests displaying correctly
+- Lint passes clean, dev server running with all 200s
+- Verified with agent-browser + VLM: homepage, categories, test list all working
+- Key files modified: All files in src/app/api/**, src/store/useAppStore.ts, src/components/JsonLd.tsx, .env

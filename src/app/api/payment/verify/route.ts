@@ -1,12 +1,9 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Student, Payment } from '@/models';
+import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
-    await dbConnect();
-
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature, studentId, deviceId, amount } = await request.json();
 
     if (!studentId && !deviceId) {
@@ -28,34 +25,37 @@ export async function POST(request: Request) {
     }
 
     // Find student
-    let student;
-    if (studentId) {
-      student = await Student.findOne({ id: studentId }).lean();
-    } else if (deviceId) {
-      student = await Student.findOne({ deviceId }).lean();
-    }
+    const student = studentId
+      ? await db.student.findUnique({ where: { id: studentId } })
+      : deviceId
+        ? await db.student.findUnique({ where: { deviceId } })
+        : null;
 
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
     // Create payment record
-    await Payment.create({
-      studentId: student.id,
-      razorpayOrderId: razorpayOrderId || `order_${Date.now()}`,
-      razorpayPaymentId: razorpayPaymentId || `pay_${Date.now()}`,
-      razorpaySignature: razorpaySignature || '',
-      amount: amount || 10000,
-      status: 'completed',
-      currency: 'INR',
+    await db.payment.create({
+      data: {
+        studentId: student.id,
+        razorpayOrderId: razorpayOrderId || `order_${Date.now()}`,
+        razorpayPaymentId: razorpayPaymentId || `pay_${Date.now()}`,
+        razorpaySignature: razorpaySignature || '',
+        amount: amount || 10000,
+        status: 'completed',
+        currency: 'INR',
+      },
     });
 
     // Activate subscription
-    const updated = await Student.findOneAndUpdate(
-      { id: student.id },
-      { isSubscribed: true, subscriptionAt: new Date() },
-      { new: true }
-    ).lean();
+    const updated = await db.student.update({
+      where: { id: student.id },
+      data: {
+        isSubscribed: true,
+        subscriptionAt: new Date(),
+      },
+    });
 
     return NextResponse.json({
       success: true,

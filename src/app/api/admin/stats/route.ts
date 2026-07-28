@@ -1,19 +1,17 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Student, Test, Question, TestAttempt, Payment } from '@/models';
 import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    await dbConnect();
-
     const [totalStudents, totalTests, totalQuestions, totalAttempts, totalPayments, totalPaidStudents] = await Promise.all([
-      Student.countDocuments(),
-      Test.countDocuments(),
-      Question.countDocuments(),
-      TestAttempt.countDocuments({ completed: true }),
-      Payment.countDocuments({ status: 'completed' }),
-      Student.countDocuments({ isSubscribed: true }),
+      db.student.count(),
+      db.test.count(),
+      db.question.count(),
+      db.testAttempt.count({ where: { completed: true } }),
+      db.payment.count({ where: { status: 'completed' } }),
+      db.student.count({ where: { isSubscribed: true } }),
     ]);
+
     return NextResponse.json({
       totalStudents,
       totalTests,

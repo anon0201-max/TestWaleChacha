@@ -1,44 +1,62 @@
-import { dbConnect } from '@/lib/mongodb';
-import { AdminPassword } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
-// Auto-create default admin if none exists
 async function ensureAdminExists() {
-  const count = await AdminPassword.countDocuments();
+  const count = await db.adminPassword.count();
   if (count === 0) {
-    await AdminPassword.create({ username: 'admin', password: 'admin123' });
-    console.log('✅ Default admin created: admin/admin123');
+    await db.adminPassword.create({
+      data: {
+        username: 'admin',
+        password: 'admin123',
+      },
+    });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
     await ensureAdminExists();
 
     const { username, password } = await request.json();
 
     if (!username || !password) {
-      return NextResponse.json({ error: 'Username and password required' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Username and password are required' },
+        { status: 400 }
+      );
     }
 
-    const admin = await AdminPassword.findOne({ username }).lean();
-    if (!admin || admin.password !== password) {
-      return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
+    const admin = await db.adminPassword.findUnique({
+      where: { username },
+    });
+
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid username or password' },
+        { status: 401 }
+      );
     }
-    return NextResponse.json({ success: true, username: admin.username });
-  } catch (error: any) {
-    console.error('Admin login error:', error);
-    const msg = error?.message || 'Unknown error';
-    if (msg.includes('MONGODB_URI')) {
-      return NextResponse.json({ error: 'Database not configured. Please set MONGODB_URI in Vercel environment variables.' }, { status: 500 });
+
+    if (admin.password !== password) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid username or password' },
+        { status: 401 }
+      );
     }
-    if (msg.includes('connection') || msg.includes('ENOTFOUND') || msg.includes('timed out')) {
-      return NextResponse.json({ error: 'Cannot connect to database. Check MONGODB_URI and MongoDB Atlas IP whitelist.' }, { status: 500 });
-    }
-    if (msg.includes('authentication')) {
-      return NextResponse.json({ error: 'Database authentication failed. Check your MongoDB credentials.' }, { status: 500 });
-    }
-    return NextResponse.json({ error: 'Login failed: ' + msg }, { status: 500 });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Login successful',
+      admin: {
+        id: admin.id,
+        username: admin.username,
+      },
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

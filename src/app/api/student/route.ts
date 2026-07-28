@@ -1,85 +1,95 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Student } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
-    const deviceId = searchParams.get('deviceId');
-    const studentId = searchParams.get('studentId');
+    const deviceId = searchParams.get("deviceId");
+    const studentId = searchParams.get("studentId");
 
-    let student = null;
-
-    if (studentId) {
-      student = await Student.findOne({ id: studentId }).lean();
-    } else if (deviceId) {
-      student = await Student.findOne({ deviceId }).lean();
+    if (!deviceId && !studentId) {
+      return NextResponse.json(
+        { success: false, message: "deviceId or studentId is required" },
+        { status: 400 }
+      );
     }
 
-    // Auto-create guest student if deviceId provided and no existing record
-    if (!student && deviceId) {
-      student = await Student.create({
-        name: 'Guest Student',
-        deviceId,
-        freeTestsUsed: 0,
-      });
-      student = student.toObject();
+    let student;
+
+    if (studentId) {
+      student = await db.student.findUnique({ where: { id: studentId } });
+    } else if (deviceId) {
+      student = await db.student.findUnique({ where: { deviceId: deviceId! } });
     }
 
     if (!student) {
-      return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+      const newStudent = await db.student.create({
+        data: {
+          name: "Guest User",
+          deviceId: deviceId || undefined,
+        },
+      });
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...newStudent,
+          freeTestsRemaining: Math.max(0, 5 - newStudent.freeTestsUsed),
+        },
+      });
     }
 
     return NextResponse.json({
-      id: student.id,
-      name: student.name,
-      email: student.email,
-      freeTestsUsed: student.freeTestsUsed,
-      freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
-      isSubscribed: student.isSubscribed,
+      success: true,
+      data: {
+        ...student,
+        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
+      },
     });
   } catch (error) {
-    console.error('Student fetch error:', error);
-    return NextResponse.json({ error: 'Failed to fetch student' }, { status: 500 });
+    console.error("Error fetching student:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch student" },
+      { status: 500 }
+    );
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
-    await dbConnect();
-
     const body = await request.json();
-    const { deviceId, studentId, name, email, phone } = body;
+    const { studentId, deviceId, name, email, phone } = body;
 
-    let filter: Record<string, string> = {};
-    if (studentId) filter.id = studentId;
-    else if (deviceId) filter.deviceId = deviceId;
-    else return NextResponse.json({ error: 'studentId or deviceId required' }, { status: 400 });
-
-    const updateData: Record<string, string> = {};
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    if (phone) updateData.phone = phone;
-
-    const existing = await Student.findOne(filter);
-    let student;
-
-    if (existing) {
-      student = await Student.findOneAndUpdate(filter, updateData, { new: true }).lean();
-    } else {
-      student = await Student.create({
-        name: name || 'Guest Student',
-        deviceId: deviceId || undefined,
-        ...updateData,
-      });
-      student = student.toObject();
+    if (!studentId && !deviceId) {
+      return NextResponse.json(
+        { success: false, message: "studentId or deviceId is required" },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(student);
+    const whereClause = studentId ? { id: studentId } : { deviceId };
+
+    const updateData: Record<string, string | undefined> = {};
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+
+    const student = await db.student.update({
+      where: whereClause,
+      data: updateData,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...student,
+        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
+      },
+    });
   } catch (error) {
-    console.error('Student update error:', error);
-    return NextResponse.json({ error: 'Failed to update student' }, { status: 500 });
+    console.error("Error updating student:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to update student" },
+      { status: 500 }
+    );
   }
 }

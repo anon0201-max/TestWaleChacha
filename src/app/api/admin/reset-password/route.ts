@@ -1,37 +1,47 @@
-import { dbConnect } from '@/lib/mongodb';
-import { AdminPassword } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
-
     const { currentPassword, newPassword } = await request.json();
 
-    if (!newPassword) {
-      return NextResponse.json({ error: 'Missing newPassword' }, { status: 400 });
+    if (!currentPassword || !newPassword) {
+      return NextResponse.json(
+        { success: false, message: 'Current password and new password are required' },
+        { status: 400 }
+      );
     }
 
-    if (newPassword.length < 4) {
-      return NextResponse.json({ error: 'New password must be at least 4 characters' }, { status: 400 });
+    const admin = await db.adminPassword.findFirst();
+
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, message: 'Admin not found' },
+        { status: 404 }
+      );
     }
 
-    // If currentPassword is provided, verify it (from admin panel settings)
-    if (currentPassword && currentPassword.length > 0) {
-      const admin = await AdminPassword.findOne({ username: 'admin' }).lean();
-      if (!admin || admin.password !== currentPassword) {
-        return NextResponse.json({ error: 'Invalid current password' }, { status: 401 });
-      }
+    if (admin.password !== currentPassword) {
+      return NextResponse.json(
+        { success: false, message: 'Current password is incorrect' },
+        { status: 401 }
+      );
     }
-    // If currentPassword is empty, it's a force reset (forgot password flow)
 
-    await AdminPassword.findOneAndUpdate(
-      { username: 'admin' },
-      { password: newPassword }
+    await db.adminPassword.update({
+      where: { id: admin.id },
+      data: { password: newPassword },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Password updated successfully',
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
     );
-
-    return NextResponse.json({ success: true, message: 'Password updated successfully' });
-  } catch {
-    return NextResponse.json({ error: 'Password reset failed' }, { status: 500 });
   }
 }

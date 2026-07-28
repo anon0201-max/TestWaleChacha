@@ -1,45 +1,47 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Student } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { db } from '@/lib/db';
 
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password + '_quizmaster_salt').digest('hex');
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
-
     const { email, password, deviceId } = await request.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: 'Email and password are required' },
+        { status: 400 }
+      );
     }
 
-    // Find student by email
-    const student = await Student.findOne({ email }).lean();
+    const student = await db.student.findUnique({
+      where: { email },
+    });
 
-    if (!student || !student.passwordHash) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    if (!student) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid email or password' },
+        { status: 401 }
+      );
     }
 
-    // Verify password
-    const inputHash = hashPassword(password);
-    if (inputHash !== student.passwordHash) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    const hashedPassword = hashPassword(password);
+
+    if (student.passwordHash !== hashedPassword) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid email or password' },
+        { status: 401 }
+      );
     }
 
-    // Link deviceId if provided (for continuity)
-    if (deviceId && !student.deviceId) {
-      try {
-        await Student.findOneAndUpdate(
-          { id: student.id },
-          { deviceId }
-        );
-      } catch {
-        // deviceId already taken by another student, ignore
-      }
+    if (deviceId && student.deviceId !== deviceId) {
+      await db.student.update({
+        where: { id: student.id },
+        data: { deviceId },
+      });
     }
 
     return NextResponse.json({
@@ -49,14 +51,18 @@ export async function POST(request: Request) {
         name: student.name,
         email: student.email,
         phone: student.phone,
+        deviceId: student.deviceId,
         freeTestsUsed: student.freeTestsUsed,
-        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
         isSubscribed: student.isSubscribed,
         subscriptionAt: student.subscriptionAt,
+        createdAt: student.createdAt,
       },
     });
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

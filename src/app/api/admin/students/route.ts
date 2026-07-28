@@ -1,12 +1,9 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Student, TestAttempt, Payment } from '@/models';
+import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 // GET /api/admin/students?filter=all|free|paid&search=xxx
 export async function GET(request: Request) {
   try {
-    await dbConnect();
-
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get('filter') || 'all';
     const search = searchParams.get('search') || '';
@@ -20,32 +17,35 @@ export async function GET(request: Request) {
     }
 
     if (search) {
-      where.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' as const } },
+        { email: { contains: search, mode: 'insensitive' as const } },
+        { phone: { contains: search, mode: 'insensitive' as const } },
       ];
     }
 
     // Fetch students
-    const students = await Student.find(where)
-      .sort({ createdAt: -1 })
-      .limit(500)
-      .lean();
+    const students = await db.student.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
 
     // Get attempt counts per student
-    const attemptCounts = await TestAttempt.aggregate([
-      { $group: { _id: '$studentId', count: { $sum: 1 } } },
-    ]);
-    const attemptCountMap = new Map(attemptCounts.map((ac) => [ac._id, ac.count]));
+    const attemptCounts = await db.testAttempt.groupBy({
+      by: ['studentId'],
+      _count: { id: true },
+    });
+    const attemptCountMap = new Map(attemptCounts.map((ac) => [ac.studentId, ac._count.id]));
 
     // Get payment counts and last payment per student
-    const payments = await Payment.find({ status: 'completed' })
-      .sort({ createdAt: -1 })
-      .lean();
+    const payments = await db.payment.findMany({
+      where: { status: 'completed' },
+      orderBy: { createdAt: 'desc' },
+    });
 
     const paymentCountsMap = new Map<string, number>();
-    const lastPaymentMap = new Map<string, any>();
+    const lastPaymentMap = new Map<string, typeof payments[0]>();
 
     for (const payment of payments) {
       const sid = payment.studentId;
@@ -57,9 +57,9 @@ export async function GET(request: Request) {
 
     // Get summary counts
     const [totalStudents, totalPaid, totalFree] = await Promise.all([
-      Student.countDocuments(),
-      Student.countDocuments({ isSubscribed: true }),
-      Student.countDocuments({ isSubscribed: false }),
+      db.student.count(),
+      db.student.count({ where: { isSubscribed: true } }),
+      db.student.count({ where: { isSubscribed: false } }),
     ]);
 
     return NextResponse.json({
@@ -88,17 +88,15 @@ export async function GET(request: Request) {
 // DELETE /api/admin/students — delete a student
 export async function DELETE(request: Request) {
   try {
-    await dbConnect();
-
     const { id } = await request.json();
     if (!id) {
       return NextResponse.json({ error: 'Student ID required' }, { status: 400 });
     }
 
     // Delete related records first, then student
-    await TestAttempt.deleteMany({ studentId: id });
-    await Payment.deleteMany({ studentId: id });
-    await Student.findOneAndDelete({ id });
+    await db.testAttempt.deleteMany({ where: { studentId: id } });
+    await db.payment.deleteMany({ where: { studentId: id } });
+    await db.student.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,39 +1,36 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Test, Question } from '@/models';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
-export async function GET(request: Request) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    await dbConnect();
+    const { id } = await params;
 
-    const { searchParams } = new URL(request.url);
-    const testId = searchParams.get('testId');
-
-    if (!testId) {
-      return NextResponse.json({ error: 'testId is required' }, { status: 400 });
-    }
-
-    const test = await Test.findOne({ id: testId })
-      .populate({ path: 'categoryId', foreignField: 'id' })
-      .lean();
+    const test = await db.test.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        questions: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    });
 
     if (!test) {
-      return NextResponse.json({ error: 'Test not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Test not found' },
+        { status: 404 }
+      );
     }
 
-    const questions = await Question.find({ testId })
-      .sort({ order: 1 })
-      .lean();
-
-    const result = {
-      ...test,
-      category: test.categoryId,
-      categoryId: test.categoryId?.id || test.categoryId,
-      questions,
-    };
-
-    return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch test' }, { status: 500 });
+    return NextResponse.json(test);
+  } catch (error) {
+    console.error('Error fetching test:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch test' },
+      { status: 500 }
+    );
   }
 }

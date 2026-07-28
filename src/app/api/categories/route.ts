@@ -1,26 +1,31 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Category, Test } from '@/models';
 import { NextResponse } from 'next/server';
+import { db } from '@/lib/db';
 
 export async function GET() {
   try {
-    await dbConnect();
+    const categories = await db.category.findMany({
+      orderBy: { name: 'asc' },
+    });
 
-    const categories = await Category.find().sort({ name: 1 }).lean();
+    // Count tests per category
+    const testCounts = await db.test.groupBy({
+      by: ['categoryId'],
+      _count: { id: true },
+    });
 
-    // Get test counts per category
-    const testCounts = await Test.aggregate([
-      { $group: { _id: '$categoryId', count: { $sum: 1 } } },
-    ]);
-    const countMap = new Map(testCounts.map((tc) => [tc._id, tc.count]));
+    const countMap = new Map(testCounts.map((tc) => [tc.categoryId, tc._count.id]));
 
-    const result = categories.map(({ _id, ...rest }) => ({
-      ...rest,
-      _count: { tests: countMap.get(rest.id) || 0 },
+    const result = categories.map((cat) => ({
+      ...cat,
+      _count: { tests: countMap.get(cat.id) || 0 },
     }));
 
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch categories' },
+      { status: 500 }
+    );
   }
 }

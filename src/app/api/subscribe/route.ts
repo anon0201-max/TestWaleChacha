@@ -1,11 +1,8 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Student } from '@/models';
+import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    await dbConnect();
-
     const body = await request.json();
     const { studentId, deviceId } = body;
 
@@ -14,26 +11,24 @@ export async function POST(request: Request) {
     }
 
     // Find student
-    let student;
-    if (studentId) {
-      student = await Student.findOne({ id: studentId }).lean();
-    } else if (deviceId) {
-      student = await Student.findOne({ deviceId }).lean();
-    }
+    const student = studentId
+      ? await db.student.findUnique({ where: { id: studentId } })
+      : deviceId
+        ? await db.student.findUnique({ where: { deviceId } })
+        : null;
 
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
     // Activate subscription
-    const updated = await Student.findOneAndUpdate(
-      { id: student.id },
-      {
+    const updated = await db.student.update({
+      where: { id: student.id },
+      data: {
         isSubscribed: true,
         subscriptionAt: new Date(),
       },
-      { new: true }
-    ).lean();
+    });
 
     return NextResponse.json({
       success: true,

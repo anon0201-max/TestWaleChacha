@@ -1,11 +1,8 @@
-import { dbConnect } from '@/lib/mongodb';
-import { Test, Question } from '@/models';
+import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
-
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const testId = formData.get('testId') as string | null;
@@ -19,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify test exists
-    const test = await Test.findOne({ id: testId }).lean();
+    const test = await db.test.findUnique({ where: { id: testId } });
     if (!test) {
       return NextResponse.json({ success: false, error: 'Test not found' }, { status: 404 });
     }
@@ -30,9 +27,10 @@ export async function POST(request: NextRequest) {
 
     // Parse answers: each line should be in format "Q<number> <answer>" or just "<answer>" per line
     let updated = 0;
-    const questions = await Question.find({ testId })
-      .sort({ order: 1 })
-      .lean();
+    const questions = await db.question.findMany({
+      where: { testId },
+      orderBy: { order: 'asc' },
+    });
 
     for (const line of lines) {
       // Try formats: "Q1 A", "Q1: A", "1. A", "1 A", "1,A", or just "A" per line
@@ -50,26 +48,15 @@ export async function POST(request: NextRequest) {
         if (numMatch) {
           questionIndex = parseInt(numMatch[1], 10) - 1;
           answer = numMatch[2].toUpperCase();
-        } else if (/^[A-Da-d]$/.test(line.trim())) {
-          // Format: just a single letter A-D per line (use line number as question index)
-          answer = line.trim().toUpperCase();
-          // Find the next unanswered question
-          const foundIdx = questions.findIndex((q, idx) => {
-            const alreadyProcessed = lines.slice(0, lines.indexOf(line)).some((prevLine) => {
-              const prevQ = prevLine.match(/^Q\s*(\d+)/i) || prevLine.match(/^(\d+)\s*[.:.\-,\s]/);
-              return prevQ && parseInt(prevQ[1], 10) - 1 === idx;
-            });
-            return false; // We'll use a simpler approach below
-          });
         }
       }
 
       // Apply the answer if valid
       if (questionIndex >= 0 && questionIndex < questions.length && ['A', 'B', 'C', 'D'].includes(answer)) {
-        await Question.findOneAndUpdate(
-          { id: questions[questionIndex].id },
-          { correctOption: answer }
-        );
+        await db.question.update({
+          where: { id: questions[questionIndex].id },
+          data: { correctOption: answer },
+        });
         updated++;
       }
     }
@@ -80,10 +67,10 @@ export async function POST(request: NextRequest) {
       for (const line of lines) {
         const trimmed = line.trim().toUpperCase();
         if (['A', 'B', 'C', 'D'].includes(trimmed) && lineIdx < questions.length) {
-          await Question.findOneAndUpdate(
-            { id: questions[lineIdx].id },
-            { correctOption: trimmed }
-          );
+          await db.question.update({
+            where: { id: questions[lineIdx].id },
+            data: { correctOption: trimmed },
+          });
           updated++;
           lineIdx++;
         }
