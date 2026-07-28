@@ -73,13 +73,13 @@ export function ThemeToggle() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/10 text-white transition-colors"
         title="Change theme"
       >
         {darkMode ? (
           <Moon className="w-4 h-4 text-amber-400" />
         ) : (
-          <Sun className="w-4 h-4 text-muted-foreground" />
+          <Sun className="w-4 h-4 text-white" />
         )}
         <div className={`w-3.5 h-3.5 rounded-full ${currentTheme.bg} ring-2 ring-offset-1 ${currentTheme.ring}`} />
       </button>

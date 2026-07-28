@@ -23,7 +23,7 @@ export function Logo({ size = 'md', showText = true, variant = 'dark', className
   const s = sizes[size];
 
   const textColor = variant === 'light' ? 'text-white' : 'text-gray-900';
-  const subColor = variant === 'light' ? 'text-blue-100' : 'text-muted-foreground';
+  const subColor = variant === 'light' ? 'text-orange-200' : 'text-muted-foreground';
 
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
