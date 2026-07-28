@@ -1,22 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Crown, CheckCircle2, Zap, BookOpen, Shield, Star, X, Sparkles, CreditCard, Smartphone, Wallet, ArrowRight,
+  Crown, CheckCircle2, Zap, BookOpen, Shield, Star, X, Sparkles, ArrowRight, Loader2,
 } from 'lucide-react';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export function SubscriptionModal() {
   const { showSubscriptionModal, setShowSubscriptionModal, deviceId, user, setUser, setStudentData } = useAppStore();
-  const [step, setStep] = useState<'form' | 'payment' | 'processing' | 'success'>('form');
-  const [payMethod, setPayMethod] = useState('upi');
+  const [step, setStep] = useState<'form' | 'processing' | 'success'>('form');
 
   const studentId = user?.id || null;
+
+  // Load Razorpay script
+  useEffect(() => {
+    if (showSubscriptionModal && typeof document !== 'undefined') {
+      if (document.getElementById('razorpay-script')) return;
+      const script = document.createElement('script');
+      script.id = 'razorpay-script';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, [showSubscriptionModal]);
 
   if (!showSubscriptionModal) return null;
 
@@ -25,10 +39,11 @@ export function SubscriptionModal() {
     setTimeout(() => setStep('form'), 200);
   }
 
-  async function processPayment() {
+  async function handlePay() {
     setStep('processing');
+
     try {
-      // Create order
+      // Step 1: Create Razorpay order from backend
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -36,34 +51,81 @@ export function SubscriptionModal() {
       });
       const orderData = await orderRes.json();
 
-      // Verify payment (simulated)
-      const verifyRes = await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          razorpayOrderId: orderData.id,
-          razorpayPaymentId: 'pay_' + Date.now(),
-          razorpaySignature: 'sig_' + Date.now(),
-          deviceId: studentId ? undefined : deviceId,
-          studentId,
-          amount: 10000,
-        }),
-      });
-      const verifyData = await verifyRes.json();
+      if (!orderRes.ok || !orderData.id) {
+        setStep('form');
+        alert('Failed to create payment order. Please try again.');
+        return;
+      }
 
-      if (verifyRes.ok && verifyData.success) {
-        // Update local state
-        if (verifyData.student) {
-          setUser(verifyData.student);
-        } else {
-          setStudentData({ freeTestsUsed: 0, isSubscribed: true });
-        }
-        setStep('success');
-      } else {
+      // Step 2: Open Razorpay Checkout
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'TestWaleChacha',
+        description: 'Pro Subscription — Unlimited Mock Tests',
+        image: 'https://test-wale-chacha.vercel.app/logo.png',
+        order_id: orderData.id,
+        handler: async function (response: any) {
+          // Step 3: Verify payment on backend
+          try {
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                studentId,
+                deviceId: studentId ? undefined : deviceId,
+                amount: orderData.amount,
+              }),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.success) {
+              if (verifyData.student) {
+                setUser(verifyData.student);
+              } else {
+                setStudentData({ freeTestsUsed: 0, isSubscribed: true });
+              }
+              setStep('success');
+            } else {
+              setStep('form');
+              alert('Payment verification failed. Contact support.');
+            }
+          } catch {
+            setStep('form');
+            alert('Error verifying payment. Please try again.');
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: '',
+        },
+        notes: {
+          deviceId: deviceId || '',
+          studentId: studentId || '',
+        },
+        theme: {
+          color: '#1d4ed8',
+        },
+        modal: {
+          ondismiss: function () {
+            setStep('form');
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (_response: any) {
         setStep('form');
         alert('Payment failed. Please try again.');
-      }
-    } catch {
+      });
+      rzp.open();
+    } catch (error) {
+      console.error('Payment error:', error);
       setStep('form');
       alert('Payment error. Please try again.');
     }
@@ -91,61 +153,10 @@ export function SubscriptionModal() {
             </div>
           ) : step === 'processing' ? (
             <div className="p-12 text-center">
-              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-              <h3 className="text-lg font-semibold">Processing Payment...</h3>
-              <p className="text-sm text-muted-foreground mt-1">Please wait while we verify your payment</p>
+              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+              <h3 className="text-lg font-semibold">Opening Payment...</h3>
+              <p className="text-sm text-muted-foreground mt-1">Razorpay payment window is opening</p>
             </div>
-          ) : step === 'payment' ? (
-            <>
-              <div className="bg-blue-900 p-4 text-white">
-                <div className="flex items-center justify-between">
-                  <button onClick={() => setStep('form')} className="text-white/70 hover:text-white"><X className="w-5 h-5" /></button>
-                  <span className="text-sm font-medium">Payment</span>
-                  <span className="text-lg font-bold">₹100</span>
-                </div>
-              </div>
-              <div className="p-5 space-y-4">
-                <div className="bg-blue-50 rounded-xl p-3 flex items-center justify-between">
-                  <div><p className="text-sm font-medium">TestWaleChacha Pro - Unlimited</p><p className="text-xs text-muted-foreground">{user?.email || 'One-time payment'}</p></div>
-                  <p className="font-bold">₹100</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-2">PAYMENT METHOD</p>
-                  <div className="space-y-2">
-                    {[
-                      { id: 'upi', icon: Smartphone, label: 'UPI / Google Pay / PhonePe', color: 'border-blue-500 bg-blue-50' },
-                      { id: 'card', icon: CreditCard, label: 'Credit / Debit Card', color: '' },
-                      { id: 'wallet', icon: Wallet, label: 'Wallets (Paytm, etc.)', color: '' },
-                    ].map((m) => (
-                      <button key={m.id} onClick={() => setPayMethod(m.id)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${payMethod === m.id ? m.color : 'border-gray-200 hover:border-gray-300'}`}>
-                        <m.icon className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm font-medium flex-1">{m.label}</span>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${payMethod === m.id ? 'border-blue-600' : 'border-gray-300'}`}>
-                          {payMethod === m.id && <div className="w-3 h-3 rounded-full bg-blue-600" />}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {payMethod === 'upi' && (
-                  <div><Label className="text-xs">UPI ID</Label><Input placeholder="yourname@upi" /></div>
-                )}
-                {payMethod === 'card' && (
-                  <div className="space-y-2">
-                    <div><Label className="text-xs">Card Number</Label><Input placeholder="1234 5678 9012 3456" /></div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><Label className="text-xs">Expiry</Label><Input placeholder="MM/YY" /></div>
-                      <div><Label className="text-xs">CVV</Label><Input placeholder="•••" type="password" /></div>
-                    </div>
-                  </div>
-                )}
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 h-12 font-semibold" onClick={processPayment}>
-                  Pay ₹100 Securely
-                </Button>
-                <p className="text-[10px] text-center text-muted-foreground">🔒 Payment secured by 256-bit SSL encryption</p>
-              </div>
-            </>
           ) : (
             <>
               <div className="bg-gradient-to-br from-blue-800 to-blue-900 p-5 text-white relative">
@@ -169,6 +180,17 @@ export function SubscriptionModal() {
                     </div>
                   ))}
                 </div>
+                <div className="bg-gray-50 rounded-xl p-3 text-sm">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">Payment Method</span>
+                    <span className="text-xs font-medium">UPI, Cards & Wallets</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span className="text-xs">Powered by</span>
+                    <span className="text-xs font-semibold text-gray-700">Razorpay</span>
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2zm4 8h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                  </div>
+                </div>
                 {user?.email && (
                   <div className="bg-gray-50 rounded-xl p-3 text-sm">
                     <p className="text-xs text-muted-foreground">Account</p>
@@ -181,9 +203,10 @@ export function SubscriptionModal() {
                     <strong>Note:</strong> Please login/signup first for better tracking and to link your subscription.
                   </div>
                 )}
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold" onClick={() => setStep('payment')}>
-                  Proceed to Pay ₹100 <ArrowRight className="w-4 h-4 ml-2 hidden sm:inline" />
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-semibold" onClick={handlePay} disabled={step === 'processing'}>
+                  {step === 'processing' ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</> : <>Pay ₹100 Securely <ArrowRight className="w-4 h-4 ml-2 hidden sm:inline" /></>}
                 </Button>
+                <p className="text-[10px] text-center text-muted-foreground">🔒 Secured by Razorpay — 256-bit SSL encryption</p>
               </div>
             </>
           )}

@@ -1,26 +1,47 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
+import Razorpay from 'razorpay';
 
-// Simulated Razorpay order creation (works without actual API keys)
 export async function POST(request: Request) {
   try {
     const { amount, deviceId, studentId } = await request.json();
+
     if (!deviceId && !studentId) {
       return NextResponse.json({ error: 'deviceId or studentId is required' }, { status: 400 });
     }
 
-    const orderAmount = amount * 100; // Convert to paise
-    const orderId = 'order_' + crypto.randomBytes(16).toString('hex');
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    // Simulate Razorpay order
-    return NextResponse.json({
-      id: orderId,
+    if (!keyId || !keySecret) {
+      return NextResponse.json({ error: 'Razorpay credentials not configured' }, { status: 500 });
+    }
+
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+
+    const orderAmount = amount * 100; // Convert ₹100 to paise (₹100 = 10000 paise)
+
+    const order = await razorpay.orders.create({
       amount: orderAmount,
       currency: 'INR',
-      status: 'created',
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_DEMO_KEY',
+      receipt: `receipt_${deviceId || studentId}_${Date.now()}`,
+      notes: {
+        deviceId: deviceId || '',
+        studentId: studentId || '',
+      },
     });
-  } catch {
+
+    return NextResponse.json({
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      status: order.status,
+      key: keyId,
+    });
+  } catch (error) {
+    console.error('Razorpay order creation error:', error);
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
   }
 }

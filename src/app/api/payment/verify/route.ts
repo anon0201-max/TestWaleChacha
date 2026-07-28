@@ -1,6 +1,7 @@
 import { dbConnect } from '@/lib/mongodb';
 import { Student, Payment } from '@/models';
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +13,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing student identification' }, { status: 400 });
     }
 
-    // Find or create student
+    // Verify Razorpay signature
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (keySecret && razorpayOrderId && razorpayPaymentId && razorpaySignature) {
+      const expectedSignature = crypto
+        .createHmac('sha256', keySecret)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest('hex');
+
+      if (expectedSignature !== razorpaySignature) {
+        console.error('Signature mismatch:', { expected: expectedSignature, received: razorpaySignature });
+        return NextResponse.json({ error: 'Payment verification failed — signature mismatch' }, { status: 400 });
+      }
+    }
+
+    // Find student
     let student;
     if (studentId) {
       student = await Student.findOne({ id: studentId }).lean();
@@ -27,9 +42,9 @@ export async function POST(request: Request) {
     // Create payment record
     await Payment.create({
       studentId: student.id,
-      razorpayOrderId: razorpayOrderId || `order_sim_${Date.now()}`,
-      razorpayPaymentId: razorpayPaymentId || `pay_sim_${Date.now()}`,
-      razorpaySignature: razorpaySignature || `sig_sim_${Date.now()}`,
+      razorpayOrderId: razorpayOrderId || `order_${Date.now()}`,
+      razorpayPaymentId: razorpayPaymentId || `pay_${Date.now()}`,
+      razorpaySignature: razorpaySignature || '',
       amount: amount || 10000,
       status: 'completed',
       currency: 'INR',

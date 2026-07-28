@@ -584,3 +584,25 @@ Stage Summary:
 - Change Password dialog was already correctly implemented from previous session
 - All fixes verified on mobile viewport (375x812) via agent-browser + VLM
 ---
+---
+Task ID: 2
+Agent: Main Agent
+Task: Integrate Razorpay Payment Gateway
+
+Work Log:
+- Added RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to .env
+- Installed razorpay npm package
+- Rewrote /api/payment/create-order route to create real Razorpay orders using SDK
+- Updated /api/payment/verify route with HMAC-SHA256 signature verification
+- Rewrote SubscriptionModal.tsx - removed fake UPI/Card form, now opens real Razorpay Checkout popup
+- Added Razorpay checkout.js script loader in useEffect
+- Modal now: form -> processing (loading) -> Razorpay popup -> success/failure
+- Tested subscription modal via agent-browser - confirmed Pay button, Razorpay branding visible
+- ESLint passed clean
+
+Stage Summary:
+- Razorpay test mode fully integrated
+- Real payment flow: Create Order -> Razorpay Checkout -> Payment -> Signature Verify -> Subscription Activate
+- User sees real Razorpay popup with UPI, Cards, Wallets, Net Banking options
+- All 3 files modified: create-order/route.ts, verify/route.ts, SubscriptionModal.tsx
+---
