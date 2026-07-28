@@ -212,11 +212,11 @@ export function AppHeader() {
                   {!isSubscribed && (
                     <Badge className="gap-1 text-xs hidden sm:flex bg-white/20 text-white border-0 hover:bg-white/30"><Zap className="w-3 h-3" />{freeTestsRemaining} free</Badge>
                   )}
-                  <Button size="sm" variant="outline" className="text-xs border-white/30 text-white hover:bg-white/10 hover:text-white" onClick={() => setShowAuthModal('login')}>
+                  <Button size="sm" className="text-xs bg-transparent border-2 border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-[#1C1C84] font-semibold transition-all" onClick={() => setShowAuthModal('login')}>
                     <LogIn className="w-3.5 h-3.5 mr-1" />
                     <span className="hidden sm:inline">Login</span>
                   </Button>
-                  <Button size="sm" className="bg-white text-[#1C1C84] hover:bg-white/90 text-xs font-semibold" onClick={() => setShowAuthModal('signup')}>
+                  <Button size="sm" className="text-xs bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600 font-semibold shadow-lg shadow-amber-500/20 transition-all" onClick={() => setShowAuthModal('signup')}>
                     <UserCircle className="w-3.5 h-3.5 mr-1" />
                     <span className="hidden sm:inline">Sign Up</span>
                   </Button>
