@@ -24,11 +24,21 @@ export async function POST(request: Request) {
 
     const admin = await AdminPassword.findOne({ username }).lean();
     if (!admin || admin.password !== password) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid username or password' }, { status: 401 });
     }
     return NextResponse.json({ success: true, username: admin.username });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Admin login error:', error);
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+    const msg = error?.message || 'Unknown error';
+    if (msg.includes('MONGODB_URI')) {
+      return NextResponse.json({ error: 'Database not configured. Please set MONGODB_URI in Vercel environment variables.' }, { status: 500 });
+    }
+    if (msg.includes('connection') || msg.includes('ENOTFOUND') || msg.includes('timed out')) {
+      return NextResponse.json({ error: 'Cannot connect to database. Check MONGODB_URI and MongoDB Atlas IP whitelist.' }, { status: 500 });
+    }
+    if (msg.includes('authentication')) {
+      return NextResponse.json({ error: 'Database authentication failed. Check your MongoDB credentials.' }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'Login failed: ' + msg }, { status: 500 });
   }
 }

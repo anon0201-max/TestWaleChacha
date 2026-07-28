@@ -1,14 +1,6 @@
 import mongoose from 'mongoose';
 
-// Load env from project root
-import { config } from 'dotenv';
-config({ path: process.cwd() + '/.env' });
-
 const MONGODB_URI = process.env.MONGODB_URI || '';
-
-if (!MONGODB_URI) {
-  throw new Error('MONGODB_URI not defined in .env');
-}
 
 let cached = (global as any).mongoose;
 if (!cached) {
@@ -16,9 +8,12 @@ if (!cached) {
 }
 
 export async function dbConnect() {
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not set. Please add it to your .env file or deployment environment variables.');
+  }
   if (cached.conn) return cached.conn;
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => mongoose);
+    cached.promise = mongoose.connect(MONGODB_URI).then((m) => m);
   }
   cached.conn = await cached.promise;
   return cached.conn;

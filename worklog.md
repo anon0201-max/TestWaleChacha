@@ -465,3 +465,27 @@ Stage Summary:
 - Default admin user: admin / admin123
 - All CRUD operations verified working
 - Lint passes clean
+
+---
+Task ID: admin-login-fix
+Agent: main (Z.ai Code)
+Task: Fix admin login failure - improve error handling for Vercel deployment
+
+Work Log:
+- Diagnosed issue: Admin login works locally (admin/admin123) but fails on Vercel deployment (test-wale-chacha.vercel.app)
+- Root cause: mongodb.ts had `throw new Error('MONGODB_URI not defined')` at module level - if MONGODB_URI missing on Vercel, entire module crashes with generic error
+- Fixed mongodb.ts: Moved MONGODB_URI check inside dbConnect() function instead of module-level throw - now all 23 API routes can properly catch and report the error
+- Fixed admin login route: Added descriptive error messages for different failure scenarios:
+  - MONGODB_URI not set → "Database not configured. Please set MONGODB_URI in Vercel environment variables."
+  - Connection failure → "Cannot connect to database. Check MONGODB_URI and MongoDB Atlas IP whitelist."
+  - Authentication failure → "Database authentication failed. Check your MongoDB credentials."
+  - Generic error → "Login failed: [actual error message]"
+- Verified: Admin login works locally via curl and browser (admin/admin123)
+- Verified: Wrong password returns proper "Invalid username or password" message
+- Verified: Lint passes clean
+
+Stage Summary:
+- Fixed mongodb.ts module-level crash issue
+- Admin login now returns descriptive error messages
+- Local admin login verified working via agent-browser
+- User needs to: Set MONGODB_URI in Vercel dashboard (Settings > Environment Variables)
