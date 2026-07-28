@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     }
 
     const tests = await Test.find(where)
-      .populate('categoryId')
+      .populate({ path: 'categoryId', foreignField: 'id' })
       .sort({ createdAt: -1 })
       .lean();
 

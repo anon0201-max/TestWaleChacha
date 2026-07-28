@@ -51,7 +51,6 @@ const PaymentSchema = new Schema<IPayment>(
     },
   },
   {
-    _id: false,
     id: false,
     timestamps: true,
     toJSON: { virtuals: true },

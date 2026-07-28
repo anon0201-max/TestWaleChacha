@@ -60,7 +60,6 @@ const TestAttemptSchema = new Schema<ITestAttempt>(
     },
   },
   {
-    _id: false,
     id: false,
     timestamps: true,
     toJSON: { virtuals: true },

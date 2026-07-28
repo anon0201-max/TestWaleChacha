@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     }
 
     const test = await Test.findOne({ id: testId })
-      .populate('categoryId')
+      .populate({ path: 'categoryId', foreignField: 'id' })
       .lean();
 
     if (!test) {

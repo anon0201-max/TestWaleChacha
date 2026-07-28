@@ -57,7 +57,6 @@ const StudentSchema = new Schema<IStudent>(
     },
   },
   {
-    _id: false,
     id: false,
     timestamps: true,
     toJSON: { virtuals: true },

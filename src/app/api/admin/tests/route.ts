@@ -7,7 +7,7 @@ export async function GET() {
     await dbConnect();
 
     const tests = await Test.find()
-      .populate('categoryId')
+      .populate({ path: 'categoryId', foreignField: 'id' })
       .sort({ createdAt: -1 })
       .lean();
 

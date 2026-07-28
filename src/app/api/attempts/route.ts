@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     });
 
     // Populate test with category for the attempt response
-    const populatedTest = await Test.findOne({ id: testId }).populate('categoryId').lean();
+    const populatedTest = await Test.findOne({ id: testId }).populate({ path: 'categoryId', foreignField: 'id' }).lean();
 
     const attemptResult = {
       ...attempt.toObject(),
@@ -132,7 +132,7 @@ export async function GET(request: Request) {
     // Ranking endpoint: /api/attempts?rankings=true&testId=xxx
     if (rankings === 'true' && testId) {
       const attempts = await TestAttempt.find({ testId, completed: true })
-        .populate('studentId')
+        .populate({ path: 'studentId', foreignField: 'id' })
         .sort({ score: -1, timeTaken: 1 })
         .lean();
 
@@ -187,7 +187,7 @@ export async function GET(request: Request) {
     // Populate test with category for each attempt
     const populatedAttempts = await Promise.all(
       attempts.map(async (attempt: any) => {
-        const test = await Test.findOne({ id: attempt.testId }).populate('categoryId').lean();
+        const test = await Test.findOne({ id: attempt.testId }).populate({ path: 'categoryId', foreignField: 'id' }).lean();
         return {
           ...attempt,
           test,

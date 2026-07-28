@@ -44,7 +44,6 @@ const CategorySchema = new Schema<ICategory>(
     },
   },
   {
-    _id: false,
     id: false,
     timestamps: true,
     toJSON: { virtuals: true },

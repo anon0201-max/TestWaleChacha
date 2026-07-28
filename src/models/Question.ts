@@ -77,7 +77,6 @@ const QuestionSchema = new Schema<IQuestion>(
     },
   },
   {
-    _id: false,
     id: false,
     timestamps: true,
     toJSON: { virtuals: true },

@@ -29,7 +29,6 @@ const AdminPasswordSchema = new Schema<IAdminPassword>(
     },
   },
   {
-    _id: false,
     id: false,
     timestamps: true,
     toJSON: { virtuals: true },

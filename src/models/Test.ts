@@ -59,7 +59,6 @@ const TestSchema = new Schema<ITest>(
     },
   },
   {
-    _id: false,
     id: false,
     timestamps: true,
     toJSON: { virtuals: true },
