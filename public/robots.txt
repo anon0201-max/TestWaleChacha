@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://test-wale-chacha.vercel.app/sitemap.xml
