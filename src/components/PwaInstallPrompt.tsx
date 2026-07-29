@@ -1,65 +1,21 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
-
-const DISMISS_KEY = 'twc_pwa_dismissed_at';
-const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-function getPlatform(): 'android' | 'ios' | 'desktop' | 'unknown' {
-  if (typeof window === 'undefined') return 'unknown';
-  const ua = navigator.userAgent.toLowerCase();
-  if (/android/.test(ua)) return 'android';
-  if (/iphone|ipad|ipod/.test(ua) || (/macintosh/.test(ua) && 'ontouchend' in document)) return 'ios';
-  if (/windows|macintosh|linux/.test(ua)) return 'desktop';
-  return 'unknown';
-}
-
-function isStandaloneMode(): boolean {
-  if (typeof window === 'undefined') return false;
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as unknown as { standalone?: boolean }).standalone === true
-  );
-}
-
-function wasDismissedRecently(): boolean {
-  try {
-    const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0);
-    return !!(dismissedAt && Date.now() - dismissedAt < DISMISS_DURATION);
-  } catch {
-    return false;
-  }
-}
-
-function markDismissed(): void {
-  try {
-    localStorage.setItem(DISMISS_KEY, String(Date.now()));
-  } catch {
-    // ignore
-  }
-}
+import { usePwaInstall, markDismissed, DISMISS_KEY } from '@/hooks/use-pwa-install';
 
 /**
- * "Add to Home Screen" / Install App prompt.
- * - Listens for the browser's `beforeinstallprompt` event
- * - Shows an install banner when the app is installable
- * - On iOS (no beforeinstallprompt), shows instructions to use Safari's Share → Add to Home Screen
+ * "Add to Home Screen" / Install App prompt — auto-showing banner.
+ * Works with the shared usePwaInstall hook so the navbar button can also trigger install.
+ * - Shows banner on first visit (Android) or after delay (iOS)
+ * - Respects 7-day dismiss period
  */
 export function PwaInstallPrompt() {
   const [showBanner, setShowBanner] = useState(false);
-  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
-  const [promptReady, setPromptReady] = useState(false);
 
-  const platform = useMemo(() => getPlatform(), []);
-  const standalone = useMemo(() => isStandaloneMode(), []);
+  const { platform, standalone, promptReady, triggerInstall, wasRecentlyDismissed } = usePwaInstall();
 
   const dismiss = useCallback(() => {
     setShowBanner(false);
@@ -67,46 +23,35 @@ export function PwaInstallPrompt() {
   }, []);
 
   const handleInstall = useCallback(async () => {
-    const prompt = deferredPromptRef.current;
-    if (prompt) {
-      await prompt.prompt();
-      const choice = await prompt.userChoice;
-      if (choice.outcome === 'accepted') {
-        setShowBanner(false);
-        deferredPromptRef.current = null;
-        setPromptReady(false);
-      } else {
-        dismiss();
-      }
+    const installed = await triggerInstall();
+    if (installed) {
+      setShowBanner(false);
+    } else {
+      dismiss();
     }
-  }, [dismiss]);
+  }, [triggerInstall, dismiss]);
 
+  // Show banner when prompt is ready (Android) or after delay (iOS)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (standalone) return;
-    if (wasDismissedRecently()) return;
+    if (wasRecentlyDismissed) return;
 
-    const handler = (e: Event) => {
-      e.preventDefault();
-      deferredPromptRef.current = e as BeforeInstallPromptEvent;
-      setPromptReady(true);
-      setShowBanner(true);
-    };
+    // iOS: show after a delay
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (platform === 'ios') {
+      timer = setTimeout(() => setShowBanner(true), 4000);
+    }
 
-    window.addEventListener('beforeinstallprompt', handler);
-
-    // For iOS, show a gentle prompt after a delay (iOS doesn't support beforeinstallprompt)
-    const plat = getPlatform();
-    let iosTimer: ReturnType<typeof setTimeout> | undefined;
-    if (plat === 'ios') {
-      iosTimer = setTimeout(() => setShowBanner(true), 4000);
+    // Android: show when prompt fires (via promptReady change)
+    if (platform === 'android' && promptReady) {
+      timer = setTimeout(() => setShowBanner(true), 500);
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-      if (iosTimer) clearTimeout(iosTimer);
+      if (timer) clearTimeout(timer);
     };
-  }, [standalone]);
+  }, [standalone, wasRecentlyDismissed, promptReady, platform]);
 
   // Don't show anything if already installed as PWA
   if (standalone) return null;
@@ -123,7 +68,7 @@ export function PwaInstallPrompt() {
         >
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
             {/* Header strip */}
-            <div className="bg-gradient-to-r from-blue-700 to-indigo-700 px-4 py-2.5 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-[#1C1C84] to-[#2D2BA8] px-4 py-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2 text-white">
                 <Smartphone className="w-4 h-4" />
                 <span className="text-sm font-semibold">Install TestWaleChacha</span>
@@ -150,7 +95,7 @@ export function PwaInstallPrompt() {
               {platform === 'ios' ? (
                 <Button
                   onClick={dismiss}
-                  className="w-full bg-blue-700 hover:bg-blue-800 text-white"
+                  className="w-full bg-[#1C1C84] hover:bg-[#15156a] text-white"
                   size="sm"
                 >
                   Got it
@@ -158,7 +103,7 @@ export function PwaInstallPrompt() {
               ) : (
                 <Button
                   onClick={handleInstall}
-                  className="w-full bg-blue-700 hover:bg-blue-800 text-white"
+                  className="w-full bg-[#1C1C84] hover:bg-[#15156a] text-white"
                   size="sm"
                 >
                   <Download className="w-4 h-4 mr-1.5" /> Add to Home Screen
