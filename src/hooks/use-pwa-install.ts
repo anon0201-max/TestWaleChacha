@@ -97,9 +97,8 @@ export function usePwaInstall() {
    */
   const canInstall = useMemo(() => {
     if (standalone) return false;
-    if (platform === 'ios') return true; // iOS always "can" (manual steps)
     if (platform === 'desktop') return promptReady; // Desktop needs the prompt event
-    return promptReady; // Android needs the prompt event
+    return true; // Mobile (iOS + Android): always show, modal handles fallback
   }, [standalone, platform, promptReady]);
 
   const wasRecentlyDismissed = useMemo(() => wasDismissedRecently(), []);
