@@ -126,7 +126,9 @@ function AppContent() {
             const meRes = await fetch(`/api/auth/me?studentId=${user.id}`);
             if (meRes.ok) {
               const meData = await meRes.json();
-              setUser(meData);
+              if (meData.success && meData.student) {
+                setUser(meData.student);
+              }
             }
           } catch { /* silent */ }
         } else if (deviceId) {
