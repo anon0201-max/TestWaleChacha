@@ -1036,3 +1036,31 @@ Stage Summary:
 - Hero banner has rounded bottom corners (32px / 2rem on desktop)
 - All sections have proper spacing
 ---
+---
+Task ID: 3
+Agent: Main Agent
+Task: Animated UI - margin-top, remove card top lines, 3D cards, full animations
+
+Work Log:
+- Added mt-3 to hero section for gap below navbar
+- Removed all `<div className="h-1">` and `<div className="h-1.5">` colored top lines from category cards and test series cards
+- Created Card3D reusable component with: gradient backgrounds (white to colored tints), shadow-md hover:shadow-2xl, hover:-translate-y-1.5, hover:scale-[1.02], border-gray-100/80
+- Added useInView-based AnimatedSection wrapper for scroll-triggered animations
+- Animation variants: fadeInUp, fadeInLeft, fadeInRight, scaleIn with stagger
+- All buttons have whileHover/whileTap scale animations
+- Stats cards icons have subtle rotate animation
+- Crown icon in PRO badges pulses with scale animation
+- Star ratings animate in sequentially
+- Pricing CTA crown floats up/down
+- WhatsApp button bounces in with spring animation, icon rotates
+- Decorative shapes in hero have pulse/bounce animations
+- All cards: halka colored gradient backgrounds (blue-50/30, teal-50/40, etc.)
+- Category card icons rotate 3deg on hover and scale up
+
+Stage Summary:
+- Hero banner has margin-top below navbar
+- All colored top lines removed from cards
+- All cards have subtle gradient backgrounds
+- All cards have 3D hover effects (lift, scale, deeper shadow)
+- Entire page is animated - sections animate on scroll, items stagger in, buttons scale on click
+---
