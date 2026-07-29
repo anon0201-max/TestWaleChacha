@@ -19,7 +19,7 @@ type ForgotStep = 'enter-email' | 'enter-otp' | 'enter-password' | 'done';
 
 export function AuthModal() {
   const {
-    showAuthModal, setShowAuthModal, user, deviceId,
+    showAuthModal, setShowAuthModal, user, setUser, deviceId,
     setStudentData, pendingTestId, setPendingTestId, setCurrentTest,
     setIsTestActive, clearAnswers, setCurrentQuestionIndex, setTimeRemaining,
   } = useAppStore();
@@ -439,17 +439,17 @@ export function AuthModal() {
                       maxLength={6}
                       value={otpValue}
                       onChange={(value) => { setOtpValue(value); setError(''); }}
-                      render={({ slots }) => (
-                        <InputOTPGroup>
-                          {slots.map((slot, i) => (
-                            <span key={i}>
-                              <InputOTPSlot {...slot} index={i} className="w-10 h-12 text-lg font-bold bg-white/10 border-white/20 text-white" />
-                              {i === 2 && <InputOTPSeparator className="text-white/20" />}
-                            </span>
-                          ))}
-                        </InputOTPGroup>
-                      )}
-                    />
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} className="w-10 h-12 text-lg font-bold bg-white/10 border-white/20 text-white" />
+                        <InputOTPSlot index={1} className="w-10 h-12 text-lg font-bold bg-white/10 border-white/20 text-white" />
+                        <InputOTPSlot index={2} className="w-10 h-12 text-lg font-bold bg-white/10 border-white/20 text-white" />
+                        <InputOTPSeparator />
+                        <InputOTPSlot index={3} className="w-10 h-12 text-lg font-bold bg-white/10 border-white/20 text-white" />
+                        <InputOTPSlot index={4} className="w-10 h-12 text-lg font-bold bg-white/10 border-white/20 text-white" />
+                        <InputOTPSlot index={5} className="w-10 h-12 text-lg font-bold bg-white/10 border-white/20 text-white" />
+                      </InputOTPGroup>
+                    </InputOTP>
                   </div>
                   {sentOtp && (
                     <div className="bg-amber-500/10 border border-amber-400/20 rounded-lg p-2.5 text-center">
