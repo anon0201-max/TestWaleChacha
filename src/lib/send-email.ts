@@ -21,7 +21,7 @@ export async function sendOtpEmail(to: string, otp: string, name?: string): Prom
     }
 
     const { error } = await resend.emails.send({
-      from: 'TestWaleChacha <noreply@testwalechacha.com>',
+      from: process.env.RESEND_FROM_EMAIL || 'TestWaleChacha <onboarding@resend.dev>',
       to: [to],
       subject: `Your Password Reset OTP: ${otp}`,
       html: `
