@@ -48,15 +48,17 @@ export function TestListPage() {
     return () => { cancelled = true; };
   }, [isLoggedIn, user?.id]);
 
-  function isTestLocked(testIndex: number) {
+  function isTestLocked(test: (typeof tests)[0]) {
     // Subscribed users: everything unlocked
     if (isSubscribed) return false;
-    // Not logged in: everything locked
+    // Test has isLocked flag set by admin → locked for non-subscribed
+    if (test.isLocked) return true;
+    // Not logged in: locked
     if (!isLoggedIn) return true;
-    // Free user with no remaining tests: everything locked
+    // Free user with no remaining tests: locked
     if (freeTestsRemaining <= 0) return true;
-    // Free user: only first 2 tests are unlockable
-    return testIndex >= 2;
+    // Default: unlocked (admin can set isLocked to control per-test)
+    return false;
   }
 
   async function handleStartTest(test: (typeof tests)[0]) {
@@ -72,20 +74,15 @@ export function TestListPage() {
     useAppStore.getState().setView('test-taking');
   }
 
-  function handleClick(test: (typeof tests)[0], testIndex: number) {
+  function handleClick(test: (typeof tests)[0]) {
     // Login gate: if not logged in, show auth modal and track pending test
     if (!isLoggedIn) {
       setPendingTestId(test.id);
       setShowAuthModal('signup');
       return;
     }
-    // Test is locked (index >= 2 for free users)
-    if (isTestLocked(testIndex)) {
-      handleSubscribeClick();
-      return;
-    }
-    // Free tests exhausted
-    if (!isSubscribed && freeTestsRemaining <= 0) {
+    // Test is locked (admin marked as locked or free tests exhausted)
+    if (isTestLocked(test)) {
       handleSubscribeClick();
       return;
     }
@@ -145,18 +142,18 @@ export function TestListPage() {
 
       {/* Test Cards - Testbook Style */}
       <div className="space-y-3">
-        {filteredTests.map((test, testIndex) => (
+        {filteredTests.map((test) => (
           <div key={test.id || test._id || test.title} className="animate-fade-in card-hover-transform">
             <Card className="hover:shadow-md transition-all border-0 shadow-sm relative">
               {/* Lock overlay for locked tests */}
-              {isTestLocked(testIndex) && (
+              {isTestLocked(test) && (
                 <div className="absolute top-3 right-3 z-10">
                   <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
                     <Crown className="w-4 h-4 text-amber-600" />
                   </div>
                 </div>
               )}
-              {!isLoggedIn && !isTestLocked(testIndex) && (
+              {!isLoggedIn && (
                 <div className="absolute top-3 right-3 z-10">
                   <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                     <Lock className="w-4 h-4 text-gray-400" />
@@ -169,6 +166,11 @@ export function TestListPage() {
                     <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                       <Badge variant="secondary" className="text-[10px]">{test.category?.name || test.examType || 'General'}</Badge>
                       <Badge className={diffColors[test.difficulty as keyof typeof diffColors] + ' text-[10px]'}>{test.difficulty || 'medium'}</Badge>
+                      {test.isLocked && (
+                        <Badge className="text-[10px] bg-amber-100 text-amber-700 border-0">
+                          <Lock className="w-2.5 h-2.5 mr-0.5" />PRO Only
+                        </Badge>
+                      )}
                     </div>
                     <h3 className="font-semibold text-sm md:text-base truncate">{test.title}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{test.description}</p>
@@ -178,26 +180,22 @@ export function TestListPage() {
                     </div>
                   </div>
                   <div className="shrink-0">
-                    {isTestLocked(testIndex) ? (
-                      <Button size="sm" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 w-full sm:w-auto text-white" onClick={() => handleClick(test, testIndex)}>
+                    {isTestLocked(test) ? (
+                      <Button size="sm" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 w-full sm:w-auto text-white" onClick={() => handleClick(test)}>
                         <Crown className="w-4 h-4 mr-1" />Subscribe to Unlock
                       </Button>
                     ) : !isLoggedIn ? (
-                      <Button size="sm" className="bg-gray-500 hover:bg-gray-600 w-full sm:w-auto" onClick={() => handleClick(test, testIndex)}>
+                      <Button size="sm" className="bg-gray-500 hover:bg-gray-600 w-full sm:w-auto" onClick={() => handleClick(test)}>
                         <Lock className="w-4 h-4 mr-1" />Login to attempt
-                      </Button>
-                    ) : !isSubscribed && freeTestsRemaining <= 0 ? (
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test, testIndex)}>
-                        <Lock className="w-4 h-4 mr-1" />Unlock
                       </Button>
                     ) : attemptedTestIds.has(test.id) ? (
                       <div className="flex gap-2 w-full sm:w-auto">
-                        <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 flex-1" onClick={() => handleClick(test, testIndex)}>
+                        <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 flex-1" onClick={() => handleClick(test)}>
                           <RotateCcw className="w-4 h-4 mr-1" />Re-attempt
                         </Button>
                       </div>
                     ) : (
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test, testIndex)}>
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
                         <Play className="w-4 h-4 mr-1" />Start Test
                       </Button>
                     )}

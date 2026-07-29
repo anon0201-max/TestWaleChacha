@@ -51,6 +51,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Test not found' }, { status: 404 });
     }
 
+    // Check if test is locked by admin
+    if (test.isLocked && !student.isSubscribed) {
+      return NextResponse.json(
+        { error: 'TEST_LOCKED', message: 'This test is locked. Subscribe to unlock.' },
+        { status: 403 }
+      );
+    }
+
     // Calculate score
     const answersParsed = typeof answers === 'string' ? JSON.parse(answers) : answers;
     let correctCount = 0;

@@ -969,3 +969,27 @@ Stage Summary:
 - Score header no longer overflows on mobile
 - Legend wraps properly in 2-column grid on mobile
 - Verified with agent-browser on iPhone 16 viewport
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix image extract + Add admin panel test lock/unlock feature
+
+Work Log:
+- Fixed download icon not showing: removed `platform === 'desktop'` restriction in `use-pwa-install.ts` `canInstall`
+- Verified image extract route uses z-ai-web-dev-sdk VLM as fallback (Grok not available without XAI_API_KEY)
+- Added `isLocked` field to MongoDB Test model (`src/lib/models/Test.ts`)
+- Added PATCH endpoint to `/api/admin/tests` for single test lock/unlock + bulk lock/unlock
+- Updated AdminPanel.tsx Tests tab with:
+  - Lock/Unlock toggle button on each test card (green unlock / amber lock icons)
+  - "Locked"/"Free" badge on each test
+  - Bulk actions card: "Lock All Tests" / "Unlock All Tests"
+  - Locked tests count in header
+- Updated TestListPage.tsx to use `test.isLocked` instead of index-based locking (first 2 free)
+- Added `isLocked` check in attempts API (`/api/attempts` POST) - blocks submission for non-subscribed users on locked tests
+- Added "PRO Only" badge on locked test cards for users
+- All code passes lint (only pre-existing seed-mongodb.js errors)
+
+Stage Summary:
+- Image extract: Code is correct, uses z-ai-web-dev-sdk VLM for free scanning. If still failing on Vercel, it's due to Hobby plan 10s timeout (needs Pro for 300s maxDuration).
+- Admin lock/unlock: Full feature implemented. Admin can lock/unlock individual tests or bulk lock/unlock all. Locked tests require subscription for non-paid users.

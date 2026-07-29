@@ -88,6 +88,49 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH — toggle lock/unlock or bulk update
+export async function PATCH(request: NextRequest) {
+  try {
+    await dbConnect();
+    const body = await request.json();
+    const { id, isLocked, bulkLock, bulkUnlock } = body;
+
+    // Bulk lock/unlock all tests
+    if (bulkLock) {
+      await Test.updateMany({}, { $set: { isLocked: true } });
+      clearCacheByPrefix('tests:');
+      return NextResponse.json({ success: true, message: 'All tests locked' });
+    }
+    if (bulkUnlock) {
+      await Test.updateMany({}, { $set: { isLocked: false } });
+      clearCacheByPrefix('tests:');
+      return NextResponse.json({ success: true, message: 'All tests unlocked' });
+    }
+
+    // Single test lock/unlock
+    if (!id || typeof isLocked !== 'boolean') {
+      return NextResponse.json(
+        { success: false, message: 'Test ID and isLocked boolean are required' },
+        { status: 400 }
+      );
+    }
+
+    await Test.updateOne({ id }, { $set: { isLocked } });
+    clearCacheByPrefix('tests:');
+
+    return NextResponse.json({
+      success: true,
+      message: isLocked ? 'Test locked' : 'Test unlocked',
+    });
+  } catch (error) {
+    console.error('Patch test error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     await dbConnect();

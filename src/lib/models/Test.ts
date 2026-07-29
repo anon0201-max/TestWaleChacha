@@ -9,6 +9,7 @@ const testSchema = new mongoose.Schema({
   totalQuestions: { type: Number, required: true },
   examName: { type: String, default: 'Practice Test' },
   isActive: { type: Boolean, default: true },
+  isLocked: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export default mongoose.models.Test || mongoose.model('Test', testSchema);

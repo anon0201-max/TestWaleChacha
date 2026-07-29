@@ -17,7 +17,7 @@ import {
   Save, Shield, FileText, Settings, Edit2, Eye, EyeOff, Copy, CheckCircle2,
   Crown, ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
   HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
-  Menu,
+  Menu, Lock, Unlock,
 } from 'lucide-react';
 
 // ==================== ADMIN LOGIN ====================
@@ -523,6 +523,7 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
   const [expandedTestId, setExpandedTestId] = useState<string | null>(null);
   const [testQuestions, setTestQuestions] = useState<Record<string, unknown[]>>({});
   const [loadingQ, setLoadingQ] = useState<string | null>(null);
+  const [togglingLock, setTogglingLock] = useState<string | null>(null);
 
   async function fetchQuestions(testId: string) {
     if (testQuestions[testId]) {
@@ -566,12 +567,87 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
     onRefresh();
   }
 
+  async function toggleLock(testId: string, currentState: boolean) {
+    setTogglingLock(testId);
+    try {
+      const res = await fetch('/api/admin/tests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: testId, isLocked: !currentState }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(!currentState ? '🔒 Test locked (Paid only)' : '🔓 Test unlocked (Free access)');
+        onRefresh();
+      } else {
+        toast.error(data.message || 'Failed to update');
+      }
+    } catch {
+      toast.error('Network error');
+    }
+    setTogglingLock(null);
+  }
+
+  async function bulkLockAll() {
+    if (!confirm('Lock ALL tests? Free users won\'t be able to access any test.')) return;
+    setTogglingLock('bulk');
+    try {
+      const res = await fetch('/api/admin/tests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bulkLock: true }),
+      });
+      const data = await res.json();
+      if (data.success) { toast.success('🔒 All tests locked!'); onRefresh(); }
+      else { toast.error(data.message || 'Failed'); }
+    } catch { toast.error('Network error'); }
+    setTogglingLock(null);
+  }
+
+  async function bulkUnlockAll() {
+    if (!confirm('Unlock ALL tests? Everyone will be able to access all tests.')) return;
+    setTogglingLock('bulk');
+    try {
+      const res = await fetch('/api/admin/tests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bulkUnlock: true }),
+      });
+      const data = await res.json();
+      if (data.success) { toast.success('🔓 All tests unlocked!'); onRefresh(); }
+      else { toast.error(data.message || 'Failed'); }
+    } catch { toast.error('Network error'); }
+    setTogglingLock(null);
+  }
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <h3 className="text-sm font-semibold">Tests ({tests.length})</h3>
-        <Badge variant="secondary" className="text-[10px] shrink-0">{tests.reduce((s, t) => s + (t._count?.questions || t.totalQuestions), 0)}Q</Badge>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="secondary" className="text-[10px] shrink-0">{tests.reduce((s, t) => s + (t._count?.questions || t.totalQuestions), 0)}Q</Badge>
+          <Badge className="text-[10px] shrink-0 bg-amber-100 text-amber-700 border-0">
+            <Lock className="w-2.5 h-2.5 mr-0.5" />{tests.filter(t => t.isLocked).length} locked
+          </Badge>
+        </div>
       </div>
+
+      {/* Bulk Actions */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-3 sm:p-4">
+          <h4 className="text-xs font-semibold text-muted-foreground mb-2">Bulk Lock/Unlock</h4>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={bulkLockAll} disabled={togglingLock === 'bulk'} className="gap-1.5 text-xs">
+              {togglingLock === 'bulk' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+              Lock All Tests
+            </Button>
+            <Button variant="outline" size="sm" onClick={bulkUnlockAll} disabled={togglingLock === 'bulk'} className="gap-1.5 text-xs">
+              {togglingLock === 'bulk' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}
+              Unlock All Tests
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {tests.length === 0 ? (
         <Card className="border-0 shadow-sm">
@@ -595,6 +671,8 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
                   <p className="text-sm font-medium truncate">{test.title}</p>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <Badge variant="secondary" className="text-[10px]">{test.category?.name}</Badge>
+                    {test.isLocked && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-0"><Lock className="w-2.5 h-2.5 mr-0.5" />Locked</Badge>}
+                    {!test.isLocked && <Badge className="text-[10px] bg-green-100 text-green-700 border-0"><Unlock className="w-2.5 h-2.5 mr-0.5" />Free</Badge>}
                     <span className="text-[10px] text-muted-foreground">{test._count?.questions || test.totalQuestions}Q</span>
                     <span className="text-[10px] text-muted-foreground hidden sm:inline">{test.difficulty}</span>
                     <span className="text-[10px] text-muted-foreground">{Math.floor(test.timeLimit / 60)}m</span>
@@ -602,6 +680,25 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
                 </div>
               </div>
               <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                {/* Lock/Unlock Toggle */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleLock(test.id, !!test.isLocked); }}
+                  disabled={togglingLock === test.id}
+                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
+                    test.isLocked
+                      ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}
+                  title={test.isLocked ? 'Unlock (Free access)' : 'Lock (Paid only)'}
+                >
+                  {togglingLock === test.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : test.isLocked ? (
+                    <Lock className="w-4 h-4" />
+                  ) : (
+                    <Unlock className="w-4 h-4" />
+                  )}
+                </button>
                 {loadingQ === test.id ? (
                   <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
                 ) : (
