@@ -923,3 +923,25 @@ Stage Summary:
 - If no key → z-ai-web-dev-sdk VLM (free) is used as fallback
 - Mini-service code ready at `mini-services/extract-service/` for production deployment
 - Browser verified: admin panel, create tab, image extract dialog all working
+
+---
+Task ID: 3-bugs-fix
+Agent: Main Agent
+Task: Fix 3 bugs: (1) Mobile logout not visible after login, (2) Cross-device login Internal Server Error, (3) Forgot password without OTP verification
+
+Work Log:
+- **Bug 1 - Mobile Logout**: Added logout button to mobile hamburger menu in AppHeader.tsx (lines 309-315). Mobile menu now shows user profile card + Logout button when logged in.
+- **Bug 2 - Cross-device Login**: Fixed login route (src/app/api/auth/login/route.ts). When logging in from a new device, the code now checks if a GUEST student (no passwordHash) already occupies that deviceId, and if so, deletes the ghost record before assigning the deviceId to the real student. Also transfers free test usage from the guest to the real student.
+- **Bug 3 - Forgot Password OTP**: Complete rewrite of forgot password flow:
+  - Created OTP model (src/models/Otp.ts) with TTL auto-expiry
+  - Created send-otp API (src/app/api/auth/send-otp/route.ts) - generates 6-digit OTP, stores in DB
+  - Created verify-otp API (src/app/api/auth/verify-otp/route.ts) - validates OTP, returns reset token
+  - Updated reset-password API (src/app/api/auth/reset-password/route.ts) - now requires resetToken (from verified OTP)
+  - Rewrote AuthModal forgot password UI with 3-step flow: Step 1 (Enter Email → Send OTP), Step 2 (Enter 6-digit OTP with InputOTP component), Step 3 (Set new password). Added step indicator, resend OTP with cooldown timer, development mode OTP preview.
+- Browser verified: Mobile menu shows Logout button when logged in, desktop profile dropdown works, forgot password shows OTP flow with step indicator
+
+Stage Summary:
+- All 3 bugs fixed and verified
+- OTP model added to MongoDB models index
+- AuthModal now has proper forgot password flow with email OTP verification
+- Login route handles cross-device guest conflict gracefully
