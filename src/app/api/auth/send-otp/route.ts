@@ -53,11 +53,11 @@ export async function POST(request: NextRequest) {
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
-    // Try to send real email via Resend
+    // Try to send real email via Gmail SMTP
     const emailResult = await sendOtpEmail(email, otp, student.name || undefined);
 
-    if (!emailResult.success && process.env.RESEND_API_KEY) {
-      // Email API configured but failed to send
+    if (!emailResult.success && process.env.SMTP_EMAIL) {
+      // SMTP configured but failed to send
       return NextResponse.json(
         { success: false, message: 'Failed to send OTP email. Please try again later.' },
         { status: 500 }
@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'OTP sent to your email successfully',
-      // Only return OTP in development mode (no RESEND_API_KEY set)
-      ...(process.env.RESEND_API_KEY ? {} : { otp }),
+      // Only return OTP in development mode (no SMTP configured)
+      ...(process.env.SMTP_EMAIL ? {} : { otp }),
     });
   } catch (error) {
     console.error('Send OTP error:', error);
