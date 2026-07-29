@@ -844,31 +844,37 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
       setFillStatus({ msg: '⚠️ No questions received from VLM to fill.', type: 'error' });
       return 0;
     }
-    setFillStatus({ msg: `🔧 Filling ${extracted.length} questions into boxes...`, type: 'info' });
-    let filledCount = 0;
+    const count = extracted.length;
+    setFillStatus({ msg: `🔧 Filling ${count} questions into boxes...`, type: 'info' });
+
+    // Use ref to track where to start filling (supports multi-image upload)
+    let startIdx = fillStartIndexRef.current;
+
     setQuestions(prev => {
       const next = [...prev];
-      let startIdx = -1;
-      for (let i = 0; i < next.length; i++) {
-        if (!next[i].question.trim()) { startIdx = i; break; }
-      }
-      if (startIdx === -1) {
-        for (const ex of extracted) { next.push(ex); filledCount++; }
-      } else {
-        for (let k = 0; k < extracted.length; k++) {
-          const targetIdx = startIdx + k;
-          if (targetIdx < next.length) { next[targetIdx] = { ...next[targetIdx], ...extracted[k] }; }
-          else { next.push(extracted[k]); }
-          filledCount++;
+      // Clamp startIdx if it's beyond array length
+      if (startIdx > next.length) startIdx = next.length;
+      // Fill each extracted question into the boxes
+      for (let k = 0; k < extracted.length; k++) {
+        const targetIdx = startIdx + k;
+        if (targetIdx < next.length) {
+          // Replace entire box with extracted data (not merge — merge keeps empty defaults)
+          next[targetIdx] = { ...extracted[k] };
+        } else {
+          next.push(extracted[k]);
         }
       }
       return next;
     });
+
+    // Advance the fill index for next image batch
+    fillStartIndexRef.current = startIdx + count;
+
     setTimeout(() => {
-      setFillStatus({ msg: `✅ ${extracted.length} questions filled into boxes!`, type: 'success' });
+      setFillStatus({ msg: `✅ ${count} questions filled into boxes!`, type: 'success' });
       setTimeout(() => setFillStatus(null), 8000);
     }, 100);
-    return filledCount;
+    return count;
   }
 
   async function handleImageExtract(e: React.ChangeEvent<HTMLInputElement>) {
@@ -891,13 +897,13 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 300000);
         try {
-          setFillStatus({ msg: `📤 Uploading image to VLM... (this can take 1-3 minutes)`, type: 'info' });
+          setFillStatus({ msg: `📤 Image ${i + 1}/${fileList.length}: Scanning with AI... (1-3 min)`, type: 'info' });
           const res = await fetch('/api/admin/extract-question', { method: 'POST', body: formData, signal: controller.signal });
           clearTimeout(timeoutId);
           if (!res.ok) {
             const errText = await res.text().catch(() => 'Unknown error');
-            setFillStatus({ msg: `❌ VLM error (HTTP ${res.status}): ${errText.substring(0, 100)}`, type: 'error' });
-            toast.error(`Image ${i + 1}: VLM returned HTTP ${res.status}`);
+            setFillStatus({ msg: `❌ Image ${i + 1}: Server error (HTTP ${res.status}). ${errText.substring(0, 80)}`, type: 'error' });
+            toast.error(`Image ${i + 1}: Server error ${res.status}`);
             hasError = true;
             continue;
           }
@@ -907,35 +913,40 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
               question: q.question || '', optionA: q.optionA || '', optionB: q.optionB || '', optionC: q.optionC || '', optionD: q.optionD || '',
               correctOption: q.correctOption || 'A', explanation: q.explanation || '', section: q.section || 'General', negativeMark: q.negativeMark || '0',
             }));
-            fillQuestionsFromExtract(newQuestions);
-            totalExtracted += newQuestions.length;
-            toast.success(`Image ${i + 1}: ${newQuestions.length} questions extracted & filled!`);
+            const filled = fillQuestionsFromExtract(newQuestions);
+            totalExtracted += filled;
+            toast.success(`Image ${i + 1}: ${filled} questions extracted & filled!`);
           } else if (data.success && data.question) {
             const newQ: QuestionForm = {
               question: data.question.question || '', optionA: data.question.optionA || '', optionB: data.question.optionB || '', optionC: data.question.optionC || '', optionD: data.question.optionD || '',
               correctOption: data.question.correctOption || 'A', explanation: data.question.explanation || '', section: data.question.section || 'General', negativeMark: data.question.negativeMark || '0',
             };
-            fillQuestionsFromExtract([newQ]);
-            totalExtracted += 1;
+            const filled = fillQuestionsFromExtract([newQ]);
+            totalExtracted += filled;
             toast.success(`Image ${i + 1}: 1 question extracted & filled!`);
           } else {
             hasError = true;
-            setFillStatus({ msg: `❌ ${data.error || 'Failed to extract questions'}`, type: 'error' });
-            toast.error(`Image ${i + 1}: ${data.error || 'Failed to extract'}`);
+            const errMsg = data.error || 'Failed to extract questions';
+            setFillStatus({ msg: `❌ ${errMsg}`, type: 'error' });
+            toast.error(`Image ${i + 1}: ${errMsg}`);
           }
         } catch (err: any) {
           clearTimeout(timeoutId);
           hasError = true;
           if (err?.name === 'AbortError') {
-            setFillStatus({ msg: '❌ Timed out (5 min). Try a smaller image.', type: 'error' });
+            setFillStatus({ msg: '❌ Timed out (5 min). Try a smaller/clearer image.', type: 'error' });
           } else {
-            setFillStatus({ msg: `❌ ${err?.message || 'Failed to extract'}`, type: 'error' });
+            setFillStatus({ msg: `❌ ${err?.message || 'Network error. Check your connection.'}`, type: 'error' });
           }
         }
       }
       if (totalExtracted > 0) {
+        setFillStatus({ msg: `✅ Done! Total ${totalExtracted} questions extracted & filled.`, type: 'success' });
         toast.success(`🎉 Total: ${totalExtracted} questions extracted!`);
-      } else if (!hasError) {
+      } else if (hasError) {
+        setFillStatus({ msg: `❌ No questions extracted. Check error messages above.`, type: 'error' });
+      } else {
+        setFillStatus({ msg: '⚠️ No questions could be extracted.', type: 'error' });
         toast.error('No questions could be extracted. Empty boxes remain for manual entry.');
       }
     } finally {

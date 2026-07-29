@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Allow up to 5 minutes for VLM processing (large images take 30-60 seconds)
 export const maxDuration = 300;
 export const runtime = 'nodejs';
 
@@ -19,9 +18,9 @@ export async function POST(request: NextRequest) {
     const mimeType = imageFile.type || 'image/jpeg';
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    console.log('🔍 Starting VLM multi-question extraction for:', imageFile.name, 'size:', imageFile.size);
+    console.log('🔍 Starting VLM extraction:', imageFile.name, 'size:', imageFile.size);
 
-    // Use z-ai-web-dev-sdk VLM to extract ALL questions from image
+    // Use z-ai-web-dev-sdk VLM
     const ZAI = (await import('z-ai-web-dev-sdk')).default;
     const zai = await ZAI.create();
 
@@ -32,28 +31,30 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: 'text',
-              text: `You are an expert MCQ question extraction assistant. This image contains MULTIPLE multiple choice questions (MCQs).
+              text: `You are an expert exam paper scanner. This image contains MULTIPLE MCQ questions from a competitive exam paper.
 
-Your task: Extract ALL questions from this image. Do NOT miss any question. Count every single question visible in the image.
+CRITICAL TASK: Extract ALL questions from this image. Do NOT miss any single question.
 
-Return ONLY a valid JSON array with no markdown, no code blocks, no extra text.
-Each element in the array must have these fields:
-- question (string): the full question text with question number
-- optionA (string): option A text
-- optionB (string): option B text
-- optionC (string): option C text
-- optionD (string): option D text
-- correctOption (string): one of A/B/C/D - the correct answer (if visible in image, otherwise leave empty string)
-- explanation (string): leave empty string if not provided in image
-- section (string): leave "General" if not specified
+Return ONLY a valid JSON array. No markdown, no code blocks, no explanation text.
+Each element must have exactly these fields:
+- "question": full question text including question number (e.g. "Q1. What is capital of India?")
+- "optionA": text of option A
+- "optionB": text of option B  
+- "optionC": text of option C
+- "optionD": text of option D
+- "correctOption": "A" or "B" or "C" or "D" (leave "A" if answer is not visible/marked)
+- "explanation": leave empty string ""
+- "section": leave "General"
+- "negativeMark": leave "0"
 
-IMPORTANT RULES:
-1. Extract EVERY question visible in the image - do not skip any
-2. Include the question number in the question text (e.g. "Q1. What is...")
-3. Return a JSON ARRAY like: [{"question":"...","optionA":"...","optionB":"...","optionC":"...","optionD":"...","correctOption":"A","explanation":"","section":"General"}, ...]
-4. If there are 34 questions, return 34 objects in the array
-5. Return ONLY the JSON array, nothing else
-6. Make sure the JSON is valid and complete`,
+RULES:
+1. Extract EVERY single question visible in the image
+2. Keep question numbers in question text (Q1, Q2 etc)
+3. Questions may be in English OR Hindi - extract as-is, do not translate
+4. If options have (a), (b), (c), (d) - normalize to just A, B, C, D
+5. Return JSON array only: [{"question":"...","optionA":"...","optionB":"...","optionC":"...","optionD":"...","correctOption":"A","explanation":"","section":"General","negativeMark":"0"}]
+6. If image has N questions, return exactly N objects in array
+7. Make sure JSON is valid and complete`,
             },
             { type: 'image_url', image_url: { url: dataUrl } },
           ],
@@ -62,63 +63,56 @@ IMPORTANT RULES:
       thinking: { type: 'disabled' },
     });
 
-    console.log('✅ VLM response received');
-
     const content = response?.choices?.[0]?.message?.content || '';
-    console.log('📝 Raw response length:', content.length);
-    console.log('📝 Raw response preview:', content.substring(0, 300));
+    console.log('📝 VLM response length:', content.length);
 
-    // Try to parse JSON array from the response
+    // Parse JSON from response
     let jsonStr = content.trim();
 
-    // Remove markdown code blocks if present
+    // Remove markdown code blocks
     const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1].trim();
-    }
+    if (jsonMatch) jsonStr = jsonMatch[1].trim();
 
-    let questions: any[] = [];
+    let questions: Record<string, any>[] = [];
 
+    // Try direct parse
     try {
       const parsed = JSON.parse(jsonStr);
-      // Check if it's an array
       if (Array.isArray(parsed)) {
         questions = parsed;
-      } else if (parsed && parsed.questions && Array.isArray(parsed.questions)) {
-        // Sometimes VLM wraps in an object with "questions" key
+      } else if (parsed?.questions && Array.isArray(parsed.questions)) {
         questions = parsed.questions;
-      } else if (parsed && parsed.question) {
-        // Single question returned - wrap in array
+      } else if (parsed?.question) {
         questions = [parsed];
       }
     } catch {
-      // Try to find JSON array in the string
+      // Fallback: find JSON array in string
       const arrMatch = jsonStr.match(/\[[\s\S]*\]/);
       if (arrMatch) {
         try {
           questions = JSON.parse(arrMatch[0]);
         } catch {
-          // Try individual objects
-          const objMatches = jsonStr.match(/\{[\s\S]*?\}/g);
-          if (objMatches && objMatches.length > 0) {
+          // Last resort: find individual objects
+          const objMatches = jsonStr.match(/\{[^{}]*"question"[^{}]*\}/g);
+          if (objMatches) {
             questions = objMatches.map(m => {
               try { return JSON.parse(m); } catch { return null; }
-            }).filter(Boolean);
+            }).filter(Boolean) as Record<string, any>[];
           }
         }
       }
+    }
 
-      if (questions.length === 0) {
-        return NextResponse.json({
-          success: false,
-          error: 'Could not parse questions from image. Please ensure the image contains clear MCQs.',
-          raw: content.substring(0, 500),
-        }, { status: 400 });
-      }
+    if (questions.length === 0) {
+      console.log('⚠️ No questions parsed from VLM response');
+      return NextResponse.json({
+        success: false,
+        error: 'Could not extract questions from image. Make sure the image is a clear photo of a question paper with MCQ questions.',
+      }, { status: 400 });
     }
 
     // Normalize each question
-    const normalizedQuestions = questions.map((q: any, index: number) => {
+    const normalized = questions.map((q, index) => {
       // Normalize correctOption
       let correctOpt = 'A';
       if (q.correctOption) {
@@ -129,49 +123,39 @@ IMPORTANT RULES:
       }
 
       return {
-        question: q.question || `Question ${index + 1}`,
-        optionA: q.optionA || '',
-        optionB: q.optionB || '',
-        optionC: q.optionC || '',
-        optionD: q.optionD || '',
+        question: String(q.question || `Question ${index + 1}`).trim(),
+        optionA: String(q.optionA || '').trim(),
+        optionB: String(q.optionB || '').trim(),
+        optionC: String(q.optionC || '').trim(),
+        optionD: String(q.optionD || '').trim(),
         correctOption: correctOpt,
-        explanation: q.explanation || '',
-        section: q.section || 'General',
-        negativeMark: q.negativeMark || '0',
+        explanation: String(q.explanation || '').trim(),
+        section: String(q.section || 'General').trim(),
+        negativeMark: String(q.negativeMark || '0').trim(),
       };
     });
 
-    // FILTER OUT placeholder/empty questions (when user uploads screenshot of app, not real question paper)
+    // Filter out placeholder/empty questions
     const PLACEHOLDER_PATTERNS = [
-      'type your question',
-      'option a',
-      'option b',
-      'option c',
-      'option d',
-      'why is this the correct answer',
-      'brief description',
-      'test title',
+      'type your question', 'option a', 'option b', 'option c', 'option d',
+      'why is this the correct answer', 'brief description', 'test title',
     ];
 
-    const realQuestions = normalizedQuestions.filter((q: any) => {
+    const realQuestions = normalized.filter(q => {
       const allText = `${q.question} ${q.optionA} ${q.optionB} ${q.optionC} ${q.optionD}`.toLowerCase();
-      // Check if question text is just placeholder
       const isPlaceholder = PLACEHOLDER_PATTERNS.some(p => allText.includes(p));
-      // Check if question has actual content (more than 15 chars and not just placeholder)
-      const hasRealContent = q.question && q.question.trim().length > 15 && !isPlaceholder;
-      return hasRealContent;
+      return q.question.length > 10 && !isPlaceholder;
     });
 
     if (realQuestions.length === 0) {
-      console.log('⚠️ No real questions found - likely a screenshot of app or non-question image');
       return NextResponse.json({
         success: false,
-        error: 'No real questions found in image. Please upload an actual question paper / question image (not a screenshot of the app interface). Make sure the image contains clear MCQ questions with options.',
-        detectedCount: normalizedQuestions.length,
+        error: 'No real questions found in image. Please upload an actual question paper photo with clear MCQ questions.',
+        detectedCount: normalized.length,
       }, { status: 400 });
     }
 
-    console.log(`✅ Extracted ${realQuestions.length} real questions from image (filtered out ${normalizedQuestions.length - realQuestions.length} placeholders)`);
+    console.log(`✅ Extracted ${realQuestions.length} questions from image`);
 
     return NextResponse.json({
       success: true,
@@ -179,11 +163,11 @@ IMPORTANT RULES:
       count: realQuestions.length,
     });
   } catch (error) {
-    console.error('❌ Error extracting questions from image:', error);
+    console.error('❌ VLM extraction error:', error);
     return NextResponse.json({
       success: false,
-      error: 'Failed to extract questions from image. Please try again.',
-      details: String(error),
+      error: 'Failed to extract questions from image. Please try again with a clearer image.',
+      details: String(error).substring(0, 200),
     }, { status: 500 });
   }
 }
