@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { Student } from '@/models';
 import { Otp } from '@/models/Otp';
+import { sendOtpEmail } from '@/lib/send-email';
 
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if student has a password (can't reset if no password)
+    // Check if student has a password
     if (!student.passwordHash) {
       return NextResponse.json(
         { success: false, message: 'This account does not have a password set. Please sign up first.' },
@@ -49,19 +50,25 @@ export async function POST(request: NextRequest) {
       email,
       otp,
       purpose: 'reset-password',
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     });
 
-    // In production, send OTP via email/SMS service (e.g., Resend, Twilio)
-    // For now, log the OTP for development and return it
-    console.log(`[OTP] Reset password OTP for ${email}: ${otp}`);
+    // Try to send real email via Resend
+    const emailResult = await sendOtpEmail(email, otp, student.name || undefined);
+
+    if (!emailResult.success && process.env.RESEND_API_KEY) {
+      // Email API configured but failed to send
+      return NextResponse.json(
+        { success: false, message: 'Failed to send OTP email. Please try again later.' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       message: 'OTP sent to your email successfully',
-      // In production, remove the `otp` field from response
-      // This is only returned for development/testing
-      otp, // TODO: Remove in production - send via email/SMS instead
+      // Only return OTP in development mode (no RESEND_API_KEY set)
+      ...(process.env.RESEND_API_KEY ? {} : { otp }),
     });
   } catch (error) {
     console.error('Send OTP error:', error);
