@@ -327,7 +327,7 @@ export function AppHeader() {
               {/* Theme Toggle in mobile */}
               <div className="flex items-center gap-3 px-3 py-2.5">
                 <ThemeToggle />
-                <span className="text-xs text-white/70">Theme</span>
+                <span className="text-xs text-white/70">Dark Mode</span>
                 {!isSubscribed && (
                   <Badge className="gap-1 text-[10px] ml-auto bg-white/20 text-white border-0"><Zap className="w-2.5 h-2.5" />{freeTestsRemaining} free</Badge>
                 )}

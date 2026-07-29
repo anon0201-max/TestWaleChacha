@@ -14,24 +14,24 @@ import {
 
 const examTabs = ['SSC', 'Banking', 'Railways', 'UPSC', 'Teaching', 'State', 'Defence', 'Other'];
 
-// ── Subtle, natural animation helpers ──
+// ── Scroll-triggered animation helpers ──
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 40 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
-    transition: { delay: i * 0.06, duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }
+    transition: { delay: i * 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] }
   })
 };
 
 const stagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.06 } }
+  visible: { transition: { staggerChildren: 0.1 } }
 };
 
 // Scroll-triggered section wrapper — items animate in as they enter viewport
 function ScrollSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const ref = useRef(null);
-  const show = useInView(ref, { once: true, margin: '-40px' });
+  const show = useInView(ref, { once: true, margin: '-60px' });
   return (
     <motion.section ref={ref} initial="hidden" animate={show ? 'visible' : 'hidden'} variants={stagger} className={className}>
       {children}
@@ -180,9 +180,9 @@ export function HomePage() {
             >
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { icon: Users, value: '10K+', label: 'Students Registered', color: 'from-blue-500/20 to-blue-600/10', iconColor: 'text-blue-400' },
-                  { icon: Flame, value: '50K+', label: 'Tests Delivered', color: 'from-orange-500/20 to-orange-600/10', iconColor: 'text-orange-400' },
-                  { icon: GraduationCap, value: '500+', label: 'Questions Bank', color: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400' },
+                  { icon: Users, value: '100', label: 'Students Registered', color: 'from-blue-500/20 to-blue-600/10', iconColor: 'text-blue-400' },
+                  { icon: Flame, value: '50+', label: 'Tests Delivered', color: 'from-orange-500/20 to-orange-600/10', iconColor: 'text-orange-400' },
+                  { icon: GraduationCap, value: '50+', label: 'Questions Bank', color: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400' },
                   { icon: Star, value: '4.8★', label: 'Average Rating', color: 'from-amber-500/20 to-amber-600/10', iconColor: 'text-amber-400' },
                 ].map((stat, i) => (
                   <motion.div
