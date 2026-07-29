@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, RotateCcw, Crown } from 'lucide-react';
+import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, RotateCcw, Crown, Target, Users, ChevronRight } from 'lucide-react';
 
 export function TestListPage() {
   const {
@@ -91,26 +91,29 @@ export function TestListPage() {
 
   const diffColors = { easy: 'bg-green-100 text-green-700', medium: 'bg-amber-100 text-amber-700', hard: 'bg-red-100 text-red-700' };
 
+  const totalQuestions = filteredTests.reduce((s, t) => s + (t._count?.questions || t.totalQuestions || 0), 0);
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
+      {/* Page Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <Button variant="ghost" size="icon" onClick={() => setView('home')}><ArrowLeft className="w-5 h-5" /></Button>
-          <div>
-            <h1 className="text-xl font-bold truncate">{selectedCategoryName || 'All Mock Tests'}</h1>
-            <p className="text-xs text-muted-foreground">
-              {filteredTests.length} tests
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold truncate">{selectedCategoryName || 'All Mock Tests'}</h1>
+            <p className="text-[11px] text-muted-foreground">
+              {filteredTests.length} Test Series · {totalQuestions} Total Questions
               {isLoggedIn && !isSubscribed && (
-                <Badge variant="secondary" className="ml-1 text-[10px]">
+                <Badge variant="secondary" className="ml-1.5 text-[10px]">
                   <Zap className="w-2.5 h-2.5 mr-0.5" />{freeTestsRemaining} free
                 </Badge>
               )}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}><Filter className="w-3.5 h-3.5 mr-1" /> Filters</Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="shrink-0">
+          <Filter className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Filters</span>
+        </Button>
       </div>
 
       <div className="relative">
