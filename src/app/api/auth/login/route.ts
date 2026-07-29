@@ -40,6 +40,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (deviceId && student.deviceId !== deviceId) {
+      // Before updating deviceId, delete any GUEST student that already
+      // has the new deviceId — otherwise the unique index on deviceId will
+      // throw a duplicate-key error (Internal Server Error on mobile login).
+      const existingGuest = await Student.findOne({ deviceId, passwordHash: { $exists: false } });
+      if (existingGuest && existingGuest.id !== student.id) {
+        // Transfer any free test usage from the guest to the real student
+        if (existingGuest.freeTestsUsed > student.freeTestsUsed) {
+          await Student.findOneAndUpdate(
+            { id: student.id },
+            { freeTestsUsed: existingGuest.freeTestsUsed }
+          );
+        }
+        await Student.deleteOne({ id: existingGuest.id });
+      }
       await Student.findOneAndUpdate({ id: student.id }, { deviceId });
       student.deviceId = deviceId;
     }

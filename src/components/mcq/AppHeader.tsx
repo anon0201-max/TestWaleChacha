@@ -292,18 +292,28 @@ export function AppHeader() {
 
             {/* Auth Buttons / Profile */}
             {isLoggedIn && user ? (
-              <div className="flex items-center gap-3 px-3 py-2">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${
-                  isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-blue-600 text-white'
-                }`}>
-                  {(user.name || '?').charAt(0).toUpperCase()}
+              <>
+                <div className="flex items-center gap-3 px-3 py-2">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${
+                    isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-blue-600 text-white'
+                  }`}>
+                    {(user.name || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                    <p className="text-[11px] text-white/60">{isSubscribed ? 'PRO Member' : `Free Plan`}</p>
+                  </div>
+                  {isSubscribed && <Crown className="w-4 h-4 text-amber-400" />}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                  <p className="text-[11px] text-white/60">{isSubscribed ? 'PRO Member' : `Free Plan`}</p>
-                </div>
-                {isSubscribed && <Crown className="w-4 h-4 text-amber-400" />}
-              </div>
+
+                {/* Mobile Logout Button */}
+                <button
+                  onClick={() => { setMobileMenuOpen(false); logout(); }}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-300 hover:bg-red-500/10 text-sm font-medium transition-colors w-full"
+                >
+                  <LogOut className="w-4 h-4" /> Logout
+                </button>
+              </>
             ) : (
               <div className="flex gap-2 px-3">
                 <Button size="sm" className="flex-1 text-xs bg-transparent border-2 border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-[#1C1C84] font-semibold transition-all" onClick={() => { setMobileMenuOpen(false); setShowAuthModal('login'); }}>

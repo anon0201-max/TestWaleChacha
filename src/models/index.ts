@@ -18,3 +18,6 @@ export type { ITestAttempt } from './TestAttempt';
 
 export { Payment } from './Payment';
 export type { IPayment } from './Payment';
+
+export { Otp } from './Otp';
+export type { IOtp } from './Otp';
