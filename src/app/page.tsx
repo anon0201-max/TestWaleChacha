@@ -165,12 +165,14 @@ function AppContent() {
             {currentView === 'test-taking' && <Suspense fallback={<RouteFallback />}><TestTakingPage /></Suspense>}
           </>
         ) : (
-          <div className="max-w-6xl mx-auto px-4 py-6">
+          <>
             {currentView === 'home' && <HomePage />}
-            {currentView === 'tests' && <TestListPage />}
-            {currentView === 'results' && <Suspense fallback={<RouteFallback />}><ResultsPage /></Suspense>}
-            {currentView === 'my-attempts' && <Suspense fallback={<RouteFallback />}><MyAttemptsPage /></Suspense>}
-          </div>
+            <div className="max-w-6xl mx-auto px-4 py-6">
+              {currentView === 'tests' && <TestListPage />}
+              {currentView === 'results' && <Suspense fallback={<RouteFallback />}><ResultsPage /></Suspense>}
+              {currentView === 'my-attempts' && <Suspense fallback={<RouteFallback />}><MyAttemptsPage /></Suspense>}
+            </div>
+          </>
         )}
       </main>
       {!isAdminOrTestTaking && <AppFooter />}

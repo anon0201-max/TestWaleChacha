@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import {
   Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle, History,
-  ChevronRight, Zap, Play, Shield, TrendingUp, Target, MessageCircle,
+  ChevronRight, Zap, Play, Shield, TrendingUp, Target, MessageCircle, GraduationCap, Flame, Sparkles, CheckCircle2,
 } from 'lucide-react';
 
 const examTabs = ['SSC', 'Banking', 'Railways', 'UPSC', 'Teaching', 'State', 'Defence', 'Other'];
@@ -33,15 +33,6 @@ function CategoriesSkeleton() {
   );
 }
 
-// Animated Counter
-function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
-  return (
-    <span>
-      {target}{suffix}
-    </span>
-  );
-}
-
 export function HomePage() {
   const { setView, categories, tests, freeTestsRemaining, isSubscribed, isLoggedIn, setShowAuthModal, setSelectedCategory } = useAppStore();
   const isDataLoaded = categories.length > 0;
@@ -50,7 +41,7 @@ export function HomePage() {
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-24">
-      {/* ===== HERO SECTION — Full-width Testbook Style ===== */}
+      {/* ===== HERO SECTION — Full-width Edge-to-Edge ===== */}
       <section className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(135deg, #0D1B4C 0%, #1C1C84 40%, #2525A0 70%, #1a1a6e 100%)' }}>
         {/* Decorative Shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -60,102 +51,109 @@ export function HomePage() {
           <div className="absolute top-1/2 right-1/4 w-4 h-4 rounded-full bg-cyan-400/30" />
           <div className="absolute top-1/3 left-1/3 w-3 h-3 rounded-full bg-amber-400/20" />
           <div className="absolute bottom-1/4 right-1/3 w-2 h-2 rounded-full bg-white/20" />
+          {/* Large subtle glow */}
+          <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-3xl" />
         </div>
 
-        <div className="relative z-10 px-4 sm:px-6 lg:px-8 py-10 sm:py-14 md:py-20 max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-2xl"
-          >
-            {/* Exam Tag Pills */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
-              {examTabs.map((t) => (
-                <Badge key={t} className="bg-white/10 backdrop-blur-sm text-white/80 border border-white/10 hover:bg-white/20 text-[10px] sm:text-xs px-2.5 py-0.5 cursor-default transition-colors">
-                  {t}
-                </Badge>
-              ))}
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold leading-tight mb-3 sm:mb-4">
-              One Destination for{' '}
-              <span className="bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent">Complete Exam Preparation</span>
-            </h1>
-
-            {/* Subtitle Steps */}
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm sm:text-base text-white/60 mb-3 sm:mb-4">
-              <span className="text-cyan-400 font-semibold">Learn</span>
-              <span className="text-white/30">▸</span>
-              <span className="text-cyan-400 font-semibold">Practice</span>
-              <span className="text-white/30">▸</span>
-              <span className="text-cyan-400 font-semibold">Improve</span>
-              <span className="text-white/30">▸</span>
-              <span className="text-cyan-400 font-semibold">Succeed</span>
-            </div>
-
-            <p className="text-sm sm:text-base text-white/50 mb-6 sm:mb-8 max-w-lg">
-              Start your preparation for government exams — SSC CGL, UPSC, IBPS PO, RRB NTPC and more. Real exam interface with question palette &amp; timer.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap gap-3">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-bold px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base rounded-xl shadow-lg shadow-cyan-500/25 transition-all hover:shadow-cyan-500/40"
-                onClick={() => setView('tests')}
-              >
-                Start Free Test <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              {isLoggedIn ? (
-                isSubscribed ? (
-                  <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl">
-                    <Crown className="w-5 h-5 mr-2 text-amber-400" /> PRO Member
-                  </Button>
-                ) : (
-                  <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl" onClick={handleSubscribeClick}>
-                    <Lock className="w-4 h-4 mr-2" /> Unlock All — ₹100
-                  </Button>
-                )
-              ) : (
-                <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl" onClick={() => setShowAuthModal('signup')}>
-                  <UserCircle className="w-5 h-5 mr-2" /> Sign Up Free
-                </Button>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Stats Counter — Right side on desktop, below on mobile */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mt-10 sm:mt-14 md:absolute md:right-8 md:top-1/2 md:-translate-y-1/2 md:grid-cols-2 md:w-72 lg:w-80"
-          >
-            {[
-              { value: '8.8+', label: 'Registered Students', suffix: ' Crore' },
-              { value: '242+', label: 'Tests Attempted', suffix: ' Crore' },
-              { value: '4+', label: 'Student Selections', suffix: ' Lacs' },
-              { value: '5.5+', label: 'Classes Attended', suffix: ' Crore' },
-            ].map((stat, i) => (
-              <div key={stat.label} className="text-center sm:text-left">
-                <p className="text-xl sm:text-2xl font-extrabold text-white">
-                  {stat.value}<span className="text-cyan-400">{stat.suffix}</span>
-                </p>
-                <p className="text-[10px] sm:text-xs text-white/50 mt-0.5">{stat.label}</p>
+        <div className="relative z-10 px-4 sm:px-6 lg:px-12 xl:px-16 py-10 sm:py-14 md:py-20 max-w-[1400px] mx-auto">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-12 xl:gap-16">
+            {/* Left: Content */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="flex-1 lg:max-w-2xl"
+            >
+              {/* Exam Tag Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
+                {examTabs.map((t) => (
+                  <Badge key={t} className="bg-white/10 backdrop-blur-sm text-white/80 border border-white/10 hover:bg-white/20 text-[10px] sm:text-xs px-2.5 py-0.5 cursor-default transition-colors">
+                    {t}
+                  </Badge>
+                ))}
               </div>
-            ))}
-          </motion.div>
+
+              {/* Headline */}
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-5xl font-extrabold leading-tight mb-3 sm:mb-4">
+                Mock Tests Jo Dili Ki{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent">
+                  Tayyari Karayein
+                </span>
+              </h1>
+
+              {/* Subtitle Steps */}
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm sm:text-base text-white/60 mb-3 sm:mb-4">
+                <span className="text-cyan-400 font-semibold flex items-center gap-1"><Sparkles className="w-4 h-4" />Pehle Practice</span>
+                <span className="text-white/30">▸</span>
+                <span className="text-cyan-400 font-semibold flex items-center gap-1"><Target className="w-4 h-4" />Phir Analyse</span>
+                <span className="text-white/30">▸</span>
+                <span className="text-cyan-400 font-semibold flex items-center gap-1"><Trophy className="w-4 h-4" />Phir Crack</span>
+              </div>
+
+              <p className="text-sm sm:text-base text-white/50 mb-6 sm:mb-8 max-w-lg">
+                Government exams ki taiyaari ab aasan hai! SSC CGL, UPSC, IBPS PO, RRB NTPC aur bahut saare exams ke liye real exam jaisa interface — Question Palette, Timer aur detailed analysis ke saath.
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-bold px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base rounded-xl shadow-lg shadow-cyan-500/25 transition-all hover:shadow-cyan-500/40"
+                  onClick={() => setView('tests')}
+                >
+                  Free Test Shuru Karein <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                {isLoggedIn ? (
+                  isSubscribed ? (
+                    <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl">
+                      <Crown className="w-5 h-5 mr-2 text-amber-400" /> PRO Member
+                    </Button>
+                  ) : (
+                    <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl" onClick={handleSubscribeClick}>
+                      <Lock className="w-4 h-4 mr-2" /> Sab Tests Unlock — ₹100
+                    </Button>
+                  )
+                ) : (
+                  <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl" onClick={() => setShowAuthModal('signup')}>
+                    <UserCircle className="w-5 h-5 mr-2" /> Free Me Signup
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Right: Stats Cards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="lg:w-80 xl:w-96 mt-10 lg:mt-0 shrink-0"
+            >
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                {[
+                  { icon: Users, value: '10K+', label: 'Students Registered', color: 'from-blue-500/20 to-blue-600/10', iconColor: 'text-blue-400' },
+                  { icon: Flame, value: '50K+', label: 'Tests Delivered', color: 'from-orange-500/20 to-orange-600/10', iconColor: 'text-orange-400' },
+                  { icon: GraduationCap, value: '500+', label: 'Questions Bank', color: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400' },
+                  { icon: Star, value: '4.8★', label: 'Average Rating', color: 'from-amber-500/20 to-amber-600/10', iconColor: 'text-amber-400' },
+                ].map((stat) => (
+                  <div key={stat.label} className={`rounded-xl bg-gradient-to-br ${stat.color} backdrop-blur-sm border border-white/10 p-4 sm:p-5`}>
+                    <stat.icon className={`w-6 h-6 ${stat.iconColor} mb-2`} />
+                    <p className="text-xl sm:text-2xl font-extrabold text-white">{stat.value}</p>
+                    <p className="text-[10px] sm:text-xs text-white/50 mt-0.5">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ===== POPULAR EXAMS SECTION ===== */}
-      <section>
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
         <div className="flex items-center justify-between mb-4 sm:mb-5">
           <div>
             <h2 className="text-lg sm:text-xl font-bold">Popular Exam Categories</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Get exam-ready with concepts, questions and study notes</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Exams ke hisaab se mock tests — abhi shuru karein</p>
           </div>
           <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700" onClick={() => setView('tests')}>
             View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -212,11 +210,11 @@ export function HomePage() {
 
       {/* ===== POPULAR TEST SERIES — Horizontal Scroll ===== */}
       {popularTests.length > 0 && (
-        <section>
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
           <div className="flex items-center justify-between mb-4 sm:mb-5">
             <div>
               <h2 className="text-lg sm:text-xl font-bold">Popular Test Series</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Boost your preparation with structured mock tests</p>
+              <p className="text-xs text-muted-foreground mt-0.5">In bahut popular tests ko pehle try karein</p>
             </div>
             <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700" onClick={() => setView('tests')}>
               View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -262,7 +260,7 @@ export function HomePage() {
                       {test.isLocked ? (
                         <><Crown className="w-3.5 h-3.5 mr-1" />Subscribe to Unlock</>
                       ) : (
-                        <><Play className="w-3.5 h-3.5 mr-1" />Start Test</>
+                        <><Play className="w-3.5 h-3.5 mr-1" />Test Shuru Karein</>
                       )}
                     </Button>
                   </CardContent>
@@ -274,15 +272,15 @@ export function HomePage() {
       )}
 
       {/* ===== FEATURES SECTION ===== */}
-      <section>
-        <h2 className="text-lg sm:text-xl font-bold mb-1">Why Choose TestWaleChacha?</h2>
-        <p className="text-xs text-muted-foreground mb-4 sm:mb-5">Everything you need to crack government exams</p>
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+        <h2 className="text-lg sm:text-xl font-bold mb-1">TestWaleChacha Kyun Choose Karein?</h2>
+        <p className="text-xs text-muted-foreground mb-4 sm:mb-5">Government exam crack karne ke liye sab kuch ek jagah</p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { icon: BarChart3, title: 'Real Exam Interface', desc: 'Question palette, mark for review, timer — exactly like SSC/UPSC online exam.', color: 'bg-blue-50 text-blue-600' },
-            { icon: Trophy, title: 'Detailed Solutions', desc: 'Every question has explanations. Learn from your mistakes.', color: 'bg-emerald-50 text-emerald-600' },
-            { icon: TrendingUp, title: 'Performance Tracking', desc: 'Track your attempts, scores, and improvement over time.', color: 'bg-purple-50 text-purple-600' },
-            { icon: Shield, title: 'Personal Dashboard', desc: 'All your test attempts, scores, and rankings in one place.', color: 'bg-amber-50 text-amber-600' },
+            { icon: BarChart3, title: 'Real Exam Interface', desc: 'Question palette, mark for review, timer — bilkul real SSC/UPSC exam jaisa.', color: 'bg-blue-50 text-blue-600' },
+            { icon: Trophy, title: 'Detailed Solutions', desc: 'Har question ka detailed explanation. Galtiyon se seekhein.', color: 'bg-emerald-50 text-emerald-600' },
+            { icon: TrendingUp, title: 'Performance Track', desc: 'Apne attempts, scores aur improvement track karein.', color: 'bg-purple-50 text-purple-600' },
+            { icon: Shield, title: 'Personal Dashboard', desc: 'Saare test attempts, scores aur rankings ek jagah.', color: 'bg-amber-50 text-amber-600' },
           ].map((item, idx) => (
             <motion.div
               key={item.title}
@@ -304,49 +302,88 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* ===== TRUST BADGES / SOCIAL PROOF ===== */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+        <div className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 p-6 sm:p-8">
+          <div className="text-center mb-6">
+            <h2 className="text-lg sm:text-xl font-bold">Hamare Students Kya Kehte Hain</h2>
+            <p className="text-xs text-muted-foreground mt-1">Thousands of students ne exams crack kiye hamare saath</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { name: 'Rahul K.', exam: 'SSC CGL 2024', text: 'TestWaleChacha ki wajah se mera prep level bahut badha. Real exam interface se confidence aaya.', rating: 5 },
+              { name: 'Priya S.', exam: 'IBPS PO 2024', text: 'Detailed solutions aur performance tracking ne meri galtiyon ko samajhne me bahut help ki.', rating: 5 },
+              { name: 'Amit T.', exam: 'RRB NTPC', text: 'Mobile pe bhi smooth chalta hai. Train me practice kar sakte hain — best part!', rating: 4 },
+            ].map((review) => (
+              <Card key={review.name} className="border-0 shadow-sm">
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center gap-1 mb-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} />
+                    ))}
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed mb-3">&ldquo;{review.text}&rdquo;</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                      {review.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{review.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{review.exam}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ===== PRICING CTA SECTION ===== */}
       {!isSubscribed && (
-        <section className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-8 text-center">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-200/20 rounded-full translate-y-1/2 -translate-x-1/2" />
-          <div className="relative z-10">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-400/30">
-              <Crown className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">Get Unlimited Access — ₹100</h2>
-            <p className="text-sm text-muted-foreground mb-5 sm:mb-6 max-w-md mx-auto">
-              {isLoggedIn
-                ? `${freeTestsRemaining} free tests remaining. Unlock all ${categories.reduce((s, c) => s + (c?._count?.tests || 0), 0)}+ tests with detailed solutions.`
-                : `Sign up free to get mock tests, then unlock unlimited access for just ₹100.`
-              }
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              {!isLoggedIn && (
-                <Button size="lg" variant="outline" className="font-semibold px-6 sm:px-8 h-11 rounded-xl border-gray-300" onClick={() => setShowAuthModal('signup')}>
-                  <UserCircle className="w-4 h-4 mr-2" /> Sign Up Free
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+          <div className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-8 text-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-200/20 rounded-full translate-y-1/2 -translate-x-1/2" />
+            <div className="relative z-10">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-400/30">
+                <Crown className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold mb-2">Sab Tests Unlock — Sirf ₹100</h2>
+              <p className="text-sm text-muted-foreground mb-5 sm:mb-6 max-w-md mx-auto">
+                {isLoggedIn
+                  ? `${freeTestsRemaining} free tests bache hain. Saare ${categories.reduce((s, c) => s + (c?._count?.tests || 0), 0)}+ tests unlimited access ke liye subscribe karein.`
+                  : `Free signup ke saath mock tests milein, phir sirf ₹100 me sab unlimited.`
+                }
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                {!isLoggedIn && (
+                  <Button size="lg" variant="outline" className="font-semibold px-6 sm:px-8 h-11 rounded-xl border-gray-300" onClick={() => setShowAuthModal('signup')}>
+                    <UserCircle className="w-4 h-4 mr-2" /> Free Signup
+                  </Button>
+                )}
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-6 sm:px-8 h-11 rounded-xl shadow-lg shadow-amber-500/25"
+                  onClick={handleSubscribeClick}
+                >
+                  Abhi Subscribe Karein — ₹100 <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-              )}
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-6 sm:px-8 h-11 rounded-xl shadow-lg shadow-amber-500/25"
-                onClick={handleSubscribeClick}
-              >
-                Subscribe Now — ₹100 <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+              </div>
             </div>
           </div>
         </section>
       )}
 
       {/* ===== FOOTER LINKS (embedded) ===== */}
-      <section className="text-center text-xs text-muted-foreground space-y-2 pt-4">
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 text-center text-xs text-muted-foreground space-y-2 pt-4">
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
           <span className="cursor-pointer hover:text-blue-600">About Us</span>
           <span className="cursor-pointer hover:text-blue-600">Contact</span>
           <span className="cursor-pointer hover:text-blue-600">Privacy Policy</span>
           <span className="cursor-pointer hover:text-blue-600">Terms</span>
         </div>
-        <p>© 2025 TestWaleChacha. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} TestWaleChacha. All rights reserved.</p>
       </section>
 
       {/* ===== FLOATING WHATSAPP BUTTON ===== */}
