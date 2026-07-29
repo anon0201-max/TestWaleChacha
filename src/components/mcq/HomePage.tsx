@@ -47,9 +47,9 @@ export function HomePage() {
         </div>
         <div className="relative z-10 max-w-2xl">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
               {examTypes.map((t) => (
-                <Badge key={t} className="bg-white/15 text-white/90 hover:bg-white/20 border-0 text-xs">{t}</Badge>
+                <Badge key={t} className="bg-white/15 text-white/90 hover:bg-white/20 border-0 text-[10px] sm:text-xs px-2 sm:px-2.5">{t}</Badge>
               ))}
             </div>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">

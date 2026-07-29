@@ -221,41 +221,43 @@ export function TestTakingPage() {
   // Instructions modal
   if (showInstructions) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto px-2 sm:px-0">
         <Card className="border-2 border-blue-200">
-          <CardContent className="p-6 md:p-8">
-            <div className="text-center mb-6">
-              <h1 className="text-xl font-bold text-blue-900">{currentTest.examName}</h1>
-              <p className="text-lg text-blue-700 mt-1">{currentTest.title}</p>
+          <CardContent className="p-4 sm:p-6 md:p-8">
+            <div className="text-center mb-5">
+              <h1 className="text-lg sm:text-xl font-bold text-blue-900">{currentTest.examName}</h1>
+              <p className="text-base sm:text-lg text-blue-700 mt-1">{currentTest.title}</p>
             </div>
-            <div className="bg-blue-50 rounded-xl p-4 mb-6 space-y-3 text-sm">
+            <div className="bg-blue-50 rounded-xl p-3 sm:p-4 mb-5 space-y-2.5 text-sm">
               <div className="flex justify-between"><span>Total Questions:</span><span className="font-semibold">{totalQuestions}</span></div>
               <div className="flex justify-between"><span>Time Duration:</span><span className="font-semibold">{formatTime(currentTest.timeLimit)}</span></div>
               <div className="flex justify-between"><span>Difficulty:</span><Badge variant="secondary">{currentTest.difficulty}</Badge></div>
               {user && <div className="flex justify-between"><span>Candidate:</span><span className="font-semibold">{user.name}</span></div>}
             </div>
-            <h3 className="font-semibold text-base mb-3">Instructions:</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground mb-6 list-disc pl-5">
-              <li>Each question carries equal marks. No negative marking for this test.</li>
-              <li>You can navigate between questions using the Question Palette.</li>
-              <li>Use <strong>Save &amp; Next</strong> to save your answer and move to next question.</li>
-              <li>Use <strong>Mark for Review</strong> to flag a question for later review.</li>
+            <h3 className="font-semibold text-sm sm:text-base mb-3">Instructions:</h3>
+            <ul className="space-y-1.5 text-xs sm:text-sm text-muted-foreground mb-5 list-disc pl-5">
+              <li>Each question carries equal marks. No negative marking.</li>
+              <li>Navigate between questions using the Question Palette.</li>
+              <li>Use <strong>Save &amp; Next</strong> to save answer and move to next question.</li>
+              <li>Use <strong>Mark for Review</strong> to flag a question for later.</li>
               <li>Use <strong>Clear Response</strong> to remove your selected answer.</li>
-              <li>The test will auto-submit when the timer reaches zero.</li>
+              <li>Test will auto-submit when the timer reaches zero.</li>
             </ul>
-            <div className="flex items-center justify-center gap-4 text-xs mb-6">
+            {/* Legend - responsive grid for mobile */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center gap-2 sm:gap-3 text-xs mb-5">
               {(['not-visited', 'not-answered', 'answered', 'marked', 'marked-answered'] as QuestionStatus[]).map((status) => (
                 <div key={status} className="flex items-center gap-1.5">
-                  <div className={`w-5 h-5 rounded ${paletteColors[status]}`} />
-                  <span>{paletteLabels[status]}</span>
+                  <div className={`w-4 h-4 rounded shrink-0 ${paletteColors[status]}`} />
+                  <span className="text-gray-700">{paletteLabels[status]}</span>
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" className="h-12 px-6" onClick={() => { setIsTestActive(false); clearAnswers(); setView('tests'); }}>
+            {/* Buttons - stack on very small screens */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+              <Button variant="outline" className="h-11 sm:h-12 px-6 w-full sm:w-auto" onClick={() => { setIsTestActive(false); clearAnswers(); setView('tests'); }}>
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </Button>
-              <Button className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-base" onClick={() => setShowInstructions(false)}>
+              <Button className="flex-1 h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base" onClick={() => setShowInstructions(false)}>
                 I have read the instructions — Start Test
               </Button>
             </div>
@@ -266,10 +268,10 @@ export function TestTakingPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-56px)]">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-56px)]">
       {/* TOP BAR - Government Exam Style */}
-      <div className="bg-blue-900 text-white px-3 py-2 flex items-center justify-between shrink-0 z-20">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="bg-blue-900 text-white px-2 sm:px-3 py-1.5 sm:py-2 flex items-center justify-between shrink-0 z-20">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <Button variant="ghost" size="icon" className="text-white hover:bg-blue-800 h-8 w-8 shrink-0" onClick={() => { if (confirm('Quit test? Your progress will be lost.')) { setIsTestActive(false); clearAnswers(); setMarkedForReview(new Set()); setView('tests'); } }}>
             <X className="w-4 h-4" />
           </Button>
@@ -277,19 +279,22 @@ export function TestTakingPage() {
             <p className="text-xs text-blue-300 truncate">{currentTest.examName} — {currentTest.category.name}</p>
             <p className="text-sm font-medium truncate">{currentTest.title}</p>
           </div>
+          <div className="min-w-0 sm:hidden">
+            <p className="text-xs font-medium truncate">Q{currentQuestionIndex + 1}/{totalQuestions}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')} className="flex items-center gap-1 text-xs bg-blue-800 hover:bg-blue-700 px-2.5 py-1.5 rounded-lg transition-colors">
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <button onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')} className="hidden sm:flex items-center gap-1 text-xs bg-blue-800 hover:bg-blue-700 px-2.5 py-1.5 rounded-lg transition-colors">
             <Languages className="w-3.5 h-3.5" />
             {language === 'en' ? 'हिंदी' : 'English'}
           </button>
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono font-bold text-lg ${isTimeLow ? 'bg-red-600 animate-pulse' : 'bg-blue-800'}`}>
-            <Clock className="w-4 h-4" />
-            {formatTime(timeRemaining)}
+          <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-mono font-bold text-sm sm:text-lg ${isTimeLow ? 'bg-red-600 animate-pulse' : 'bg-blue-800'}`}>
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>{formatTime(timeRemaining)}</span>
           </div>
-          <button className="flex items-center gap-1.5 bg-blue-800 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-xs transition-colors">
+          <button className="hidden sm:flex items-center gap-1.5 bg-blue-800 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-xs transition-colors">
             <User className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{user?.name || 'Candidate'}</span>
+            <span>{user?.name || 'Candidate'}</span>
           </button>
         </div>
       </div>
@@ -353,17 +358,17 @@ export function TestTakingPage() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleClearResponse} disabled={!answers[currentQuestion.id]}>
-                    <RotateCcw className="w-3.5 h-3.5 mr-1" /> Clear Response
+                  <Button variant="outline" size="sm" onClick={handleClearResponse} disabled={!answers[currentQuestion.id]} className="text-xs sm:text-sm">
+                    <RotateCcw className="w-3.5 h-3.5 mr-1" /> Clear
                   </Button>
-                  <Button variant="outline" size="sm" className={markedForReview.has(currentQuestion.id) ? 'border-purple-500 text-purple-700 bg-purple-50' : ''} onClick={handleMarkForReview}>
-                    <Flag className="w-3.5 h-3.5 mr-1" /> {markedForReview.has(currentQuestion.id) ? 'Unmark' : 'Mark for Review'}
+                  <Button variant="outline" size="sm" className={`text-xs sm:text-sm ${markedForReview.has(currentQuestion.id) ? 'border-purple-500 text-purple-700 bg-purple-50' : ''}`} onClick={handleMarkForReview}>
+                    <Flag className="w-3.5 h-3.5 mr-1" /> {markedForReview.has(currentQuestion.id) ? 'Unmark' : 'Mark'}
                   </Button>
                   <div className="flex-1" />
-                  <Button variant="outline" size="sm" onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))} disabled={currentQuestionIndex === 0}>
-                    <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                  <Button variant="outline" size="sm" onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))} disabled={currentQuestionIndex === 0} className="text-xs sm:text-sm">
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Prev
                   </Button>
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={handleSaveAndNext} disabled={currentQuestionIndex >= totalQuestions - 1}>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-xs sm:text-sm" onClick={handleSaveAndNext} disabled={currentQuestionIndex >= totalQuestions - 1}>
                     Save &amp; Next <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 </div>
@@ -437,18 +442,18 @@ export function TestTakingPage() {
       </div>
 
       {/* MOBILE: Bottom bar */}
-      <div className="md:hidden border-t bg-white p-2 shrink-0">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => setShowProfilePanel(!showProfilePanel)}>
-            <BookmarkPlus className="w-3.5 h-3.5 mr-1" /> Palette
+      <div className="md:hidden border-t bg-white p-2 shrink-0 safe-bottom">
+        <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="sm" className="flex-1 text-[11px] px-1.5 h-9" onClick={() => setShowProfilePanel(!showProfilePanel)}>
+            <BookmarkPlus className="w-3.5 h-3.5 mr-0.5" /> Palette
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={handleMarkForReview}>
-            <Flag className="w-3.5 h-3.5 mr-1" /> {markedForReview.has(currentQuestion.id) ? 'Unmark' : 'Mark'}
+          <Button variant="outline" size="sm" className="flex-1 text-[11px] px-1.5 h-9" onClick={handleMarkForReview}>
+            <Flag className="w-3.5 h-3.5 mr-0.5" /> {markedForReview.has(currentQuestion.id) ? 'Unmark' : 'Mark'}
           </Button>
-          <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs" onClick={handleSaveAndNext}>
+          <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700 text-[11px] px-1.5 h-9" onClick={handleSaveAndNext}>
             Save &amp; Next
           </Button>
-          <Button size="sm" className="flex-1 bg-red-600 hover:bg-red-700 text-xs" onClick={() => setShowConfirmSubmit(true)} disabled={submitting}>
+          <Button size="sm" className="flex-1 bg-red-600 hover:bg-red-700 text-[11px] px-1.5 h-9" onClick={() => setShowConfirmSubmit(true)} disabled={submitting}>
             Submit
           </Button>
         </div>

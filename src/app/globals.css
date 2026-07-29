@@ -404,3 +404,38 @@ html.dark .bg-gray-50 {
   transform: translateY(0);
 }
 
+/* ==================== MOBILE SAFE AREAS & RESPONSIVE ==================== */
+/* Prevent iOS safe area overlap for sticky headers/footers */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Prevent horizontal overflow on mobile */
+body {
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text selection issues on mobile buttons */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom scrollbar for mobile palette/rankings */
+.max-h-72::-webkit-scrollbar,
+.max-h-64::-webkit-scrollbar,
+.max-h-96::-webkit-scrollbar {
+  width: 4px;
+}
+.max-h-72::-webkit-scrollbar-track,
+.max-h-64::-webkit-scrollbar-track,
+.max-h-96::-webkit-scrollbar-track {
+  background: transparent;
+}
+.max-h-72::-webkit-scrollbar-thumb,
+.max-h-64::-webkit-scrollbar-thumb,
+.max-h-96::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+

@@ -13,8 +13,11 @@ import {
 } from 'lucide-react';
 
 function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  if (!seconds || !isFinite(seconds) || seconds < 0) return '0:00';
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
@@ -79,26 +82,28 @@ export function ResultsPage() {
       {/* Score Header */}
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
         <Card className="border-0 shadow-lg overflow-hidden">
-          <div className={`bg-gradient-to-br ${grade.gradient} p-8 text-white`}>
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring' }}>
-              <span className="text-6xl mb-4 block">{grade.emoji}</span>
-            </motion.div>
-            <h1 className={`text-3xl font-bold mb-2`}>{grade.label}</h1>
-            <p className="text-white/80 mb-4">{currentTest.title}</p>
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-center">
-                <div className="text-4xl font-bold">{percentage}%</div>
-                <div className="text-sm text-white/70">Score</div>
-              </div>
-              <div className="w-px h-12 bg-white/20" />
-              <div className="text-center">
-                <div className="text-4xl font-bold">{correctAnswers}/{totalQuestions}</div>
-                <div className="text-sm text-white/70">Correct</div>
-              </div>
-              <div className="w-px h-12 bg-white/20" />
-              <div className="text-center">
-                <div className="text-4xl font-bold">{formatTime(timeTaken)}</div>
-                <div className="text-sm text-white/70">Time</div>
+          <div className={`bg-gradient-to-br ${grade.gradient} px-4 py-6 sm:p-8 text-white`}>
+            <div className="flex flex-col items-center text-center">
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring' }}>
+                <span className="text-5xl sm:text-6xl mb-3 block">{grade.emoji}</span>
+              </motion.div>
+              <h1 className="text-2xl sm:text-3xl font-bold mb-1">{grade.label}</h1>
+              <p className="text-white/80 mb-4 text-sm sm:text-base max-w-md truncate px-2">{currentTest.title}</p>
+              <div className="flex items-center justify-center gap-4 sm:gap-6 w-full">
+                <div className="flex-1 text-center">
+                  <div className="text-2xl sm:text-4xl font-bold">{percentage}%</div>
+                  <div className="text-xs sm:text-sm text-white/70">Score</div>
+                </div>
+                <div className="w-px h-10 bg-white/20" />
+                <div className="flex-1 text-center">
+                  <div className="text-2xl sm:text-4xl font-bold">{correctAnswers}/{totalQuestions}</div>
+                  <div className="text-xs sm:text-sm text-white/70">Correct</div>
+                </div>
+                <div className="w-px h-10 bg-white/20" />
+                <div className="flex-1 text-center">
+                  <div className="text-2xl sm:text-4xl font-bold">{formatTime(timeTaken)}</div>
+                  <div className="text-xs sm:text-sm text-white/70">Time</div>
+                </div>
               </div>
             </div>
           </div>
@@ -126,24 +131,22 @@ export function ResultsPage() {
                 <span className="ml-2 text-sm text-muted-foreground">Loading rankings...</span>
               </div>
             ) : rankings.length > 0 ? (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-2 max-h-72 overflow-y-auto">
                 {rankings.slice(0, 10).map((r) => {
                   const isMe = r.studentId === user?.id;
                   return (
-                    <div key={r.rank} className={`flex items-center justify-between p-2.5 rounded-lg text-sm ${isMe ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                          r.rank === 1 ? 'bg-amber-400 text-amber-900' : r.rank === 2 ? 'bg-gray-300 text-gray-700' : r.rank === 3 ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-500'
+                    <div key={r.rank} className={`flex items-center justify-between p-2.5 rounded-lg ${isMe ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'}`}>
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          r.rank === 1 ? 'bg-amber-400 text-amber-900' : r.rank === 2 ? 'bg-gray-300 text-gray-700' : r.rank === 3 ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-600'
                         }`}>
                           {r.rank <= 3 ? ['🥇', '🥈', '🥉'][r.rank - 1] : `#${r.rank}`}
                         </div>
-                        <div>
-                          <p className={`font-medium text-sm ${isMe ? 'text-blue-700' : ''}`}>{r.studentName}{isMe ? ' (You)' : ''}</p>
-                        </div>
+                        <p className={`font-medium text-sm truncate ${isMe ? 'text-blue-700' : 'text-gray-800'}`}>{r.studentName}{isMe ? ' (You)' : ''}</p>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2.5 text-xs text-muted-foreground shrink-0 ml-2">
                         <span className="font-bold text-foreground">{r.score}%</span>
-                        <span>{formatTime(r.timeTaken)}</span>
+                        <span className="tabular-nums">{formatTime(r.timeTaken)}</span>
                       </div>
                     </div>
                   );

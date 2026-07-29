@@ -166,10 +166,9 @@ export function TestListPage() {
               <CardContent className="p-4 md:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <Badge variant="secondary" className="text-[10px]">{test.category?.examType || 'General'}</Badge>
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      <Badge variant="secondary" className="text-[10px]">{test.category?.name || test.examType || 'General'}</Badge>
                       <Badge className={diffColors[test.difficulty as keyof typeof diffColors] + ' text-[10px]'}>{test.difficulty || 'medium'}</Badge>
-                      <span className="text-[10px] text-muted-foreground">{test.examName || 'Practice Test'}</span>
                     </div>
                     <h3 className="font-semibold text-sm md:text-base truncate">{test.title}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{test.description}</p>

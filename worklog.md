@@ -945,3 +945,27 @@ Stage Summary:
 - OTP model added to MongoDB models index
 - AuthModal now has proper forgot password flow with email OTP verification
 - Login route handles cross-device guest conflict gracefully
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix mobile responsive UI issues across all pages
+
+Work Log:
+- Analyzed 2 user screenshots using VLM to identify mobile UI problems
+- Fixed ResultsPage: score header overflow (responsive padding + text sizes), NaN time display (added isFinite check), leaderboard alignment (flex items, shrink-0, truncate)
+- Fixed TestTakingPage instructions modal: legend cramped on mobile (changed from flex to 2-col grid), button alignment (flex-col on mobile), reduced padding on mobile
+- Fixed TestTakingPage top bar: hid language/user buttons on mobile, added Q counter, reduced timer size
+- Fixed TestTakingPage mobile bottom bar: smaller text (11px), tighter spacing, safe-area bottom padding
+- Fixed TestTakingPage question action buttons: shortened labels (Clear, Mark, Prev) for mobile
+- Fixed AppHeader: smaller height on mobile (h-12 vs h-14), reduced padding
+- Fixed HomePage hero badges: smaller text/padding on mobile (text-[10px] sm:text-xs)
+- Fixed TestListPage: removed raw text examType span, used proper Badge instead
+- Added CSS: safe-bottom class for iOS, overflow-x hidden, tap highlight transparent, custom scrollbar styles
+
+Stage Summary:
+- All mobile responsive issues from user screenshots fixed
+- NaN time display bug fixed (formatTime now validates input)
+- Score header no longer overflows on mobile
+- Legend wraps properly in 2-column grid on mobile
+- Verified with agent-browser on iPhone 16 viewport
