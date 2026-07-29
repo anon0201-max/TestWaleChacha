@@ -1019,3 +1019,20 @@ Stage Summary:
 - New testimonials/social proof section added
 - Page verified via agent browser - all 7 sections rendering correctly
 ---
+---
+Task ID: 2
+Agent: Main Agent
+Task: Navbar full-width, remove side gaps, round hero banner corners
+
+Work Log:
+- Modified AppHeader.tsx: Changed navbar container from `max-w-6xl mx-auto px-3` to `w-full px-3 sm:px-6 lg:px-12 xl:px-16` for edge-to-edge width
+- Added CSS class `.hero-banner-rounded` in globals.css with `border-bottom-left-radius: 1.5rem` and `overflow: hidden`
+- Applied `.hero-banner-rounded` class to hero section in HomePage.tsx
+- Changed HomePage section spacing from `space-y-6` wrapper to individual `mt-6 sm:mt-8` on each section
+- Fixed Tailwind CSS v4 inline style issue by using CSS class in globals.css instead
+
+Stage Summary:
+- Navbar is now full-width edge-to-edge with no side gaps
+- Hero banner has rounded bottom corners (32px / 2rem on desktop)
+- All sections have proper spacing
+---

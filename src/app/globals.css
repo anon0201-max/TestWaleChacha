@@ -439,3 +439,17 @@ button, a {
   border-radius: 2px;
 }
 
+/* ===== Hero Banner Rounded Corners ===== */
+.hero-banner-rounded {
+  border-bottom-left-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .hero-banner-rounded {
+    border-bottom-left-radius: 2rem;
+    border-bottom-right-radius: 2rem;
+  }
+}
+

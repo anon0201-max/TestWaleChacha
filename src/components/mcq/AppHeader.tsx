@@ -82,7 +82,7 @@ export function AppHeader() {
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-[#1C1C84]/20 relative" style={{ backgroundColor: '#1C1C84' }}>
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 h-12 sm:h-14 flex items-center justify-between">
+        <div className="w-full px-3 sm:px-6 lg:px-12 xl:px-16 h-12 sm:h-14 flex items-center justify-between">
           <button onClick={() => { setView('home'); setMobileMenuOpen(false); }} className="flex items-center gap-2 hover:opacity-80 transition-opacity relative z-10 text-white shrink-0">
             <Logo size="sm" variant="light" />
           </button>

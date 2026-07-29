@@ -40,9 +40,14 @@ export function HomePage() {
   const popularTests = tests.slice(0, 8);
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-24">
+    <div className="pb-24">
       {/* ===== HERO SECTION — Full-width Edge-to-Edge ===== */}
-      <section className="relative overflow-hidden text-white" style={{ background: 'linear-gradient(135deg, #0D1B4C 0%, #1C1C84 40%, #2525A0 70%, #1a1a6e 100%)' }}>
+      <section
+        className="relative text-white mb-6 sm:mb-8 hero-banner-rounded"
+        style={{
+          background: 'linear-gradient(135deg, #0D1B4C 0%, #1C1C84 40%, #2525A0 70%, #1a1a6e 100%)',
+        }}
+      >
         {/* Decorative Shapes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full border border-white/10" />
@@ -149,7 +154,7 @@ export function HomePage() {
       </section>
 
       {/* ===== POPULAR EXAMS SECTION ===== */}
-      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
         <div className="flex items-center justify-between mb-4 sm:mb-5">
           <div>
             <h2 className="text-lg sm:text-xl font-bold">Popular Exam Categories</h2>
@@ -210,7 +215,7 @@ export function HomePage() {
 
       {/* ===== POPULAR TEST SERIES — Horizontal Scroll ===== */}
       {popularTests.length > 0 && (
-        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
           <div className="flex items-center justify-between mb-4 sm:mb-5">
             <div>
               <h2 className="text-lg sm:text-xl font-bold">Popular Test Series</h2>
@@ -272,7 +277,7 @@ export function HomePage() {
       )}
 
       {/* ===== FEATURES SECTION ===== */}
-      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
         <h2 className="text-lg sm:text-xl font-bold mb-1">TestWaleChacha Kyun Choose Karein?</h2>
         <p className="text-xs text-muted-foreground mb-4 sm:mb-5">Government exam crack karne ke liye sab kuch ek jagah</p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -303,7 +308,7 @@ export function HomePage() {
       </section>
 
       {/* ===== TRUST BADGES / SOCIAL PROOF ===== */}
-      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
         <div className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 p-6 sm:p-8">
           <div className="text-center mb-6">
             <h2 className="text-lg sm:text-xl font-bold">Hamare Students Kya Kehte Hain</h2>
@@ -341,7 +346,7 @@ export function HomePage() {
 
       {/* ===== PRICING CTA SECTION ===== */}
       {!isSubscribed && (
-        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
           <div className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-8 text-center">
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-200/20 rounded-full translate-y-1/2 -translate-x-1/2" />
@@ -376,7 +381,7 @@ export function HomePage() {
       )}
 
       {/* ===== FOOTER LINKS (embedded) ===== */}
-      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 text-center text-xs text-muted-foreground space-y-2 pt-4">
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 text-center text-xs text-muted-foreground space-y-2 mt-6 sm:mt-8">
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
           <span className="cursor-pointer hover:text-blue-600">About Us</span>
           <span className="cursor-pointer hover:text-blue-600">Contact</span>
