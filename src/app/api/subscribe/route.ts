@@ -1,4 +1,5 @@
 import { dbConnect } from '@/lib/mongodb';
+import { FREE_TEST_LIMIT } from '@/lib/api-utils';
 import { Student } from '@/models';
 import { NextResponse } from 'next/server';
 
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
         name: updated!.name,
         email: updated!.email,
         freeTestsUsed: updated!.freeTestsUsed,
-        freeTestsRemaining: Math.max(0, 5 - updated!.freeTestsUsed),
+        freeTestsRemaining: Math.max(0, FREE_TEST_LIMIT - updated!.freeTestsUsed),
         isSubscribed: updated!.isSubscribed,
         subscriptionAt: updated!.subscriptionAt,
       },

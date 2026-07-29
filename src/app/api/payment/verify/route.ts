@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/mongodb';
 import { Student, Payment } from '@/models';
+import { FREE_TEST_LIMIT } from '@/lib/api-utils';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
         name: updated!.name,
         email: updated!.email,
         freeTestsUsed: updated!.freeTestsUsed,
-        freeTestsRemaining: Math.max(0, 5 - updated!.freeTestsUsed),
+        freeTestsRemaining: Math.max(0, FREE_TEST_LIMIT - updated!.freeTestsUsed),
         isSubscribed: updated!.isSubscribed,
       },
       message: 'Payment verified and subscription activated!',

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
+import { FREE_TEST_LIMIT } from '@/lib/api-utils';
 import { Student } from '@/models';
 
 export async function GET(request: NextRequest) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
         phone: student.phone,
         deviceId: student.deviceId,
         freeTestsUsed: student.freeTestsUsed,
-        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
+        freeTestsRemaining: Math.max(0, FREE_TEST_LIMIT - student.freeTestsUsed),
         isSubscribed: student.isSubscribed,
         subscriptionAt: student.subscriptionAt,
         createdAt: student.createdAt,

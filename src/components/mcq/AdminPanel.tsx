@@ -1407,7 +1407,7 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
                           </Badge>
                         ) : (
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                            Free ({student.freeTestsUsed}/5)
+                            Free ({student.freeTestsUsed}/2)
                           </Badge>
                         )}
                         <span className="text-[10px] text-muted-foreground">{student.totalAttempts} attempts</span>
@@ -1468,7 +1468,7 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
                             <Crown className="w-2.5 h-2.5" /> Paid
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-[10px]">Free ({student.freeTestsUsed}/5)</Badge>
+                          <Badge variant="secondary" className="text-[10px]">Free ({student.freeTestsUsed}/2)</Badge>
                         )}
                       </div>
                       <div className="col-span-2 flex flex-col items-center gap-0.5">

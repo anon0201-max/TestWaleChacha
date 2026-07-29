@@ -159,7 +159,7 @@ export function AppHeader() {
                       <div className="px-3 py-2 text-xs space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">Free tests used</span>
-                          <span className="font-medium">{isSubscribed ? '∞' : `${user.freeTestsUsed}/5`}</span>
+                          <span className="font-medium">{isSubscribed ? '∞' : `${user.freeTestsUsed}/2`}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">Status</span>

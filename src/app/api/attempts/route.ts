@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
 import { TestAttempt, Student, Test, Question, Category } from '@/models';
-import { stripMongoFields, CACHE_HEADERS } from '@/lib/api-utils';
+import { stripMongoFields, CACHE_HEADERS, FREE_TEST_LIMIT } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if can take test (free tests limit or subscribed)
-    if (student.freeTestsUsed >= 5 && !student.isSubscribed) {
+    if (student.freeTestsUsed >= FREE_TEST_LIMIT && !student.isSubscribed) {
       return NextResponse.json(
         { error: 'FREE_LIMIT_REACHED', freeTestsUsed: student.freeTestsUsed, isSubscribed: false },
         { status: 403 }
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         name: updatedStudent.name,
         email: updatedStudent.email,
         freeTestsUsed: updatedStudent.freeTestsUsed,
-        freeTestsRemaining: Math.max(0, 5 - updatedStudent.freeTestsUsed),
+        freeTestsRemaining: Math.max(0, FREE_TEST_LIMIT - updatedStudent.freeTestsUsed),
         isSubscribed: updatedStudent.isSubscribed,
       },
     }));

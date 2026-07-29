@@ -1,3 +1,6 @@
+/** Number of free tests a new student gets before needing a subscription. */
+export const FREE_TEST_LIMIT = 2;
+
 /**
  * Strips MongoDB internal fields (_id, __v) from response data.
  * Handles plain objects, arrays, and nested structures from .lean() queries.

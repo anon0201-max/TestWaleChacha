@@ -179,25 +179,25 @@ export const useAppStore = create<AppState>()(
         user,
         isLoggedIn: !!user,
         freeTestsUsed: user?.freeTestsUsed ?? 0,
-        freeTestsRemaining: Math.max(0, user?.freeTestsRemaining ?? 5),
+        freeTestsRemaining: Math.max(0, user?.freeTestsRemaining ?? 2),
         isSubscribed: user?.isSubscribed ?? false,
       }),
       logout: () => set({
         user: null,
         isLoggedIn: false,
         freeTestsUsed: 0,
-        freeTestsRemaining: 5,
+        freeTestsRemaining: 2,
         isSubscribed: false,
         attemptHistory: [],
       }),
 
       // Student
       freeTestsUsed: 0,
-      freeTestsRemaining: 5,
+      freeTestsRemaining: 2,
       isSubscribed: false,
       setStudentData: (data) => set({
         freeTestsUsed: data.freeTestsUsed ?? 0,
-        freeTestsRemaining: Math.max(0, 5 - (data.freeTestsUsed ?? 0)),
+        freeTestsRemaining: Math.max(0, 2 - (data.freeTestsUsed ?? 0)),
         isSubscribed: data.isSubscribed ?? false,
       }),
 
@@ -279,7 +279,7 @@ export const useAppStore = create<AppState>()(
             user: safeUser,
             isLoggedIn: safeUser ? true : false,
             freeTestsUsed: Number(p.freeTestsUsed) || 0,
-            freeTestsRemaining: Number(p.freeTestsRemaining) || 5,
+            freeTestsRemaining: Number(p.freeTestsRemaining) || 2,
             isSubscribed: typeof p.isSubscribed === 'boolean' ? p.isSubscribed : false,
             themeColor: typeof p.themeColor === 'string' ? p.themeColor : current.themeColor,
           };

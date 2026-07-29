@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongodb';
+import { FREE_TEST_LIMIT } from '@/lib/api-utils';
 import { Student } from '@/models';
 import { stripMongoFields } from '@/lib/api-utils';
 
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         ...stripMongoFields(student),
-        freeTestsRemaining: Math.max(0, 5 - student!.freeTestsUsed),
+        freeTestsRemaining: Math.max(0, FREE_TEST_LIMIT - student!.freeTestsUsed),
       },
     });
   } catch (error) {
@@ -81,7 +82,7 @@ export async function PUT(request: NextRequest) {
       success: true,
       data: {
         ...stripMongoFields(student),
-        freeTestsRemaining: Math.max(0, 5 - student.freeTestsUsed),
+        freeTestsRemaining: Math.max(0, FREE_TEST_LIMIT - student.freeTestsUsed),
       },
     });
   } catch (error) {

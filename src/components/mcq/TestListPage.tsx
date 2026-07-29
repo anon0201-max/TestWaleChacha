@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, RotateCcw } from 'lucide-react';
+import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, RotateCcw, Crown } from 'lucide-react';
 
 export function TestListPage() {
   const {
@@ -48,6 +48,17 @@ export function TestListPage() {
     return () => { cancelled = true; };
   }, [isLoggedIn, user?.id]);
 
+  function isTestLocked(testIndex: number) {
+    // Subscribed users: everything unlocked
+    if (isSubscribed) return false;
+    // Not logged in: everything locked
+    if (!isLoggedIn) return true;
+    // Free user with no remaining tests: everything locked
+    if (freeTestsRemaining <= 0) return true;
+    // Free user: only first 2 tests are unlockable
+    return testIndex >= 2;
+  }
+
   async function handleStartTest(test: (typeof tests)[0]) {
     try {
       const res = await fetch(`/api/tests/${test.id}?testId=${test.id}`);
@@ -61,14 +72,19 @@ export function TestListPage() {
     useAppStore.getState().setView('test-taking');
   }
 
-  function handleClick(test: (typeof tests)[0]) {
+  function handleClick(test: (typeof tests)[0], testIndex: number) {
     // Login gate: if not logged in, show auth modal and track pending test
     if (!isLoggedIn) {
       setPendingTestId(test.id);
       setShowAuthModal('signup');
       return;
     }
-    // Subscription check for logged-in users
+    // Test is locked (index >= 2 for free users)
+    if (isTestLocked(testIndex)) {
+      handleSubscribeClick();
+      return;
+    }
+    // Free tests exhausted
     if (!isSubscribed && freeTestsRemaining <= 0) {
       handleSubscribeClick();
       return;
@@ -129,11 +145,18 @@ export function TestListPage() {
 
       {/* Test Cards - Testbook Style */}
       <div className="space-y-3">
-        {filteredTests.map((test) => (
+        {filteredTests.map((test, testIndex) => (
           <div key={test.id || test._id || test.title} className="animate-fade-in card-hover-transform">
             <Card className="hover:shadow-md transition-all border-0 shadow-sm relative">
-              {/* Lock overlay for non-logged-in users */}
-              {!isLoggedIn && (
+              {/* Lock overlay for locked tests */}
+              {isTestLocked(testIndex) && (
+                <div className="absolute top-3 right-3 z-10">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                    <Crown className="w-4 h-4 text-amber-600" />
+                  </div>
+                </div>
+              )}
+              {!isLoggedIn && !isTestLocked(testIndex) && (
                 <div className="absolute top-3 right-3 z-10">
                   <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                     <Lock className="w-4 h-4 text-gray-400" />
@@ -156,22 +179,26 @@ export function TestListPage() {
                     </div>
                   </div>
                   <div className="shrink-0">
-                    {!isLoggedIn ? (
-                      <Button size="sm" className="bg-gray-500 hover:bg-gray-600 w-full sm:w-auto" onClick={() => handleClick(test)}>
+                    {isTestLocked(testIndex) ? (
+                      <Button size="sm" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 w-full sm:w-auto text-white" onClick={() => handleClick(test, testIndex)}>
+                        <Crown className="w-4 h-4 mr-1" />Subscribe to Unlock
+                      </Button>
+                    ) : !isLoggedIn ? (
+                      <Button size="sm" className="bg-gray-500 hover:bg-gray-600 w-full sm:w-auto" onClick={() => handleClick(test, testIndex)}>
                         <Lock className="w-4 h-4 mr-1" />Login to attempt
                       </Button>
                     ) : !isSubscribed && freeTestsRemaining <= 0 ? (
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test, testIndex)}>
                         <Lock className="w-4 h-4 mr-1" />Unlock
                       </Button>
                     ) : attemptedTestIds.has(test.id) ? (
                       <div className="flex gap-2 w-full sm:w-auto">
-                        <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 flex-1" onClick={() => handleClick(test)}>
+                        <Button size="sm" variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 flex-1" onClick={() => handleClick(test, testIndex)}>
                           <RotateCcw className="w-4 h-4 mr-1" />Re-attempt
                         </Button>
                       </div>
                     ) : (
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test)}>
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => handleClick(test, testIndex)}>
                         <Play className="w-4 h-4 mr-1" />Start Test
                       </Button>
                     )}
