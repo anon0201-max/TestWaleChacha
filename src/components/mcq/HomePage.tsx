@@ -8,90 +8,61 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import {
-  Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle, History,
-  ChevronRight, Zap, Play, Shield, TrendingUp, Target, MessageCircle, GraduationCap, Flame, Sparkles, CheckCircle2,
+  Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle,
+  Play, Shield, TrendingUp, Target, MessageCircle, GraduationCap, Flame, Sparkles,
 } from 'lucide-react';
 
 const examTabs = ['SSC', 'Banking', 'Railways', 'UPSC', 'Teaching', 'State', 'Defence', 'Other'];
 
-// Animation variants
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
+// ── Subtle, natural animation helpers ──
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1, y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: 'easeOut' }
+    transition: { delay: i * 0.06, duration: 0.45, ease: [0.25, 0.1, 0.25, 1] }
   })
 };
 
-const fadeInLeft = {
-  hidden: { opacity: 0, x: -30 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: 'easeOut' } }
-};
-
-const fadeInRight = {
-  hidden: { opacity: 0, x: 30 },
-  visible: (i: number) => ({
-    opacity: 1, x: 0,
-    transition: { delay: i * 0.1, duration: 0.5, ease: 'easeOut' }
-  })
-};
-
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: (i: number) => ({
-    opacity: 1, scale: 1,
-    transition: { delay: i * 0.1, duration: 0.4, ease: 'easeOut' }
-  })
-};
-
-const staggerContainer = {
+const stagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } }
+  visible: { transition: { staggerChildren: 0.06 } }
 };
 
-// Reusable animated section wrapper
-function AnimatedSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+// Scroll-triggered section wrapper — items animate in as they enter viewport
+function ScrollSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const show = useInView(ref, { once: true, margin: '-40px' });
   return (
-    <motion.section
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
-      variants={staggerContainer}
-      className={className}
-    >
+    <motion.section ref={ref} initial="hidden" animate={show ? 'visible' : 'hidden'} variants={stagger} className={className}>
       {children}
     </motion.section>
   );
 }
 
-// Skeleton for categories grid
+// Skeleton
 function CategoriesSkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
       {Array.from({ length: 10 }).map((_, i) => (
         <div key={i}>
-          <Card className="border border-gray-100 bg-gradient-to-br from-white to-blue-50/50 shadow-md hover:shadow-xl transition-all">
-            <CardContent className="p-4">
-              <Skeleton className="w-9 h-9 rounded-lg mb-2" />
-              <Skeleton className="h-4 w-20 mb-1" />
-              <Skeleton className="h-3 w-16" />
-            </CardContent>
-          </Card>
+          <Card className="border border-gray-100/80 bg-gradient-to-br from-white to-blue-50/30 shadow-md"><CardContent className="p-4">
+            <Skeleton className="w-9 h-9 rounded-lg mb-2" />
+            <Skeleton className="h-4 w-20 mb-1" />
+            <Skeleton className="h-3 w-16" />
+          </CardContent></Card>
         </div>
       ))}
     </div>
   );
 }
 
-// 3D Card wrapper component
-function Card3D({ children, className = '', bgFrom = 'from-white', bgTo = 'to-blue-50/30', onClick }: {
-  children: React.ReactNode; className?: string; bgFrom?: string; bgTo?: string; onClick?: () => void;
+// 3D-style card with subtle colored gradient bg
+function Card3D({ children, className = '', bgTo = 'to-blue-50/30', onClick }: {
+  children: React.ReactNode; className?: string; bgTo?: string; onClick?: () => void;
 }) {
   return (
     <Card
-      className={`border border-gray-100/80 bg-gradient-to-br ${bgFrom} ${bgTo} shadow-md hover:shadow-2xl hover:shadow-blue-200/30 hover:-translate-y-1.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-pointer ${className}`}
+      className={`border border-gray-100/80 bg-gradient-to-br from-white ${bgTo} shadow-md hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-1 transition-all duration-300 ease-out cursor-pointer ${className}`}
       onClick={onClick}
     >
       {children}
@@ -102,79 +73,65 @@ function Card3D({ children, className = '', bgFrom = 'from-white', bgTo = 'to-bl
 export function HomePage() {
   const { setView, categories, tests, freeTestsRemaining, isSubscribed, isLoggedIn, setShowAuthModal, setSelectedCategory } = useAppStore();
   const isDataLoaded = categories.length > 0;
-
   const popularTests = tests.slice(0, 8);
 
   return (
     <div className="pb-24">
-      {/* ===== HERO SECTION — Full-width Edge-to-Edge ===== */}
+      {/* ===== HERO ===== */}
       <section
         className="relative text-white mb-6 sm:mb-8 hero-banner-rounded mt-3"
-        style={{
-          background: 'linear-gradient(135deg, #0D1B4C 0%, #1C1C84 40%, #2525A0 70%, #1a1a6e 100%)',
-        }}
+        style={{ background: 'linear-gradient(135deg, #0D1B4C 0%, #1C1C84 40%, #2525A0 70%, #1a1a6e 100%)' }}
       >
-        {/* Decorative Shapes */}
+        {/* Decorative circles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full border border-white/10 animate-pulse" />
-          <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full border border-white/5 animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full border border-white/5 animate-pulse" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-1/2 right-1/4 w-4 h-4 rounded-full bg-cyan-400/30 animate-bounce" />
-          <div className="absolute top-1/3 left-1/3 w-3 h-3 rounded-full bg-amber-400/20 animate-bounce" style={{ animationDelay: '0.5s' }} />
-          <div className="absolute bottom-1/4 right-1/3 w-2 h-2 rounded-full bg-white/20 animate-bounce" style={{ animationDelay: '1s' }} />
-          {/* Large subtle glow */}
-          <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-3xl animate-pulse" style={{ animationDelay: '3s' }} />
+          <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full border border-white/10" />
+          <div className="absolute -top-10 -right-10 w-52 h-52 rounded-full border border-white/5" />
+          <div className="absolute bottom-0 left-1/4 w-96 h-96 rounded-full border border-white/5" />
+          <div className="absolute top-1/2 right-1/4 w-4 h-4 rounded-full bg-cyan-400/30" />
+          <div className="absolute top-1/3 left-1/3 w-3 h-3 rounded-full bg-amber-400/20" />
+          <div className="absolute bottom-1/4 right-1/3 w-2 h-2 rounded-full bg-white/20" />
+          <div className="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-3xl" />
         </div>
 
         <div className="relative z-10 px-4 sm:px-6 lg:px-12 xl:px-16 py-10 sm:py-14 md:py-20 max-w-[1400px] mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center lg:gap-12 xl:gap-16">
-            {/* Left: Content */}
+
+            {/* ── Left ── */}
             <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={fadeInLeft}
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
               className="flex-1 lg:max-w-2xl"
             >
-              {/* Exam Tag Pills */}
+              {/* Pills */}
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
                 {examTabs.map((t, i) => (
                   <motion.span
                     key={t}
-                    custom={i}
-                    variants={scaleIn}
-                    className="inline-block"
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 + i * 0.04, duration: 0.3 }}
                   >
-                    <Badge className="bg-white/10 backdrop-blur-sm text-white/80 border border-white/10 hover:bg-white/20 hover:scale-105 text-[10px] sm:text-xs px-2.5 py-0.5 cursor-default transition-all">
-                      {t}
-                    </Badge>
+                    <Badge className="bg-white/10 backdrop-blur-sm text-white/80 border border-white/10 hover:bg-white/20 text-[10px] sm:text-xs px-2.5 py-0.5 cursor-default transition-colors">{t}</Badge>
                   </motion.span>
                 ))}
               </div>
 
-              {/* Headline */}
               <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
+                transition={{ duration: 0.6, delay: 0.25 }}
                 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-5xl font-extrabold leading-tight mb-3 sm:mb-4"
               >
                 Mock Tests Jo Dili Ki{' '}
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6, duration: 0.8 }}
-                  className="bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent"
-                >
-                  Tayyari Karayein
-                </motion.span>
+                <span className="bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent">Tayyari Karayein</span>
               </motion.h1>
 
-              {/* Subtitle Steps */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
                 className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm sm:text-base text-white/60 mb-3 sm:mb-4"
               >
                 <span className="text-cyan-400 font-semibold flex items-center gap-1"><Sparkles className="w-4 h-4" />Pehle Practice</span>
@@ -187,60 +144,38 @@ export function HomePage() {
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
                 className="text-sm sm:text-base text-white/50 mb-6 sm:mb-8 max-w-lg"
               >
                 Government exams ki taiyaari ab aasan hai! SSC CGL, UPSC, IBPS PO, RRB NTPC aur bahut saare exams ke liye real exam jaisa interface — Question Palette, Timer aur detailed analysis ke saath.
               </motion.p>
 
-              {/* CTA Buttons */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 }}
+                transition={{ delay: 0.6, duration: 0.4 }}
                 className="flex flex-wrap gap-3"
               >
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-bold px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base rounded-xl shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all"
-                    onClick={() => setView('tests')}
-                  >
-                    Free Test Shuru Karein <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </motion.div>
+                <Button size="lg" className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-bold px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base rounded-xl shadow-lg shadow-cyan-500/25 transition-all" onClick={() => setView('tests')}>
+                  Free Test Shuru Karein <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
                 {isLoggedIn ? (
                   isSubscribed ? (
-                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                      <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl">
-                        <Crown className="w-5 h-5 mr-2 text-amber-400" /> PRO Member
-                      </Button>
-                    </motion.div>
+                    <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl"><Crown className="w-5 h-5 mr-2 text-amber-400" /> PRO Member</Button>
                   ) : (
-                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                      <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl" onClick={handleSubscribeClick}>
-                        <Lock className="w-4 h-4 mr-2" /> Sab Tests Unlock — ₹100
-                      </Button>
-                    </motion.div>
+                    <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl" onClick={handleSubscribeClick}><Lock className="w-4 h-4 mr-2" /> Sab Tests Unlock — ₹100</Button>
                   )
                 ) : (
-                  <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                    <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl" onClick={() => setShowAuthModal('signup')}>
-                      <UserCircle className="w-5 h-5 mr-2" /> Free Me Signup
-                    </Button>
-                  </motion.div>
+                  <Button size="lg" variant="outline" className="border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 rounded-xl" onClick={() => setShowAuthModal('signup')}><UserCircle className="w-5 h-5 mr-2" /> Free Me Signup</Button>
                 )}
               </motion.div>
             </motion.div>
 
-            {/* Right: Stats Cards */}
+            {/* ── Right: Stats ── */}
             <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: {},
-                visible: { transition: { staggerChildren: 0.15, delayChildren: 0.4 } }
-              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
               className="lg:w-80 xl:w-96 mt-10 lg:mt-0 shrink-0"
             >
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -249,22 +184,15 @@ export function HomePage() {
                   { icon: Flame, value: '50K+', label: 'Tests Delivered', color: 'from-orange-500/20 to-orange-600/10', iconColor: 'text-orange-400' },
                   { icon: GraduationCap, value: '500+', label: 'Questions Bank', color: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400' },
                   { icon: Star, value: '4.8★', label: 'Average Rating', color: 'from-amber-500/20 to-amber-600/10', iconColor: 'text-amber-400' },
-                ].map((stat) => (
+                ].map((stat, i) => (
                   <motion.div
                     key={stat.label}
-                    variants={{
-                      hidden: { opacity: 0, y: 20, scale: 0.9 },
-                      visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } }
-                    }}
-                    whileHover={{ scale: 1.05, y: -4, transition: { duration: 0.2 } }}
-                    className={`rounded-xl bg-gradient-to-br ${stat.color} backdrop-blur-sm border border-white/10 p-4 sm:p-5 shadow-lg hover:shadow-2xl transition-shadow`}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 + i * 0.1, duration: 0.4 }}
+                    className={`rounded-xl bg-gradient-to-br ${stat.color} backdrop-blur-sm border border-white/10 p-4 sm:p-5 shadow-lg`}
                   >
-                    <motion.div
-                      animate={{ rotate: [0, 10, -10, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-                    >
-                      <stat.icon className={`w-6 h-6 ${stat.iconColor} mb-2`} />
-                    </motion.div>
+                    <stat.icon className={`w-6 h-6 ${stat.iconColor} mb-2`} />
                     <p className="text-xl sm:text-2xl font-extrabold text-white">{stat.value}</p>
                     <p className="text-[10px] sm:text-xs text-white/50 mt-0.5">{stat.label}</p>
                   </motion.div>
@@ -275,65 +203,43 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ===== POPULAR EXAMS SECTION ===== */}
-      <AnimatedSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
-        <motion.div variants={fadeInUp} custom={0}>
+      {/* ===== POPULAR EXAMS ===== */}
+      <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
+        <motion.div variants={fadeUp} custom={0}>
           <div className="flex items-center justify-between mb-4 sm:mb-5">
             <div>
               <h2 className="text-lg sm:text-xl font-bold">Popular Exam Categories</h2>
               <p className="text-xs text-muted-foreground mt-0.5">Exams ke hisaab se mock tests — abhi shuru karein</p>
             </div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700" onClick={() => setView('tests')}>
-                View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
-            </motion.div>
+            <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700" onClick={() => setView('tests')}>
+              View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </Button>
           </div>
         </motion.div>
 
-        {/* Horizontal scrollable exam tabs */}
-        <motion.div variants={fadeInUp} custom={1}>
+        <motion.div variants={fadeUp} custom={1}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar mb-4 pb-1 -mx-1 px-1">
             {examTabs.map((tab) => (
-              <motion.button
-                key={tab}
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 hover:shadow-md text-gray-600 transition-all whitespace-nowrap shrink-0"
-              >
+              <button key={tab} className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 hover:shadow-sm text-gray-600 transition-all whitespace-nowrap shrink-0">
                 {tab} Exams
-              </motion.button>
+              </button>
             ))}
           </div>
         </motion.div>
 
-        {/* Exam Category Cards — No top line, colored bg, 3D */}
         {isDataLoaded ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {categories.map((cat, idx) => (
-              <motion.div
-                key={cat.id || cat._id || cat.name}
-                custom={idx}
-                variants={fadeInUp}
-                whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => { setSelectedCategory(cat.id || cat._id); setView('tests'); }}
-                className="text-left group"
-              >
+              <motion.div key={cat.id || cat._id || cat.name} custom={idx} variants={fadeUp} onClick={() => { setSelectedCategory(cat.id || cat._id); setView('tests'); }} className="text-left group">
                 <Card3D className="h-full overflow-hidden" bgTo="to-indigo-50/40">
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-start gap-2.5 sm:gap-3">
-                      <div
-                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-300"
-                        style={{ backgroundColor: cat.color || '#1C1C84' }}
-                      >
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: cat.color || '#1C1C84' }}>
                         {cat.name?.charAt(0) || '?'}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold text-xs sm:text-sm leading-tight group-hover:text-blue-600 transition-colors truncate">{cat.name || 'Unknown'}</h3>
-                        <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5">
-                          {cat._count?.tests || 0} Tests
-                        </p>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5">{cat._count?.tests || 0} Tests</p>
                       </div>
                     </div>
                   </CardContent>
@@ -341,47 +247,33 @@ export function HomePage() {
               </motion.div>
             ))}
           </div>
-        ) : (
-          <CategoriesSkeleton />
-        )}
-      </AnimatedSection>
+        ) : <CategoriesSkeleton />}
+      </ScrollSection>
 
-      {/* ===== POPULAR TEST SERIES — Horizontal Scroll ===== */}
+      {/* ===== POPULAR TEST SERIES ===== */}
       {popularTests.length > 0 && (
-        <AnimatedSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
-          <motion.div variants={fadeInUp} custom={0}>
+        <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
+          <motion.div variants={fadeUp} custom={0}>
             <div className="flex items-center justify-between mb-4 sm:mb-5">
               <div>
                 <h2 className="text-lg sm:text-xl font-bold">Popular Test Series</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">In bahut popular tests ko pehle try karein</p>
               </div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700" onClick={() => setView('tests')}>
-                  View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
-              </motion.div>
+              <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700" onClick={() => setView('tests')}>
+                View All <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </Button>
             </div>
           </motion.div>
 
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
             {popularTests.map((test, idx) => (
-              <motion.div
-                key={test.id || test._id}
-                custom={idx}
-                variants={fadeInRight}
-                whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
-                className="shrink-0 w-[260px] sm:w-[280px]"
-              >
+              <motion.div key={test.id || test._id} custom={idx} variants={fadeUp} className="shrink-0 w-[260px] sm:w-[280px]">
                 <Card3D className="h-full overflow-hidden" bgTo="to-teal-50/40" onClick={() => { setSelectedCategory(test.categoryId); setView('tests'); }}>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="secondary" className="text-[10px]">{test.category?.name || 'General'}</Badge>
                       {test.isLocked && (
-                        <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
-                          <Badge className="text-[10px] bg-amber-100 text-amber-700 border-0 gap-0.5">
-                            <Crown className="w-2.5 h-2.5" />PRO
-                          </Badge>
-                        </motion.div>
+                        <Badge className="text-[10px] bg-amber-100 text-amber-700 border-0 gap-0.5"><Crown className="w-2.5 h-2.5" />PRO</Badge>
                       )}
                     </div>
                     <h3 className="font-semibold text-sm leading-snug mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">{test.title}</h3>
@@ -391,35 +283,21 @@ export function HomePage() {
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{Math.floor(test.timeLimit / 60)} min</span>
                       <span className="flex items-center gap-1"><Target className="w-3 h-3" />{test.difficulty}</span>
                     </div>
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      <Button
-                        size="sm"
-                        className={`w-full text-xs font-semibold h-9 ${
-                          test.isLocked
-                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
-                        }`}
-                        onClick={(e) => { e.stopPropagation(); setSelectedCategory(test.categoryId); setView('tests'); }}
-                      >
-                        {test.isLocked ? (
-                          <><Crown className="w-3.5 h-3.5 mr-1" />Subscribe to Unlock</>
-                        ) : (
-                          <><Play className="w-3.5 h-3.5 mr-1" />Test Shuru Karein</>
-                        )}
-                      </Button>
-                    </motion.div>
+                    <Button size="sm" className={`w-full text-xs font-semibold h-9 ${test.isLocked ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`} onClick={(e) => { e.stopPropagation(); setSelectedCategory(test.categoryId); setView('tests'); }}>
+                      {test.isLocked ? <><Crown className="w-3.5 h-3.5 mr-1" />Subscribe to Unlock</> : <><Play className="w-3.5 h-3.5 mr-1" />Test Shuru Karein</>}
+                    </Button>
                   </CardContent>
                 </Card3D>
               </motion.div>
             ))}
           </div>
-        </AnimatedSection>
+        </ScrollSection>
       )}
 
-      {/* ===== FEATURES SECTION ===== */}
-      <AnimatedSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
-        <motion.h2 variants={fadeInUp} custom={0} className="text-lg sm:text-xl font-bold mb-1">TestWaleChacha Kyun Choose Karein?</motion.h2>
-        <motion.p variants={fadeInUp} custom={1} className="text-xs text-muted-foreground mb-4 sm:mb-5">Government exam crack karne ke liye sab kuch ek jagah</motion.p>
+      {/* ===== FEATURES ===== */}
+      <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
+        <motion.h2 variants={fadeUp} custom={0} className="text-lg sm:text-xl font-bold mb-1">TestWaleChacha Kyun Choose Karein?</motion.h2>
+        <motion.p variants={fadeUp} custom={1} className="text-xs text-muted-foreground mb-4 sm:mb-5">Government exam crack karne ke liye sab kuch ek jagah</motion.p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { icon: BarChart3, title: 'Real Exam Interface', desc: 'Question palette, mark for review, timer — bilkul real SSC/UPSC exam jaisa.', color: 'bg-blue-50 text-blue-600', gradient: 'to-blue-50/50' },
@@ -427,20 +305,12 @@ export function HomePage() {
             { icon: TrendingUp, title: 'Performance Track', desc: 'Apne attempts, scores aur improvement track karein.', color: 'bg-purple-50 text-purple-600', gradient: 'to-purple-50/50' },
             { icon: Shield, title: 'Personal Dashboard', desc: 'Saare test attempts, scores aur rankings ek jagah.', color: 'bg-amber-50 text-amber-600', gradient: 'to-amber-50/50' },
           ].map((item, idx) => (
-            <motion.div
-              key={item.title}
-              custom={idx + 2}
-              variants={fadeInUp}
-              whileHover={{ y: -8, scale: 1.03, transition: { duration: 0.25 } }}
-            >
+            <motion.div key={item.title} custom={idx + 2} variants={fadeUp}>
               <Card3D className="h-full" bgTo={item.gradient}>
                 <CardContent className="p-4 sm:p-5">
-                  <motion.div
-                    whileHover={{ rotate: 10, scale: 1.15 }}
-                    className={`w-10 h-10 rounded-xl ${item.color} flex items-center justify-center mb-3 shadow-sm`}
-                  >
+                  <div className={`w-10 h-10 rounded-xl ${item.color} flex items-center justify-center mb-3 shadow-sm`}>
                     <item.icon className="w-5 h-5" />
-                  </motion.div>
+                  </div>
                   <h3 className="font-semibold text-sm mb-1">{item.title}</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
                 </CardContent>
@@ -448,16 +318,12 @@ export function HomePage() {
             </motion.div>
           ))}
         </div>
-      </AnimatedSection>
+      </ScrollSection>
 
-      {/* ===== TRUST BADGES / SOCIAL PROOF ===== */}
-      <AnimatedSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
-        <motion.div
-          variants={fadeInUp}
-          custom={0}
-          className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 p-6 sm:p-8 shadow-md"
-        >
-          <motion.div variants={fadeInUp} custom={1} className="text-center mb-6">
+      {/* ===== REVIEWS ===== */}
+      <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
+        <motion.div variants={fadeUp} custom={0} className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 p-6 sm:p-8 shadow-md">
+          <motion.div variants={fadeUp} custom={1} className="text-center mb-6">
             <h2 className="text-lg sm:text-xl font-bold">Hamare Students Kya Kehte Hain</h2>
             <p className="text-xs text-muted-foreground mt-1">Thousands of students ne exams crack kiye hamare saath</p>
           </motion.div>
@@ -467,34 +333,19 @@ export function HomePage() {
               { name: 'Priya S.', exam: 'IBPS PO 2024', text: 'Detailed solutions aur performance tracking ne meri galtiyon ko samajhne me bahut help ki.', rating: 5 },
               { name: 'Amit T.', exam: 'RRB NTPC', text: 'Mobile pe bhi smooth chalta hai. Train me practice kar sakte hain — best part!', rating: 4 },
             ].map((review, idx) => (
-              <motion.div
-                key={review.name}
-                custom={idx + 2}
-                variants={fadeInUp}
-                whileHover={{ y: -6, scale: 1.02, transition: { duration: 0.25 } }}
-              >
-                <Card3D className="border-gray-100" bgTo="to-yellow-50/30">
+              <motion.div key={review.name} custom={idx + 2} variants={fadeUp}>
+                <Card3D bgTo="to-yellow-50/30">
                   <CardContent className="p-4 sm:p-5">
                     <div className="flex items-center gap-1 mb-2">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <motion.span
-                          key={i}
-                          initial={{ opacity: 0, scale: 0 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.5 + i * 0.1 }}
-                        >
-                          <Star className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} />
-                        </motion.span>
+                        <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} />
                       ))}
                     </div>
                     <p className="text-sm text-gray-700 leading-relaxed mb-3">&ldquo;{review.text}&rdquo;</p>
                     <div className="flex items-center gap-2">
-                      <motion.div
-                        whileHover={{ scale: 1.15, rotate: 5 }}
-                        className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-md"
-                      >
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                         {review.name.charAt(0)}
-                      </motion.div>
+                      </div>
                       <div>
                         <p className="text-sm font-semibold">{review.name}</p>
                         <p className="text-[10px] text-muted-foreground">{review.exam}</p>
@@ -506,27 +357,18 @@ export function HomePage() {
             ))}
           </div>
         </motion.div>
-      </AnimatedSection>
+      </ScrollSection>
 
-      {/* ===== PRICING CTA SECTION ===== */}
+      {/* ===== PRICING CTA ===== */}
       {!isSubscribed && (
-        <AnimatedSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
-          <motion.div
-            variants={fadeInUp}
-            custom={0}
-            whileHover={{ scale: 1.01, transition: { duration: 0.3 } }}
-            className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-8 text-center shadow-xl shadow-amber-200/20"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-200/20 rounded-full translate-y-1/2 -translate-x-1/2 animate-pulse" style={{ animationDelay: '1.5s' }} />
+        <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
+          <motion.div variants={fadeUp} custom={0} className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-6 sm:p-8 text-center shadow-xl shadow-amber-200/20">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-orange-200/20 rounded-full translate-y-1/2 -translate-x-1/2" />
             <div className="relative z-10">
-              <motion.div
-                animate={{ y: [0, -5, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-400/30"
-              >
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-400/30">
                 <Crown className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-              </motion.div>
+              </div>
               <h2 className="text-xl sm:text-2xl font-bold mb-2">Sab Tests Unlock — Sirf ₹100</h2>
               <p className="text-sm text-muted-foreground mb-5 sm:mb-6 max-w-md mx-auto">
                 {isLoggedIn
@@ -536,64 +378,41 @@ export function HomePage() {
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 {!isLoggedIn && (
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button size="lg" variant="outline" className="font-semibold px-6 sm:px-8 h-11 rounded-xl border-gray-300" onClick={() => setShowAuthModal('signup')}>
-                      <UserCircle className="w-4 h-4 mr-2" /> Free Signup
-                    </Button>
-                  </motion.div>
-                )}
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button
-                    size="lg"
-                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-6 sm:px-8 h-11 rounded-xl shadow-lg shadow-amber-500/25"
-                    onClick={handleSubscribeClick}
-                  >
-                    Abhi Subscribe Karein — ₹100 <ArrowRight className="w-4 h-4 ml-2" />
+                  <Button size="lg" variant="outline" className="font-semibold px-6 sm:px-8 h-11 rounded-xl border-gray-300" onClick={() => setShowAuthModal('signup')}>
+                    <UserCircle className="w-4 h-4 mr-2" /> Free Signup
                   </Button>
-                </motion.div>
+                )}
+                <Button size="lg" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold px-6 sm:px-8 h-11 rounded-xl shadow-lg shadow-amber-500/25" onClick={handleSubscribeClick}>
+                  Abhi Subscribe Karein — ₹100 <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               </div>
             </div>
           </motion.div>
-        </AnimatedSection>
+        </ScrollSection>
       )}
 
-      {/* ===== FOOTER LINKS (embedded) ===== */}
-      <AnimatedSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 text-center text-xs text-muted-foreground space-y-2 mt-6 sm:mt-8">
-        <motion.div variants={fadeInUp} custom={0} className="flex flex-wrap justify-center gap-x-4 gap-y-1">
-          {['About Us', 'Contact', 'Privacy Policy', 'Terms'].map((link, i) => (
-            <motion.span
-              key={link}
-              custom={i}
-              variants={fadeInUp}
-              whileHover={{ scale: 1.1, color: '#2563eb' }}
-              className="cursor-pointer transition-colors"
-            >
-              {link}
-            </motion.span>
+      {/* ===== FOOTER LINKS ===== */}
+      <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 text-center text-xs text-muted-foreground space-y-2 mt-6 sm:mt-8">
+        <motion.div variants={fadeUp} custom={0} className="flex flex-wrap justify-center gap-x-4 gap-y-1">
+          {['About Us', 'Contact', 'Privacy Policy', 'Terms'].map((link) => (
+            <span key={link} className="cursor-pointer hover:text-blue-600 transition-colors">{link}</span>
           ))}
         </motion.div>
-        <motion.p variants={fadeInUp} custom={4}>&copy; {new Date().getFullYear()} TestWaleChacha. All rights reserved.</motion.p>
-      </AnimatedSection>
+        <motion.p variants={fadeUp} custom={1}>&copy; {new Date().getFullYear()} TestWaleChacha. All rights reserved.</motion.p>
+      </ScrollSection>
 
-      {/* ===== FLOATING WHATSAPP BUTTON ===== */}
+      {/* ===== WHATSAPP ===== */}
       <motion.a
         href="https://wa.me/919999999999"
         target="_blank"
         rel="noopener noreferrer"
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 2, type: 'spring', stiffness: 200 }}
-        whileHover={{ scale: 1.15 }}
-        whileTap={{ scale: 0.9 }}
-        className="fixed bottom-20 right-4 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 group"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 2, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+        className="fixed bottom-20 right-4 z-50 w-12 h-12 sm:w-14 sm:h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30 transition-colors group"
         title="Chat on WhatsApp"
       >
-        <motion.div
-          animate={{ rotate: [0, 15, -15, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
-        >
-          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-        </motion.div>
+        <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
         <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-[10px] sm:text-xs px-2 py-1 rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
           Chat with us!
         </span>
