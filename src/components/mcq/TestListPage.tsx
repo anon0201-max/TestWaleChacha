@@ -111,8 +111,8 @@ export function TestListPage() {
           <div className="flex flex-wrap gap-1.5">
             <Button variant={selectedCategory === null ? 'default' : 'outline'} size="sm" className="text-xs h-7" onClick={() => setSelectedCategory(null)}>All</Button>
             {categories.map((cat) => (
-              <Button key={cat.id} variant={selectedCategory === cat.id ? 'default' : 'outline'} size="sm" className="text-xs h-7" onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}>
-                {cat.name}<span className="ml-1 opacity-60">({cat._count.tests})</span>
+              <Button key={cat.id || cat._id || cat.name} variant={selectedCategory === (cat.id || cat._id) ? 'default' : 'outline'} size="sm" className="text-xs h-7" onClick={() => setSelectedCategory(selectedCategory === (cat.id || cat._id) ? null : (cat.id || cat._id))}>
+                {cat.name || 'Unknown'}<span className="ml-1 opacity-60">({cat._count?.tests || 0})</span>
               </Button>
             ))}
           </div>
@@ -130,7 +130,7 @@ export function TestListPage() {
       {/* Test Cards - Testbook Style */}
       <div className="space-y-3">
         {filteredTests.map((test) => (
-          <div key={test.id} className="animate-fade-in card-hover-transform">
+          <div key={test.id || test._id || test.title} className="animate-fade-in card-hover-transform">
             <Card className="hover:shadow-md transition-all border-0 shadow-sm relative">
               {/* Lock overlay for non-logged-in users */}
               {!isLoggedIn && (
@@ -145,7 +145,7 @@ export function TestListPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <Badge variant="secondary" className="text-[10px]">{test.category?.examType || 'General'}</Badge>
-                      <Badge className={diffColors[test.difficulty as keyof typeof diffColors] + ' text-[10px]'}>{test.difficulty}</Badge>
+                      <Badge className={diffColors[test.difficulty as keyof typeof diffColors] + ' text-[10px]'}>{test.difficulty || 'medium'}</Badge>
                       <span className="text-[10px] text-muted-foreground">{test.examName || 'Practice Test'}</span>
                     </div>
                     <h3 className="font-semibold text-sm md:text-base truncate">{test.title}</h3>

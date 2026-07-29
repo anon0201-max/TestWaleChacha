@@ -1,0 +1,502 @@
+  1001→
+  1002→      {/* Step 1: Test Details */}
+  1003→      {step === 1 && (
+  1004→        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+  1005→          <Card className="border-0 shadow-sm">
+  1006→            <CardContent className="p-4 sm:p-5 space-y-4">
+  1007→              <div>
+  1008→                <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 mb-1"><FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /> Test Information</h3>
+  1009→                <p className="text-xs text-muted-foreground">Fill in the basic details for your mock test</p>
+  1010→              </div>
+  1011→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+  1012→                <div className="sm:col-span-2">
+  1013→                  <Label className="text-xs font-medium">Test Title *</Label>
+  1014→                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., SSC CGL 2024 - General Awareness" className="h-11" />
+  1015→                </div>
+  1016→                <div className="sm:col-span-2">
+  1017→                  <Label className="text-xs font-medium">Description</Label>
+  1018→                  <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Brief description..." className="min-h-[70px] sm:min-h-[80px] resize-none" />
+  1019→                </div>
+  1020→                <div>
+  1021→                  <Label className="text-xs font-medium">Category *</Label>
+  1022→                  <select className="w-full border rounded-md px-3 py-2.5 text-sm h-11 bg-white" value={catId} onChange={(e) => setCatId(e.target.value)}>
+  1023→                    <option value="">Select category...</option>
+  1024→                    {categories.map(c => <option key={c.id} value={c.id}>{c.name} ({c.examType})</option>)}
+  1025→                  </select>
+  1026→                </div>
+  1027→                <div>
+  1028→                  <Label className="text-xs font-medium">Exam Name</Label>
+  1029→                  <Input value={examName} onChange={(e) => setExamName(e.target.value)} placeholder="e.g., SSC CGL 2024" className="h-11" />
+  1030→                </div>
+  1031→                <div>
+  1032→                  <Label className="text-xs font-medium">Difficulty</Label>
+  1033→                  <select className="w-full border rounded-md px-3 py-2.5 text-sm h-11 bg-white" value={diff} onChange={(e) => setDiff(e.target.value)}>
+  1034→                    {['easy', 'medium', 'hard'].map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+  1035→                  </select>
+  1036→                </div>
+  1037→                <div>
+  1038→                  <Label className="text-xs font-medium">Time Limit (sec)</Label>
+  1039→                  <Input type="number" value={time} onChange={(e) => setTime(e.target.value)} className="h-11" />
+  1040→                  <p className="text-[10px] text-muted-foreground mt-1">600s = 10min</p>
+  1041→                </div>
+  1042→              </div>
+  1043→              <div className="flex justify-end pt-2">
+  1044→                <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={createTest} disabled={!title || !catId}>
+  1045→                  Next <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
+  1046→                </Button>
+  1047→              </div>
+  1048→            </CardContent>
+  1049→          </Card>
+  1050→        </motion.div>
+  1051→      )}
+  1052→
+  1053→      {/* Step 2: Add Questions */}
+  1054→      {step === 2 && (
+  1055→        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3 sm:space-y-4">
+  1056→          {/* Quick Stats Bar */}
+  1057→          <div className="flex items-center justify-between gap-2 flex-wrap">
+  1058→            <div className="flex items-center gap-2">
+  1059→              <Badge variant="secondary" className="text-xs">{questions.length}Q</Badge>
+  1060→              <Badge variant="outline" className="text-xs">
+  1061→                {questions.filter(q => q.question.trim() && q.optionA.trim()).length} done
+  1062→              </Badge>
+  1063→            </div>
+  1064→            <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
+  1065→              <Plus className="w-3.5 h-3.5" /> Add Q
+  1066→            </Button>
+  1067→          </div>
+  1068→
+  1069→          {/* Hidden file inputs */}
+  1070→          <input type="file" ref={imageInputRef} accept="image/*" onChange={handleImageExtract} className="hidden" />
+  1071→          <input type="file" ref={answersInputRef} accept=".txt,.csv" onChange={handleImportAnswers} className="hidden" />
+  1072→          <input type="file" ref={explanationsInputRef} accept=".txt" onChange={handleImportExplanations} className="hidden" />
+  1073→
+  1074→          {/* Import Actions Bar */}
+  1075→          <div className="flex items-center gap-2 flex-wrap">
+  1076→            {fillStatus && (
+  1077→              <div className={`w-full p-2.5 sm:p-3 rounded-lg border flex items-center gap-2 text-xs sm:text-sm font-medium ${
+  1078→                fillStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+  1079→                fillStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+  1080→                'bg-blue-50 border-blue-200 text-blue-800'
+  1081→              }`}>
+  1082→                {fillStatus.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
+  1083→                 fillStatus.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
+  1084→                 <Loader2 className="w-4 h-4 shrink-0 animate-spin" />}
+  1085→                <span className="break-all">{fillStatus.msg}</span>
+  1086→              </div>
+  1087→            )}
+  1088→            <Button variant="outline" size="sm" onClick={openCountDialog} disabled={extractingImage} className="gap-1.5 text-xs">
+  1089→              {extractingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+  1090→              <span className="hidden sm:inline">{extractingImage ? `Extracting... (${extractElapsed}s)` : '📸 Upload Image'}</span>
+  1091→              <span className="sm:hidden">{extractingImage ? `${extractElapsed}s` : '📸'}</span>
+  1092→            </Button>
+  1093→            {extractingImage && (
+  1094→              <div className="w-full p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+  1095→                <p className="text-xs text-amber-700 font-medium animate-pulse mb-1">
+  1096→                  ⏳ VLM image se questions padh raha hai...
+  1097→                </p>
+  1098→                <div className="w-full bg-amber-200 rounded-full h-1.5 overflow-hidden">
+  1099→                  <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min((extractElapsed / 60) * 100, 95)}%` }} />
+  1100→                </div>
+  1101→              </div>
+  1102→            )}
+  1103→            <Button variant="outline" size="sm" onClick={() => answersInputRef.current?.click()} disabled={importingAnswers} className="gap-1.5 text-xs">
+  1104→              {importingAnswers ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />}
+  1105→              <span className="hidden sm:inline">{importingAnswers ? 'Importing...' : 'Answers'}</span>
+  1106→            </Button>
+  1107→            <Button variant="outline" size="sm" onClick={() => explanationsInputRef.current?.click()} disabled={importingExplanations} className="gap-1.5 text-xs">
+  1108→              {importingExplanations ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+  1109→              <span className="hidden sm:inline">{importingExplanations ? 'Importing...' : 'Explanations'}</span>
+  1110→            </Button>
+  1111→          </div>
+  1112→
+  1113→          {/* Questions */}
+  1114→          <div className="space-y-3">
+  1115→            {questions.map((q, i) => (
+  1116→              <Card key={i} className={`border shadow-sm overflow-hidden ${q.question.trim() && q.optionA.trim() ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-amber-400'}`}>
+  1117→                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+  1118→                  {/* Question Header */}
+  1119→                  <div className="flex items-center justify-between gap-2">
+  1120→                    <div className="flex items-center gap-2 min-w-0">
+  1121→                      <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+  1122→                      <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">Section:</span>
+  1123→                      <Input value={q.section} onChange={(e) => updateQ(i, 'section', e.target.value)} placeholder="General" className="w-24 sm:w-32 h-7 text-xs" />
+  1124→                    </div>
+  1125→                    <div className="flex items-center gap-1 shrink-0">
+  1126→                      <button onClick={() => duplicateQ(i)} className="p-1.5 rounded hover:bg-gray-100 text-muted-foreground hover:text-blue-600 transition-colors" title="Duplicate">
+  1127→                        <Copy className="w-3.5 h-3.5" />
+  1128→                      </button>
+  1129→                      {questions.length > 1 && (
+  1130→                        <button onClick={() => removeQ(i)} className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors" title="Delete">
+  1131→                          <Trash2 className="w-3.5 h-3.5" />
+  1132→                        </button>
+  1133→                      )}
+  1134→                    </div>
+  1135→                  </div>
+  1136→
+  1137→                  {/* Question Text */}
+  1138→                  <Textarea value={q.question} onChange={(e) => updateQ(i, 'question', e.target.value)} placeholder="Type your question here..." className="min-h-[50px] sm:min-h-[60px] resize-none text-sm" />
+  1139→
+  1140→                  {/* Options - stacked on mobile, 2-col on sm+ */}
+  1141→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+  1142→                    {(['A', 'B', 'C', 'D'] as const).map((opt) => (
+  1143→                      <div key={opt} className="relative">
+  1144→                        <div className={`absolute left-0 top-0 w-6 h-6 sm:w-6 sm:h-6 rounded-l-md flex items-center justify-center text-xs font-bold text-white ${q.correctOption === opt ? 'bg-green-600' : 'bg-gray-300'}`}>
+  1145→                          {opt}
+  1146→                        </div>
+  1147→                        <Input
+  1148→                          value={q[`option${opt}` as keyof QuestionForm]}
+  1149→                          onChange={(e) => updateQ(i, `option${opt}` as keyof QuestionForm, e.target.value)}
+  1150→                          placeholder={`Option ${opt}`}
+  1151→                          className={`pl-9 h-10 text-sm ${q.correctOption === opt ? 'border-green-500 bg-green-50/50' : ''}`}
+  1152→                        />
+  1153→                        <button
+  1154→                          onClick={() => updateQ(i, 'correctOption', opt)}
+  1155→                          className={`absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+  1156→                            q.correctOption === opt ? 'border-green-600 bg-green-600' : 'border-gray-300 hover:border-green-400'
+  1157→                          }`}
+  1158→                          title={`Set ${opt} as correct answer`}
+  1159→                        >
+  1160→                          {q.correctOption === opt && <div className="w-2 h-2 rounded-full bg-white" />}
+  1161→                        </button>
+  1162→                      </div>
+  1163→                    ))}
+  1164→                  </div>
+  1165→
+  1166→                  {/* Explanation & Negative Marking */}
+  1167→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+  1168→                    <div>
+  1169→                      <Label className="text-[10px] text-muted-foreground">Explanation</Label>
+  1170→                      <Input value={q.explanation} onChange={(e) => updateQ(i, 'explanation', e.target.value)} placeholder="Why is this correct?" className="h-9 text-xs" />
+  1171→                    </div>
+  1172→                    <div>
+  1173→                      <Label className="text-[10px] text-muted-foreground">Neg. Marking</Label>
+  1174→                      <Input type="number" step="0.25" value={q.negativeMark} onChange={(e) => updateQ(i, 'negativeMark', e.target.value)} placeholder="0" className="h-9 text-xs" />
+  1175→                    </div>
+  1176→                  </div>
+  1177→                </CardContent>
+  1178→              </Card>
+  1179→            ))}
+  1180→          </div>
+  1181→
+  1182→          {/* Action Buttons — stacked on mobile */}
+  1183→          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 sticky bottom-2 bg-gray-50 py-2 px-1 rounded-xl border">
+  1184→            <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5">
+  1185→              <ArrowLeft className="w-4 h-4" /> Back
+  1186→            </Button>
+  1187→            <div className="flex items-center gap-2">
+  1188→              <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
+  1189→                <Plus className="w-3.5 h-3.5" /> Add More
+  1190→              </Button>
+  1191→              <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={saveQuestions} disabled={saving || questions.filter(q => q.question.trim() && q.optionA.trim()).length === 0}>
+  1192→                {saving ? (
+  1193→                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Saving...</>
+  1194→                ) : (
+  1195→                  <><Save className="w-4 h-4 mr-1 sm:mr-2" /> Save {questions.filter(q => q.question.trim() && q.optionA.trim()).length}Q</>
+  1196→                )}
+  1197→              </Button>
+  1198→            </div>
+  1199→          </div>
+  1200→        </motion.div>
+  1201→      )}
+  1202→
+  1203→      {/* Step 3: Success */}
+  1204→      {step === 3 && (
+  1205→        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 sm:py-10">
+  1206→          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+  1207→            <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+  1208→          </div>
+  1209→          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Test Created!</h2>
+  1210→          <p className="text-sm text-muted-foreground mb-1">
+  1211→            <strong>&quot;{title}&quot;</strong> with <strong>{savedCount} questions</strong>
+  1212→          </p>
+  1213→          <p className="text-xs text-muted-foreground mb-6">Students can now attempt this test.</p>
+  1214→          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 px-4">
+  1215→            <Button variant="outline" onClick={resetAll}>
+  1216→              <Plus className="w-4 h-4 mr-2" /> Create Another
+  1217→            </Button>
+  1218→            <Button className="bg-blue-700 hover:bg-blue-800" onClick={() => useAppStore.getState().setView('tests')}>
+  1219→              View All Tests
+  1220→            </Button>
+  1221→          </div>
+  1222→        </motion.div>
+  1223→      )}
+  1224→
+  1225→      {/* Count Dialog */}
+  1226→      <Dialog open={showCountDialog} onOpenChange={setShowCountDialog}>
+  1227→        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+  1228→          <DialogHeader>
+  1229→            <DialogTitle className="flex items-center gap-2 text-base">
+  1230→              <Camera className="w-5 h-5 text-blue-600" />
+  1231→              Kitne questions hain?
+  1232→            </DialogTitle>
+  1233→            <DialogDescription className="text-xs">
+  1234→              Image me jitne questions hain, wo number yahan likhein.
+  1235→            </DialogDescription>
+  1236→          </DialogHeader>
+  1237→          <div className="py-2">
+  1238→            <Label htmlFor="qcount" className="text-xs font-medium mb-1.5 block">Kitne questions? (1-200)</Label>
+  1239→            <Input
+  1240→              id="qcount"
+  1241→              type="number"
+  1242→              min={1} max={200}
+  1243→              autoFocus
+  1244→              value={questionCount}
+  1245→              onChange={(e) => setQuestionCount(e.target.value)}
+  1246→              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmCountAndPickImage(); } }}
+  1247→              placeholder="e.g., 34"
+  1248→              className="h-12 text-lg font-semibold text-center"
+  1249→            />
+  1250→            <div className="flex flex-wrap gap-2 mt-3">
+  1251→              {[10, 25, 34, 50, 75, 100].map(preset => (
+  1252→                <button key={preset} type="button" onClick={() => setQuestionCount(String(preset))}
+  1253→                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+  1254→                    questionCount === String(preset) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+  1255→                  }`}>
+  1256→                  {preset}
+  1257→                </button>
+  1258→              ))}
+  1259→            </div>
+  1260→          </div>
+  1261→          <DialogFooter className="gap-2 sm:gap-2">
+  1262→            <DialogClose asChild>
+  1263→              <Button variant="outline" className="gap-1.5"><X className="w-4 h-4" /> Cancel</Button>
+  1264→            </DialogClose>
+  1265→            <Button className="bg-blue-700 hover:bg-blue-800 gap-1.5" onClick={confirmCountAndPickImage} disabled={!questionCount || parseInt(questionCount) < 1}>
+  1266→              <Camera className="w-4 h-4" /> Select Image
+  1267→            </Button>
+  1268→          </DialogFooter>
+  1269→        </DialogContent>
+  1270→      </Dialog>
+  1271→    </div>
+  1272→  );
+  1273→}
+  1274→
+  1275→// ==================== USERS TAB ====================
+  1276→interface StudentRow {
+  1277→  id: string;
+  1278→  name: string;
+  1279→  email: string | null;
+  1280→  phone: string | null;
+  1281→  deviceId: string;
+  1282→  freeTestsUsed: number;
+  1283→  isSubscribed: boolean;
+  1284→  subscriptionAt: string | null;
+  1285→  createdAt: string;
+  1286→  totalAttempts: number;
+  1287→  totalPayments: number;
+  1288→  lastPayment: { id: string; amount: number; currency: string; status: string; createdAt: string } | null;
+  1289→}
+  1290→
+  1291→function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
+  1292→  const [students, setStudents] = useState<StudentRow[]>([]);
+  1293→  const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
+  1294→  const [search, setSearch] = useState('');
+  1295→  const [loading, setLoading] = useState(true);
+  1296→  const [deleting, setDeleting] = useState<string | null>(null);
+  1297→  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  1298→  const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
+  1299→  const [summary, setSummary] = useState({ totalStudents: 0, totalPaid: 0, totalFree: 0 });
+  1300→  const [reloadKey, setReloadKey] = useState(0);
+  1301→
+  1302→  useEffect(() => {
+  1303→    let cancelled = false;
+  1304→    (async () => {
+  1305→      setLoading(true);
+  1306→      try {
+  1307→        const params = new URLSearchParams({ filter, search });
+  1308→        const res = await fetch(`/api/admin/students?${params}`);
+  1309→        if (res.ok && !cancelled) {
+  1310→          const data = await res.json();
+  1311→          if (!cancelled) { setStudents(data.students); setSummary(data.summary); }
+  1312→        }
+  1313→      } catch {}
+  1314→      if (!cancelled) setLoading(false);
+  1315→    })();
+  1316→    return () => { cancelled = true; };
+  1317→  }, [filter, search, reloadKey]);
+  1318→
+  1319→  async function handleDelete() {
+  1320→    if (!deleteTarget) return;
+  1321→    setDeleting(deleteTarget.id);
+  1322→    try {
+  1323→      const res = await fetch('/api/admin/students', {
+  1324→        method: 'DELETE',
+  1325→        headers: { 'Content-Type': 'application/json' },
+  1326→        body: JSON.stringify({ id: deleteTarget.id }),
+  1327→      });
+  1328→      if (res.ok) {
+  1329→        toast.success(`User "${deleteTarget.name}" deleted`);
+  1330→        setShowDeleteDialog(false);
+  1331→        setDeleteTarget(null);
+  1332→        setReloadKey(k => k + 1);
+  1333→        onRefresh();
+  1334→      }
+  1335→    } catch {}
+  1336→    setDeleting(null);
+  1337→  }
+  1338→
+  1339→  const filters = [
+  1340→    { key: 'all' as const, label: 'All', count: summary.totalStudents },
+  1341→    { key: 'free' as const, label: 'Free', count: summary.totalFree },
+  1342→    { key: 'paid' as const, label: 'Paid', count: summary.totalPaid },
+  1343→  ];
+  1344→
+  1345→  return (
+  1346→    <div className="space-y-3 sm:space-y-4">
+  1347→      {/* Filter Bar */}
+  1348→      <Card className="border-0 shadow-sm">
+  1349→        <CardContent className="p-3 sm:p-4">
+  1350→          <div className="flex flex-col gap-3">
+  1351→            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+  1352→              <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+  1353→              {filters.map(f => (
+  1354→                <button
+  1355→                  key={f.key}
+  1356→                  onClick={() => { setFilter(f.key); }}
+  1357→                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+  1358→                    filter === f.key ? 'bg-blue-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+  1359→                  }`}
+  1360→                >
+  1361→                  {f.label} ({f.count})
+  1362→                </button>
+  1363→              ))}
+  1364→            </div>
+  1365→            <div className="relative w-full">
+  1366→              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+  1367→              <input
+  1368→                type="text"
+  1369→                placeholder="Search name, email, phone..."
+  1370→                value={search}
+  1371→                onChange={(e) => setSearch(e.target.value)}
+  1372→                className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+  1373→              />
+  1374→            </div>
+  1375→          </div>
+  1376→        </CardContent>
+  1377→      </Card>
+  1378→
+  1379→      {/* Users List — Card layout on mobile, Table on desktop */}
+  1380→      {loading ? (
+  1381→        <div className="flex items-center justify-center py-12">
+  1382→          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+  1383→          <span className="ml-2 text-sm text-muted-foreground">Loading users...</span>
+  1384→        </div>
+  1385→      ) : students.length === 0 ? (
+  1386→        <div className="text-center py-12 text-muted-foreground text-sm">No users found</div>
+  1387→      ) : (
+  1388→        <>
+  1389→          {/* Mobile: Card Layout */}
+  1390→          <div className="space-y-2 sm:hidden">
+  1391→            {students.map((student) => (
+  1392→              <Card key={student.id} className="border-0 shadow-sm overflow-hidden">
+  1393→                <div className="p-3 flex items-start justify-between gap-2">
+  1394→                  <div className="flex items-center gap-2 min-w-0">
+  1395→                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+  1396→                      student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+  1397→                    }`}>
+  1398→                      {student.name.charAt(0).toUpperCase()}
+  1399→                    </div>
+  1400→                    <div className="min-w-0">
+  1401→                      <p className="text-sm font-medium truncate">{student.name}</p>
+  1402→                      <p className="text-[10px] text-muted-foreground truncate">{student.email || student.phone || student.deviceId}</p>
+  1403→                      <div className="flex items-center gap-2 mt-1">
+  1404→                        {student.isSubscribed ? (
+  1405→                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5 px-1.5 py-0">
+  1406→                            <Crown className="w-2.5 h-2.5" /> Paid
+  1407→                          </Badge>
+  1408→                        ) : (
+  1409→                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+  1410→                            Free ({student.freeTestsUsed}/5)
+  1411→                          </Badge>
+  1412→                        )}
+  1413→                        <span className="text-[10px] text-muted-foreground">{student.totalAttempts} attempts</span>
+  1414→                      </div>
+  1415→                    </div>
+  1416→                  </div>
+  1417→                  <div className="flex items-center gap-1 shrink-0">
+  1418→                    {student.subscriptionAt && (
+  1419→                      <button className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors" title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}>
+  1420→                        <Receipt className="w-4 h-4" />
+  1421→                      </button>
+  1422→                    )}
+  1423→                    <button
+  1424→                      onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+  1425→                      className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+  1426→                      title="Delete user"
+  1427→                    >
+  1428→                      <Trash2 className="w-4 h-4" />
+  1429→                    </button>
+  1430→                  </div>
+  1431→                </div>
+  1432→              </Card>
+  1433→            ))}
+  1434→          </div>
+  1435→
+  1436→          {/* Desktop: Table Layout */}
+  1437→          <div className="hidden sm:block">
+  1438→            <Card className="border-0 shadow-sm">
+  1439→              <CardContent className="p-0">
+  1440→                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+  1441→                  <div className="col-span-3">User</div>
+  1442→                  <div className="col-span-2">Email</div>
+  1443→                  <div className="col-span-1">Phone</div>
+  1444→                  <div className="col-span-2 text-center">Status</div>
+  1445→                  <div className="col-span-2 text-center">Activity</div>
+  1446→                  <div className="col-span-2 text-right">Actions</div>
+  1447→                </div>
+  1448→                <div className="max-h-[60vh] overflow-y-auto">
+  1449→                  {students.map((student) => (
+  1450→                    <div key={student.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center group">
+  1451→                      <div className="col-span-3">
+  1452→                        <div className="flex items-center gap-2">
+  1453→                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+  1454→                            student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+  1455→                          }`}>
+  1456→                            {student.name.charAt(0).toUpperCase()}
+  1457→                          </div>
+  1458→                          <div className="min-w-0">
+  1459→                            <p className="text-sm font-medium truncate">{student.name}</p>
+  1460→                          </div>
+  1461→                        </div>
+  1462→                      </div>
+  1463→                      <div className="col-span-2"><p className="text-xs truncate">{student.email || '—'}</p></div>
+  1464→                      <div className="col-span-1"><p className="text-xs truncate">{student.phone || '—'}</p></div>
+  1465→                      <div className="col-span-2 flex justify-center">
+  1466→                        {student.isSubscribed ? (
+  1467→                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5">
+  1468→                            <Crown className="w-2.5 h-2.5" /> Paid
+  1469→                          </Badge>
+  1470→                        ) : (
+  1471→                          <Badge variant="secondary" className="text-[10px]">Free ({student.freeTestsUsed}/5)</Badge>
+  1472→                        )}
+  1473→                      </div>
+  1474→                      <div className="col-span-2 flex flex-col items-center gap-0.5">
+  1475→                        <span className="text-xs font-medium">{student.totalAttempts} attempts</span>
+  1476→                        {student.lastPayment && <span className="text-[10px] text-emerald-600">Paid ₹{student.lastPayment.amount / 100}</span>}
+  1477→                      </div>
+  1478→                      <div className="col-span-2 flex justify-end gap-1">
+  1479→                        {student.subscriptionAt && (
+  1480→                          <button className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors" title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}>
+  1481→                            <Receipt className="w-4 h-4" />
+  1482→                          </button>
+  1483→                        )}
+  1484→                        <button
+  1485→                          onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+  1486→                          className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+  1487→                          title="Delete user"
+  1488→                        >
+  1489→                          <Trash2 className="w-4 h-4" />
+  1490→                        </button>
+  1491→                      </div>
+  1492→                    </div>
+  1493→                  ))}
+  1494→                </div>
+  1495→              </CardContent>
+  1496→            </Card>
+  1497→          </div>
+  1498→        </>
+  1499→      )}
+  1500→
+
+[showing lines 1001-1500 of 1747; use offset=1501 with limit to continue reading]

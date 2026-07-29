@@ -85,7 +85,7 @@ export function HomePage() {
       {/* Stats */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { icon: BarChart3, label: 'Test Series', value: `${categories.reduce((s, c) => s + c._count.tests, 0)}+`, color: 'bg-blue-100 text-blue-700' },
+          { icon: BarChart3, label: 'Test Series', value: `${categories.reduce((s, c) => s + (c?._count?.tests || 0), 0)}+`, color: 'bg-blue-100 text-blue-700' },
           { icon: BookOpen, label: 'Questions', value: '100+', color: 'bg-green-100 text-green-700' },
           { icon: Users, label: 'Exam Types', value: '5+', color: 'bg-purple-100 text-purple-700' },
           { icon: Star, label: 'Free Tests', value: freeTestsRemaining, color: 'bg-amber-100 text-amber-700' },
@@ -110,18 +110,18 @@ export function HomePage() {
         {isDataLoaded ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             {categories.map((cat) => (
-              <button key={cat.id}
-                onClick={() => { useAppStore.getState().setSelectedCategory(cat.id); setView('tests'); }}
+              <button key={cat.id || cat._id || cat.name}
+                onClick={() => { useAppStore.getState().setSelectedCategory(cat.id || cat._id); setView('tests'); }}
                 className="text-left group card-hover-transform"
               >
                 <Card className="border-0 shadow-sm hover:shadow-lg transition-all overflow-hidden">
-                  <div className="h-1.5" style={{ backgroundColor: cat.color }} />
+                  <div className="h-1.5" style={{ backgroundColor: cat.color || '#1e40af' }} />
                   <CardContent className="p-4">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2 text-white text-sm font-bold" style={{ backgroundColor: cat.color }}>
-                      {cat.name.charAt(0)}
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2 text-white text-sm font-bold" style={{ backgroundColor: cat.color || '#1e40af' }}>
+                      {cat.name?.charAt(0) || '?'}
                     </div>
-                    <h3 className="font-semibold text-sm leading-tight group-hover:text-blue-600 transition-colors truncate">{cat.name}</h3>
-                    <p className="text-[11px] text-muted-foreground mt-1">{cat.examType} · {cat._count.tests} tests</p>
+                    <h3 className="font-semibold text-sm leading-tight group-hover:text-blue-600 transition-colors truncate">{cat.name || 'Unknown'}</h3>
+                    <p className="text-[11px] text-muted-foreground mt-1">{cat.examType || 'General'} · {cat._count?.tests || 0} tests</p>
                   </CardContent>
                 </Card>
               </button>
@@ -164,7 +164,7 @@ export function HomePage() {
           <h2 className="text-xl sm:text-2xl font-bold mb-2">Get Unlimited Access — ₹100</h2>
           <p className="text-muted-foreground mb-4 max-w-md mx-auto">
             {isLoggedIn
-              ? `${freeTestsRemaining} free tests remaining. Unlock all ${categories.reduce((s, c) => s + c._count.tests, 0)}+ tests with detailed solutions.`
+              ? `${freeTestsRemaining} free tests remaining. Unlock all ${categories.reduce((s, c) => s + (c?._count?.tests || 0), 0)}+ tests with detailed solutions.`
               : `Sign up free to get 5 mock tests, then unlock unlimited access for just ₹100.`
             }
           </p>

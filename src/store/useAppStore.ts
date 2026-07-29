@@ -257,12 +257,25 @@ export const useAppStore = create<AppState>()(
         isSubscribed: state.isSubscribed,
         themeColor: state.themeColor,
       }),
-      merge: (persisted, current) => ({
-        ...current,
-        ...(persisted as object),
-        freeTestsUsed: Number((persisted as any).freeTestsUsed) || 0,
-        freeTestsRemaining: Number((persisted as any).freeTestsRemaining) || 5,
-      }),
+      merge: (persisted, current) => {
+        // Guard against corrupt/invalid localStorage data — never crash the app
+        try {
+          if (!persisted || typeof persisted !== 'object') return current;
+          const p = persisted as Record<string, unknown>;
+          return {
+            ...current,
+            deviceId: typeof p.deviceId === 'string' ? p.deviceId : current.deviceId,
+            user: (p.user && typeof p.user === 'object') ? p.user : null,
+            isLoggedIn: typeof p.isLoggedIn === 'boolean' ? p.isLoggedIn : false,
+            freeTestsUsed: Number(p.freeTestsUsed) || 0,
+            freeTestsRemaining: Number(p.freeTestsRemaining) || 5,
+            isSubscribed: typeof p.isSubscribed === 'boolean' ? p.isSubscribed : false,
+            themeColor: typeof p.themeColor === 'string' ? p.themeColor : current.themeColor,
+          };
+        } catch {
+          return current;
+        }
+      },
     }
   )
 );

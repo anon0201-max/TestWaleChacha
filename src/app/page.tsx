@@ -35,7 +35,15 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode; fallbac
   }
 
   static getDerivedStateFromError(error: Error) {
+    // Store error on window so CrashFallback can display it
+    if (typeof window !== 'undefined') {
+      (window as any).__NEXT_ERROR__ = error;
+    }
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[ErrorBoundary] Caught render error:', error.message, errorInfo.componentStack);
   }
 
   render() {
@@ -75,7 +83,9 @@ function CrashFallback() {
         </button>
         {showDetails && (
           <pre className="mt-3 text-left text-xs text-red-500 bg-red-50 p-3 rounded-lg overflow-auto max-h-40 font-mono">
-            {typeof window !== 'undefined' && (window as any).__NEXT_ERROR__?.toString() || 'No details available'}
+            {typeof window !== 'undefined' && (window as any).__NEXT_ERROR__
+              ? `${(window as any).__NEXT_ERROR__.message}\n\n${(window as any).__NEXT_ERROR__.stack?.slice(0, 500) || ''}`
+              : 'No details available'}
           </pre>
         )}
       </div>

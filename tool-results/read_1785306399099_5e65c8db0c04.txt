@@ -1,0 +1,1747 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react';
+     4→import { useAppStore } from '@/store/useAppStore';
+     5→import { Button } from '@/components/ui/button';
+     6→import { Input } from '@/components/ui/input';
+     7→import { Label } from '@/components/ui/label';
+     8→import { Card, CardContent } from '@/components/ui/card';
+     9→import { Badge } from '@/components/ui/badge';
+    10→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+    11→import { Textarea } from '@/components/ui/textarea';
+    12→import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+    13→import { motion, AnimatePresence } from 'framer-motion';
+    14→import { toast } from 'sonner';
+    15→import {
+    16→  ArrowLeft, LogOut, Plus, Trash2, BarChart3, BookOpen, Users, CreditCard,
+    17→  Save, Shield, FileText, Settings, Edit2, Eye, EyeOff, Copy, CheckCircle2,
+    18→  Crown, ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
+    19→  HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
+    20→  Menu,
+    21→} from 'lucide-react';
+    22→
+    23→// ==================== ADMIN LOGIN ====================
+    24→function AdminLogin() {
+    25→  const { setAdminData } = useAppStore();
+    26→  const [username, setUsername] = useState('');
+    27→  const [password, setPassword] = useState('');
+    28→  const [error, setError] = useState('');
+    29→  const [loading, setLoading] = useState(false);
+    30→  const [showPassword, setShowPassword] = useState(false);
+    31→  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+    32→  const [cpCurrentPassword, setCpCurrentPassword] = useState('');
+    33→  const [cpNewPassword, setCpNewPassword] = useState('');
+    34→  const [cpConfirmPassword, setCpConfirmPassword] = useState('');
+    35→  const [cpLoading, setCpLoading] = useState(false);
+    36→  const [cpMsg, setCpMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    37→
+    38→  async function handleLogin() {
+    39→    setLoading(true);
+    40→    setError('');
+    41→    try {
+    42→      const res = await fetch('/api/admin/login', {
+    43→        method: 'POST',
+    44→        headers: { 'Content-Type': 'application/json' },
+    45→        body: JSON.stringify({ username, password }),
+    46→      });
+    47→      const data = await res.json();
+    48→      if (data.success) {
+    49→        setAdminData({ isLoggedIn: true });
+    50→      } else {
+    51→        setError(data.error || 'Login failed');
+    52→      }
+    53→    } catch { setError('Server error'); }
+    54→    setLoading(false);
+    55→  }
+    56→
+    57→  async function handleChangePassword() {
+    58→    setCpMsg(null);
+    59→    if (!cpCurrentPassword || !cpNewPassword || !cpConfirmPassword) {
+    60→      setCpMsg({ type: 'error', text: 'All fields are required' });
+    61→      return;
+    62→    }
+    63→    if (cpNewPassword !== cpConfirmPassword) {
+    64→      setCpMsg({ type: 'error', text: 'New password and confirm password do not match' });
+    65→      return;
+    66→    }
+    67→    if (cpNewPassword.length < 4) {
+    68→      setCpMsg({ type: 'error', text: 'New password must be at least 4 characters' });
+    69→      return;
+    70→    }
+    71→    setCpLoading(true);
+    72→    try {
+    73→      const res = await fetch('/api/admin/reset-password', {
+    74→        method: 'POST',
+    75→        headers: { 'Content-Type': 'application/json' },
+    76→        body: JSON.stringify({ currentPassword: cpCurrentPassword, newPassword: cpNewPassword }),
+    77→      });
+    78→      const data = await res.json();
+    79→      if (data.success) {
+    80→        setCpMsg({ type: 'success', text: 'Password updated successfully! Use new password to login next time.' });
+    81→        setCpCurrentPassword('');
+    82→        setCpNewPassword('');
+    83→        setCpConfirmPassword('');
+    84→      } else {
+    85→        setCpMsg({ type: 'error', text: data.error || 'Failed to update password' });
+    86→      }
+    87→    } catch {
+    88→      setCpMsg({ type: 'error', text: 'Server error. Please try again.' });
+    89→    }
+    90→    setCpLoading(false);
+    91→  }
+    92→
+    93→  return (
+    94→    <div className="min-h-[70vh] flex items-center justify-center px-4 pt-12">
+    95→      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full">
+    96→        <Card className="w-full max-w-md mx-auto shadow-xl border-0">
+    97→          <CardContent className="p-5 sm:p-6">
+    98→            <div className="text-center mb-6">
+    99→              <div className="w-16 h-16 rounded-2xl bg-blue-700 flex items-center justify-center mx-auto mb-4">
+   100→                <Shield className="w-8 h-8 text-white" />
+   101→              </div>
+   102→              <h2 className="text-xl font-bold text-gray-900">Admin Login</h2>
+   103→              <p className="text-xs text-muted-foreground mt-1">Enter credentials to manage tests & questions</p>
+   104→            </div>
+   105→            <div className="space-y-4">
+   106→              <div>
+   107→                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Username</Label>
+   108→                <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="admin" className="h-11" />
+   109→              </div>
+   110→              <div>
+   111→                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Password</Label>
+   112→                <div className="relative">
+   113→                  <Input
+   114→                    type={showPassword ? 'text' : 'password'}
+   115→                    value={password}
+   116→                    onChange={(e) => setPassword(e.target.value)}
+   117→                    placeholder="••••••••"
+   118→                    className="h-11 pr-10"
+   119→                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+   120→                  />
+   121→                  <button
+   122→                    type="button"
+   123→                    onClick={() => setShowPassword(!showPassword)}
+   124→                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+   125→                  >
+   126→                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+   127→                  </button>
+   128→                </div>
+   129→              </div>
+   130→              <p className="text-right">
+   131→                <button onClick={() => setChangePasswordOpen(true)} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Change Password?</button>
+   132→              </p>
+   133→              {error && (
+   134→                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 flex items-center gap-2">
+   135→                  <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
+   136→                </motion.div>
+   137→              )}
+   138→              <Button className="w-full bg-blue-700 hover:bg-blue-800 h-11 font-semibold" onClick={handleLogin} disabled={loading || !username || !password}>
+   139→                {loading ? 'Logging in...' : 'Login to Admin Panel'}
+   140→              </Button>
+   141→            </div>
+   142→          </CardContent>
+   143→        </Card>
+   144→
+   145→        {/* Admin Change Password Dialog */}
+   146→        <Dialog open={changePasswordOpen} onOpenChange={(open) => { if (!open) { setChangePasswordOpen(false); setCpMsg(null); setCpCurrentPassword(''); setCpNewPassword(''); setCpConfirmPassword(''); } }}>
+   147→          <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm">
+   148→            <DialogHeader>
+   149→              <DialogTitle className="flex items-center gap-2 text-base"><Shield className="w-5 h-5 text-blue-600" />Change Admin Password</DialogTitle>
+   150→              <DialogDescription className="text-xs">Enter current password, then set new password</DialogDescription>
+   151→            </DialogHeader>
+   152→            <div className="space-y-3">
+   153→              {cpMsg && (
+   154→                <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+   155→                  className={`p-3 rounded-xl text-sm flex items-center gap-2 border ${
+   156→                    cpMsg.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+   157→                  }`}>
+   158→                  {cpMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+   159→                  {cpMsg.text}
+   160→                </motion.div>
+   161→              )}
+   162→              <div>
+   163→                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Current Password</Label>
+   164→                <Input type="password" value={cpCurrentPassword} onChange={(e) => setCpCurrentPassword(e.target.value)} placeholder="Enter current password" className="h-11" />
+   165→              </div>
+   166→              <div>
+   167→                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
+   168→                <Input type="password" value={cpNewPassword} onChange={(e) => setCpNewPassword(e.target.value)} placeholder="Enter new password (min 4 chars)" className="h-11" />
+   169→              </div>
+   170→              <div>
+   171→                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
+   172→                <Input type="password" value={cpConfirmPassword} onChange={(e) => setCpConfirmPassword(e.target.value)} placeholder="Confirm new password" className="h-11" onKeyDown={(e) => e.key === 'Enter' && handleChangePassword()} />
+   173→              </div>
+   174→              <div className="flex gap-2">
+   175→                <DialogClose asChild>
+   176→                  <Button variant="outline" className="flex-1 h-11">Cancel</Button>
+   177→                </DialogClose>
+   178→                <Button className="flex-1 h-11 bg-blue-700 hover:bg-blue-800 font-semibold" onClick={handleChangePassword} disabled={cpLoading || !cpCurrentPassword || !cpNewPassword || !cpConfirmPassword}>
+   179→                  {cpLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : <><Save className="w-4 h-4 mr-2" />Update Password</>}
+   180→                </Button>
+   181→              </div>
+   182→            </div>
+   183→          </DialogContent>
+   184→        </Dialog>
+   185→      </motion.div>
+   186→    </div>
+   187→  );
+   188→}
+   189→
+   190→// ==================== ADMIN PANEL ====================
+   191→export function AdminPanel() {
+   192→  const { setView, setAdminData, adminData, categories, setCategories, tests, setTests } = useAppStore();
+   193→  const [activeTab, setActiveTab] = useState('dashboard');
+   194→
+   195→  const fetchStats = useCallback(async () => {
+   196→    try {
+   197→      const res = await fetch('/api/admin/stats');
+   198→      if (res.ok) {
+   199→        const data = await res.json();
+   200→        setAdminData({ stats: data });
+   201→      }
+   202→    } catch {}
+   203→  }, [setAdminData]);
+   204→
+   205→  const fetchCategories = useCallback(async () => {
+   206→    try {
+   207→      const res = await fetch('/api/admin/categories');
+   208→      if (res.ok) setCategories(await res.json());
+   209→    } catch {}
+   210→  }, [setCategories]);
+   211→
+   212→  const fetchTests = useCallback(async () => {
+   213→    try {
+   214→      const res = await fetch('/api/admin/tests');
+   215→      if (res.ok) setTests(await res.json());
+   216→    } catch {}
+   217→  }, [setTests]);
+   218→
+   219→  useEffect(() => {
+   220→    if (adminData.isLoggedIn) {
+   221→      fetchStats();
+   222→      fetchCategories();
+   223→      fetchTests();
+   224→    }
+   225→  }, [adminData.isLoggedIn, fetchStats, fetchCategories, fetchTests]);
+   226→
+   227→  if (!adminData.isLoggedIn) return <AdminLogin />;
+   228→
+   229→  const stats = adminData.stats;
+   230→
+   231→  return (
+   232→    <div className="min-h-[80vh] bg-gray-50">
+   233→      {/* Admin Header */}
+   234→      <div className="bg-white border-b sticky top-14 z-20">
+   235→        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
+   236→          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+   237→            <Button variant="ghost" size="icon" onClick={() => setView('home')} className="h-9 w-9 shrink-0">
+   238→              <ArrowLeft className="w-4 h-4" />
+   239→            </Button>
+   240→            <div className="flex items-center gap-2 min-w-0">
+   241→              <Shield className="w-5 h-5 text-blue-700 shrink-0" />
+   242→              <div className="min-w-0">
+   243→                <h1 className="text-sm sm:text-base font-bold text-gray-900 truncate">Admin Panel</h1>
+   244→                <p className="text-[10px] sm:text-[11px] text-muted-foreground -mt-0.5 hidden sm:block">Manage tests, questions & categories</p>
+   245→              </div>
+   246→            </div>
+   247→          </div>
+   248→          <Button variant="outline" size="sm" onClick={() => setAdminData({ isLoggedIn: false })} className="text-red-600 hover:text-red-700 hover:bg-red-50 shrink-0">
+   249→            <LogOut className="w-3.5 h-3.5 sm:mr-1.5" />
+   250→            <span className="hidden sm:inline">Logout</span>
+   251→          </Button>
+   252→        </div>
+   253→      </div>
+   254→
+   255→      {/* Admin Content */}
+   256→      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-5">
+   257→        {/* Stats Cards — more compact on mobile */}
+   258→        <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-4 sm:mb-5">
+   259→          {[
+   260→            { icon: Users, label: 'Users', value: stats.totalStudents, color: 'bg-blue-50 text-blue-700', iconBg: 'bg-blue-100' },
+   261→            { icon: BadgeCheck, label: 'Paid', value: stats.totalPaidStudents, color: 'bg-emerald-50 text-emerald-700', iconBg: 'bg-emerald-100' },
+   262→            { icon: BadgeX, label: 'Free', value: stats.totalFreeStudents, color: 'bg-gray-50 text-gray-600', iconBg: 'bg-gray-100' },
+   263→            { icon: FileText, label: 'Tests', value: stats.totalTests, color: 'bg-indigo-50 text-indigo-700', iconBg: 'bg-indigo-100' },
+   264→            { icon: HelpCircle, label: 'Questions', value: stats.totalQuestions, color: 'bg-amber-50 text-amber-700', iconBg: 'bg-amber-100' },
+   265→            { icon: CreditCard, label: 'Payments', value: stats.totalPayments, color: 'bg-purple-50 text-purple-700', iconBg: 'bg-purple-100' },
+   266→          ].map((item) => (
+   267→            <Card key={item.label} className="border-0 shadow-sm">
+   268→              <CardContent className="p-2 sm:p-3 lg:p-4 flex flex-col lg:flex-row items-center gap-1.5 lg:gap-3">
+   269→                <div className={`p-1.5 sm:p-2 rounded-lg lg:rounded-xl ${item.iconBg}`}><item.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 ${item.color.split(' ')[1]}`} /></div>
+   270→                <div className="text-center lg:text-left">
+   271→                  <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">{item.value}</p>
+   272→                  <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-tight">{item.label}</p>
+   273→                </div>
+   274→              </CardContent>
+   275→            </Card>
+   276→          ))}
+   277→        </div>
+   278→
+   279→        {/* Tabs — horizontally scrollable on mobile, icon-only on mobile */}
+   280→        <Tabs value={activeTab} onValueChange={setActiveTab}>
+   281→          <div className="mb-4 sm:mb-5 -mx-3 sm:mx-0">
+   282→            <TabsList className="bg-white border mb-0 h-auto p-1 w-full inline-flex overflow-x-auto no-scrollbar gap-0.5">
+   283→              {[
+   284→                { value: 'dashboard', icon: LayoutGrid, label: 'Dashboard' },
+   285→                { value: 'categories', icon: BookOpen, label: 'Categories' },
+   286→                { value: 'tests', icon: FileText, label: 'Tests' },
+   287→                { value: 'create-test', icon: Plus, label: 'Create' },
+   288→                { value: 'users', icon: Users, label: 'Users' },
+   289→                { value: 'payments', icon: Wallet, label: 'Payments' },
+   290→                { value: 'settings', icon: Settings, label: 'Settings' },
+   291→              ].map((tab) => (
+   292→                <TabsTrigger
+   293→                  key={tab.value}
+   294→                  value={tab.value}
+   295→                  className="text-xs gap-1 sm:gap-1.5 data-[state=active]:bg-blue-700 data-[state=active]:text-white whitespace-nowrap flex-shrink-0 px-2 sm:px-3 py-2"
+   296→                >
+   297→                  <tab.icon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
+   298→                  <span className="hidden sm:inline">{tab.label}</span>
+   299→                </TabsTrigger>
+   300→              ))}
+   301→            </TabsList>
+   302→          </div>
+   303→
+   304→          <TabsContent value="dashboard">
+   305→            <AdminDashboardContent onNavigate={setActiveTab} />
+   306→          </TabsContent>
+   307→          <TabsContent value="categories">
+   308→            <AdminCategoriesTab onRefresh={fetchCategories} />
+   309→          </TabsContent>
+   310→          <TabsContent value="tests">
+   311→            <AdminTestsTab onRefresh={fetchTests} />
+   312→          </TabsContent>
+   313→          <TabsContent value="create-test">
+   314→            <AdminCreateTestTab onCreated={fetchTests} />
+   315→          </TabsContent>
+   316→          <TabsContent value="users">
+   317→            <AdminUsersTab onRefresh={fetchStats} />
+   318→          </TabsContent>
+   319→          <TabsContent value="payments">
+   320→            <AdminPaymentsTab />
+   321→          </TabsContent>
+   322→          <TabsContent value="settings">
+   323→            <AdminSettingsTab />
+   324→          </TabsContent>
+   325→        </Tabs>
+   326→      </div>
+   327→    </div>
+   328→  );
+   329→}
+   330→
+   331→// ==================== DASHBOARD ====================
+   332→function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => void }) {
+   333→  const { tests, categories } = useAppStore();
+   334→
+   335→  return (
+   336→    <div className="space-y-3 sm:space-y-5">
+   337→      {/* Quick Stats */}
+   338→      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+   339→        <Card className="border-0 shadow-sm">
+   340→          <CardContent className="p-3 sm:p-4">
+   341→            <div className="flex items-center justify-between mb-2">
+   342→              <span className="text-xs font-medium text-muted-foreground">Categories</span>
+   343→              <Badge variant="secondary" className="text-[10px]">{categories.length}</Badge>
+   344→            </div>
+   345→            <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-1.5 sm:flex-wrap pb-1 sm:pb-0">
+   346→              {categories.slice(0, 8).map((cat) => (
+   347→                <Badge key={cat.id} className="text-[10px] font-normal whitespace-nowrap shrink-0" style={{ backgroundColor: cat.color + '20', color: cat.color, border: 'none' }}>
+   348→                  {cat.name}
+   349→                </Badge>
+   350→              ))}
+   351→              {categories.length > 8 && <Badge variant="secondary" className="text-[10px] shrink-0">+{categories.length - 8}</Badge>}
+   352→            </div>
+   353→          </CardContent>
+   354→        </Card>
+   355→        <Card className="border-0 shadow-sm">
+   356→          <CardContent className="p-3 sm:p-4">
+   357→            <div className="flex items-center justify-between mb-2">
+   358→              <span className="text-xs font-medium text-muted-foreground">Active Tests</span>
+   359→              <Badge variant="secondary" className="text-[10px]">{tests.filter(t => t.isActive).length}</Badge>
+   360→            </div>
+   361→            <div className="space-y-1.5">
+   362→              {tests.slice(0, 4).map((t) => (
+   363→                <div key={t.id} className="flex items-center justify-between text-xs">
+   364→                  <span className="truncate max-w-[120px] sm:max-w-[150px]">{t.title}</span>
+   365→                  <span className="text-muted-foreground">{t._count?.questions || t.totalQuestions}Q</span>
+   366→                </div>
+   367→              ))}
+   368→            </div>
+   369→          </CardContent>
+   370→        </Card>
+   371→        <Card className="border-0 shadow-sm">
+   372→          <CardContent className="p-3 sm:p-4">
+   373→            <div className="flex items-center justify-between mb-2">
+   374→              <span className="text-xs font-medium text-muted-foreground">Quick Actions</span>
+   375→            </div>
+   376→            <div className="space-y-2">
+   377→              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-2 h-8" onClick={() => onNavigate('create-test')}>
+   378→                <Plus className="w-3.5 h-3.5" /> Add New Test
+   379→              </Button>
+   380→              <Button size="sm" variant="outline" className="w-full justify-start text-xs gap-2 h-8" onClick={() => onNavigate('categories')}>
+   381→                <Plus className="w-3.5 h-3.5" /> Add Category
+   382→              </Button>
+   383→            </div>
+   384→          </CardContent>
+   385→        </Card>
+   386→      </div>
+   387→
+   388→      {/* Recent Tests */}
+   389→      <Card className="border-0 shadow-sm">
+   390→        <CardContent className="p-3 sm:p-4">
+   391→          <h3 className="text-sm font-semibold mb-3">All Tests</h3>
+   392→          <div className="space-y-2">
+   393→            {tests.length === 0 ? (
+   394→              <p className="text-sm text-muted-foreground text-center py-6">No tests yet. Create your first test!</p>
+   395→            ) : (
+   396→              tests.map((test) => (
+   397→                <div key={test.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors gap-2">
+   398→                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+   399→                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
+   400→                      {test.category?.name?.charAt(0) || '?'}
+   401→                    </div>
+   402→                    <div className="min-w-0">
+   403→                      <p className="text-sm font-medium truncate">{test.title}</p>
+   404→                      <p className="text-[11px] text-muted-foreground truncate">{test.category?.name} · {test._count?.questions || test.totalQuestions}Q · {test.difficulty}</p>
+   405→                    </div>
+   406→                  </div>
+   407→                  <Badge variant={test.isActive ? 'default' : 'secondary'} className="text-[10px] shrink-0">
+   408→                    {test.isActive ? 'Active' : 'Inactive'}
+   409→                  </Badge>
+   410→                </div>
+   411→              ))
+   412→            )}
+   413→          </div>
+   414→        </CardContent>
+   415→      </Card>
+   416→    </div>
+   417→  );
+   418→}
+   419→
+   420→// ==================== CATEGORIES TAB ====================
+   421→function AdminCategoriesTab({ onRefresh }: { onRefresh: () => void }) {
+   422→  const { categories, setCategories } = useAppStore();
+   423→  const [newName, setNewName] = useState('');
+   424→  const [newSlug, setNewSlug] = useState('');
+   425→  const [newExamType, setNewExamType] = useState('General');
+   426→  const [adding, setAdding] = useState(false);
+   427→
+   428→  async function handleAdd() {
+   429→    if (!newName || !newSlug) return;
+   430→    setAdding(true);
+   431→    await fetch('/api/admin/categories', {
+   432→      method: 'POST',
+   433→      headers: { 'Content-Type': 'application/json' },
+   434→      body: JSON.stringify({ name: newName, slug: newSlug, examType: newExamType }),
+   435→    });
+   436→    setNewName(''); setNewSlug('');
+   437→    setAdding(false);
+   438→    onRefresh();
+   439→  }
+   440→
+   441→  async function handleDelete(id: string) {
+   442→    if (!confirm('Delete this category and ALL its tests & questions? This cannot be undone.')) return;
+   443→    await fetch('/api/admin/categories', {
+   444→      method: 'DELETE',
+   445→      headers: { 'Content-Type': 'application/json' },
+   446→      body: JSON.stringify({ id }),
+   447→    });
+   448→    onRefresh();
+   449→  }
+   450→
+   451→  return (
+   452→    <div className="space-y-3 sm:space-y-4">
+   453→      {/* Add Category */}
+   454→      <Card className="border-0 shadow-sm">
+   455→        <CardContent className="p-3 sm:p-5">
+   456→          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Plus className="w-4 h-4 text-blue-600" /> Add New Category</h3>
+   457→          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+   458→            <div className="sm:col-span-2">
+   459→              <Label className="text-xs">Category Name</Label>
+   460→              <Input
+   461→                placeholder="e.g., SSC CGL"
+   462→                value={newName}
+   463→                onChange={(e) => { setNewName(e.target.value); setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')); }}
+   464→                className="h-10"
+   465→              />
+   466→            </div>
+   467→            <div>
+   468→              <Label className="text-xs">URL Slug</Label>
+   469→              <Input placeholder="ssc-cgl" value={newSlug} onChange={(e) => setNewSlug(e.target.value)} className="h-10" />
+   470→            </div>
+   471→            <div>
+   472→              <Label className="text-xs">Exam Type</Label>
+   473→              <select className="w-full border rounded-md px-3 py-2 text-sm h-10 bg-white" value={newExamType} onChange={(e) => setNewExamType(e.target.value)}>
+   474→                {['General', 'SSC', 'UPSC', 'Banking', 'Railways', 'State', 'Defence'].map(t => <option key={t}>{t}</option>)}
+   475→              </select>
+   476→            </div>
+   477→          </div>
+   478→          <Button size="sm" className="bg-blue-700 hover:bg-blue-800 mt-3" onClick={handleAdd} disabled={!newName || !newSlug || adding}>
+   479→            {adding ? 'Adding...' : <><Plus className="w-3.5 h-3.5 mr-1" /> Add Category</>}
+   480→          </Button>
+   481→        </CardContent>
+   482→      </Card>
+   483→
+   484→      {/* Categories List */}
+   485→      <Card className="border-0 shadow-sm">
+   486→        <CardContent className="p-3 sm:p-5">
+   487→          <h3 className="text-sm font-semibold mb-3">All Categories ({categories.length})</h3>
+   488→          <div className="space-y-2">
+   489→            {categories.map((cat) => (
+   490→              <div key={cat.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group gap-2">
+   491→                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+   492→                  <div className="w-2 h-8 sm:h-10 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+   493→                  <div className="min-w-0">
+   494→                    <p className="text-sm font-medium truncate">{cat.name}</p>
+   495→                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+   496→                      <Badge variant="secondary" className="text-[10px]">{cat.examType}</Badge>
+   497→                      <span className="text-[10px] text-muted-foreground">{cat._count.tests} tests</span>
+   498→                      <span className="text-[10px] text-muted-foreground hidden sm:inline">/{cat.slug}</span>
+   499→                    </div>
+   500→                  </div>
+   501→                </div>
+   502→                <Button
+   503→                  variant="ghost"
+   504→                  size="icon"
+   505→                  className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+   506→                  onClick={() => handleDelete(cat.id)}
+   507→                >
+   508→                  <Trash2 className="w-4 h-4" />
+   509→                </Button>
+   510→              </div>
+   511→            ))}
+   512→            {categories.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">No categories yet</p>}
+   513→          </div>
+   514→        </CardContent>
+   515→      </Card>
+   516→    </div>
+   517→  );
+   518→}
+   519→
+   520→// ==================== TESTS TAB ====================
+   521→function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
+   522→  const { tests } = useAppStore();
+   523→  const [expandedTestId, setExpandedTestId] = useState<string | null>(null);
+   524→  const [testQuestions, setTestQuestions] = useState<Record<string, unknown[]>>({});
+   525→  const [loadingQ, setLoadingQ] = useState<string | null>(null);
+   526→
+   527→  async function fetchQuestions(testId: string) {
+   528→    if (testQuestions[testId]) {
+   529→      setExpandedTestId(expandedTestId === testId ? null : testId);
+   530→      return;
+   531→    }
+   532→    setLoadingQ(testId);
+   533→    try {
+   534→      const res = await fetch(`/api/tests/${testId}`);
+   535→      if (res.ok) {
+   536→        const data = await res.json();
+   537→        setTestQuestions(prev => ({ ...prev, [testId]: data.questions || [] }));
+   538→        setExpandedTestId(testId);
+   539→      }
+   540→    } catch {}
+   541→    setLoadingQ(null);
+   542→  }
+   543→
+   544→  async function handleDeleteTest(id: string) {
+   545→    if (!confirm('Delete this test and ALL its questions? This cannot be undone.')) return;
+   546→    await fetch('/api/admin/tests', {
+   547→      method: 'DELETE',
+   548→      headers: { 'Content-Type': 'application/json' },
+   549→      body: JSON.stringify({ id }),
+   550→    });
+   551→    onRefresh();
+   552→  }
+   553→
+   554→  async function handleDeleteQuestion(questionId: string, testId: string) {
+   555→    if (!confirm('Delete this question?')) return;
+   556→    await fetch('/api/admin/tests/questions', {
+   557→      method: 'DELETE',
+   558→      headers: { 'Content-Type': 'application/json' },
+   559→      body: JSON.stringify({ questionId }),
+   560→    });
+   561→    const res = await fetch(`/api/tests/${testId}`);
+   562→    if (res.ok) {
+   563→      const data = await res.json();
+   564→      setTestQuestions(prev => ({ ...prev, [testId]: data.questions || [] }));
+   565→    }
+   566→    onRefresh();
+   567→  }
+   568→
+   569→  return (
+   570→    <div className="space-y-3">
+   571→      <div className="flex items-center justify-between gap-2">
+   572→        <h3 className="text-sm font-semibold">Tests ({tests.length})</h3>
+   573→        <Badge variant="secondary" className="text-[10px] shrink-0">{tests.reduce((s, t) => s + (t._count?.questions || t.totalQuestions), 0)}Q</Badge>
+   574→      </div>
+   575→
+   576→      {tests.length === 0 ? (
+   577→        <Card className="border-0 shadow-sm">
+   578→          <CardContent className="p-10 text-center">
+   579→            <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+   580→            <p className="text-sm text-muted-foreground">No tests yet. Go to &quot;Create&quot; tab to add your first test.</p>
+   581→          </CardContent>
+   582→        </Card>
+   583→      ) : (
+   584→        tests.map((test) => (
+   585→          <Card key={test.id} className="border-0 shadow-sm overflow-hidden">
+   586→            <div
+   587→              className="p-3 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors gap-2"
+   588→              onClick={() => fetchQuestions(test.id)}
+   589→            >
+   590→              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+   591→                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: test.category?.color || '#1e40af' }}>
+   592→                  {test.category?.name?.charAt(0) || 'T'}
+   593→                </div>
+   594→                <div className="min-w-0">
+   595→                  <p className="text-sm font-medium truncate">{test.title}</p>
+   596→                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+   597→                    <Badge variant="secondary" className="text-[10px]">{test.category?.name}</Badge>
+   598→                    <span className="text-[10px] text-muted-foreground">{test._count?.questions || test.totalQuestions}Q</span>
+   599→                    <span className="text-[10px] text-muted-foreground hidden sm:inline">{test.difficulty}</span>
+   600→                    <span className="text-[10px] text-muted-foreground">{Math.floor(test.timeLimit / 60)}m</span>
+   601→                  </div>
+   602→                </div>
+   603→              </div>
+   604→              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+   605→                {loadingQ === test.id ? (
+   606→                  <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+   607→                ) : (
+   608→                  <>
+   609→                    <Button
+   610→                      variant="ghost"
+   611→                      size="icon"
+   612→                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+   613→                      onClick={(e) => { e.stopPropagation(); handleDeleteTest(test.id); }}
+   614→                    >
+   615→                      <Trash2 className="w-4 h-4" />
+   616→                    </Button>
+   617→                    {expandedTestId === test.id ? (
+   618→                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+   619→                    ) : (
+   620→                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+   621→                    )}
+   622→                  </>
+   623→                )}
+   624→              </div>
+   625→            </div>
+   626→
+   627→            {/* Questions List */}
+   628→            <AnimatePresence>
+   629→              {expandedTestId === test.id && (
+   630→                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+   631→                  <div className="border-t bg-gray-50 p-3 sm:p-4 space-y-2">
+   632→                    <h4 className="text-xs font-semibold text-muted-foreground">
+   633→                      Questions ({(testQuestions[test.id] || []).length})
+   634→                    </h4>
+   635→                    {(testQuestions[test.id] || []).length === 0 ? (
+   636→                      <p className="text-xs text-muted-foreground text-center py-4">No questions in this test</p>
+   637→                    ) : (
+   638→                      (testQuestions[test.id] as Array<Record<string, unknown>>).map((q, i) => (
+   639→                        <div key={String(q.id)} className="bg-white rounded-lg p-3 border text-xs group">
+   640→                          <div className="flex items-start justify-between gap-2">
+   641→                            <div className="flex-1 min-w-0">
+   642→                              <div className="flex items-center gap-2 mb-1">
+   643→                                <span className="font-bold text-blue-700 shrink-0">Q{i + 1}.</span>
+   644→                                <span className="text-gray-700">{String(q.question).substring(0, 80)}{String(q.question).length > 80 ? '...' : ''}</span>
+   645→                              </div>
+   646→                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5 ml-5 text-muted-foreground">
+   647→                                <div className={String(q.correctOption) === 'A' ? 'text-green-700 font-medium' : ''}>
+   648→                                  A. {String(q.optionA)}
+   649→                                </div>
+   650→                                <div className={String(q.correctOption) === 'B' ? 'text-green-700 font-medium' : ''}>
+   651→                                  B. {String(q.optionB)}
+   652→                                </div>
+   653→                                <div className={String(q.correctOption) === 'C' ? 'text-green-700 font-medium' : ''}>
+   654→                                  C. {String(q.optionC)}
+   655→                                </div>
+   656→                                <div className={String(q.correctOption) === 'D' ? 'text-green-700 font-medium' : ''}>
+   657→                                  D. {String(q.optionD)}
+   658→                                </div>
+   659→                              </div>
+   660→                            </div>
+   661→                            <Button
+   662→                              variant="ghost"
+   663→                              size="icon"
+   664→                              className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+   665→                              onClick={() => handleDeleteQuestion(String(q.id), test.id)}
+   666→                            >
+   667→                              <Trash2 className="w-3.5 h-3.5" />
+   668→                            </Button>
+   669→                          </div>
+   670→                        </div>
+   671→                      ))
+   672→                    )}
+   673→                  </div>
+   674→                </motion.div>
+   675→              )}
+   676→            </AnimatePresence>
+   677→          </Card>
+   678→        ))
+   679→      )}
+   680→    </div>
+   681→  );
+   682→}
+   683→
+   684→// ==================== CREATE TEST TAB ====================
+   685→interface QuestionForm {
+   686→  question: string;
+   687→  optionA: string;
+   688→  optionB: string;
+   689→  optionC: string;
+   690→  optionD: string;
+   691→  correctOption: string;
+   692→  explanation: string;
+   693→  section: string;
+   694→  negativeMark: string;
+   695→}
+   696→
+   697→const emptyQuestion = (): QuestionForm => ({
+   698→  question: '',
+   699→  optionA: '',
+   700→  optionB: '',
+   701→  optionC: '',
+   702→  optionD: '',
+   703→  correctOption: 'A',
+   704→  explanation: '',
+   705→  section: 'General',
+   706→  negativeMark: '0',
+   707→});
+   708→
+   709→function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
+   710→  const { categories } = useAppStore();
+   711→  const [step, setStep] = useState<1 | 2 | 3>(1);
+   712→
+   713→  // Step 1: Test details
+   714→  const [title, setTitle] = useState('');
+   715→  const [desc, setDesc] = useState('');
+   716→  const [catId, setCatId] = useState('');
+   717→  const [diff, setDiff] = useState('medium');
+   718→  const [time, setTime] = useState('600');
+   719→  const [examName, setExamName] = useState('');
+   720→
+   721→  // Step 2: Questions
+   722→  const [questions, setQuestions] = useState<QuestionForm[]>([emptyQuestion()]);
+   723→  const [createdTestId, setCreatedTestId] = useState('');
+   724→
+   725→  // Step 3: Done
+   726→  const [savedCount, setSavedCount] = useState(0);
+   727→  const [saving, setSaving] = useState(false);
+   728→
+   729→  // Import states
+   730→  const [extractingImage, setExtractingImage] = useState(false);
+   731→  const [extractElapsed, setExtractElapsed] = useState(0);
+   732→  const [importingAnswers, setImportingAnswers] = useState(false);
+   733→  const [importingExplanations, setImportingExplanations] = useState(false);
+   734→  const [fillStatus, setFillStatus] = useState<{ msg: string; type: 'info' | 'success' | 'error' } | null>(null);
+   735→
+   736→  // Count dialog state
+   737→  const [showCountDialog, setShowCountDialog] = useState(false);
+   738→  const [questionCount, setQuestionCount] = useState('');
+   739→  const fillStartIndexRef = useRef<number>(0);
+   740→
+   741→  // File input refs
+   742→  const imageInputRef = useRef<HTMLInputElement>(null);
+   743→  const answersInputRef = useRef<HTMLInputElement>(null);
+   744→  const explanationsInputRef = useRef<HTMLInputElement>(null);
+   745→
+   746→  useEffect(() => {
+   747→    const filledCount = questions.filter(q => q.question.trim() !== '').length;
+   748→    console.log(`📊 questions state changed — total: ${questions.length}, filled: ${filledCount}, empty: ${questions.length - filledCount}`);
+   749→  }, [questions]);
+   750→
+   751→  function addQuestion() {
+   752→    setQuestions([...questions, emptyQuestion()]);
+   753→  }
+   754→
+   755→  function updateQ(i: number, field: keyof QuestionForm, value: string) {
+   756→    const updated = [...questions];
+   757→    updated[i] = { ...updated[i], [field]: value };
+   758→    setQuestions(updated);
+   759→  }
+   760→
+   761→  function removeQ(i: number) {
+   762→    if (questions.length <= 1) return;
+   763→    setQuestions(questions.filter((_, idx) => idx !== i));
+   764→  }
+   765→
+   766→  function duplicateQ(i: number) {
+   767→    const updated = [...questions];
+   768→    updated.splice(i + 1, 0, { ...questions[i] });
+   769→    setQuestions(updated);
+   770→  }
+   771→
+   772→  async function createTest() {
+   773→    if (!title || !catId) return;
+   774→    const res = await fetch('/api/admin/tests', {
+   775→      method: 'POST',
+   776→      headers: { 'Content-Type': 'application/json' },
+   777→      body: JSON.stringify({ title, description: desc, categoryId: catId, difficulty: diff, timeLimit: parseInt(time), examName: examName || 'Practice Test' }),
+   778→    });
+   779→    const data = await res.json();
+   780→    setCreatedTestId(data.id);
+   781→    setStep(2);
+   782→  }
+   783→
+   784→  async function saveQuestions() {
+   785→    const valid = questions.filter(q => q.question.trim() && q.optionA.trim() && q.optionB.trim() && q.optionC.trim() && q.optionD.trim());
+   786→    if (valid.length === 0) return;
+   787→    setSaving(true);
+   788→    const res = await fetch('/api/admin/tests/questions', {
+   789→      method: 'POST',
+   790→      headers: { 'Content-Type': 'application/json' },
+   791→      body: JSON.stringify({ testId: createdTestId, questions: valid }),
+   792→    });
+   793→    if (res.ok) {
+   794→      const data = await res.json();
+   795→      setSavedCount(data.created || valid.length);
+   796→      setStep(3);
+   797→    }
+   798→    setSaving(false);
+   799→  }
+   800→
+   801→  function resetAll() {
+   802→    setStep(1);
+   803→    setTitle('');
+   804→    setDesc('');
+   805→    setCatId('');
+   806→    setDiff('medium');
+   807→    setTime('600');
+   808→    setExamName('');
+   809→    setQuestions([emptyQuestion()]);
+   810→    setCreatedTestId('');
+   811→    setSavedCount(0);
+   812→  }
+   813→
+   814→  function openCountDialog() {
+   815→    if (extractingImage) return;
+   816→    setQuestionCount('');
+   817→    setShowCountDialog(true);
+   818→  }
+   819→
+   820→  function confirmCountAndPickImage() {
+   821→    const n = parseInt(questionCount, 10);
+   822→    if (!n || n < 1 || n > 200) {
+   823→      toast.error('Please enter a valid number between 1 and 200');
+   824→      return;
+   825→    }
+   826→    setQuestions(prev => {
+   827→      let cleaned = prev.filter(q => {
+   828→        const isEmpty = !q.question.trim() && !q.optionA.trim() && !q.optionB.trim() && !q.optionC.trim() && !q.optionD.trim() && !q.explanation.trim();
+   829→        return !isEmpty;
+   830→      });
+   831→      fillStartIndexRef.current = cleaned.length;
+   832→      const newBoxes: QuestionForm[] = Array.from({ length: n }, () => emptyQuestion());
+   833→      return [...cleaned, ...newBoxes];
+   834→    });
+   835→    setShowCountDialog(false);
+   836→    toast.success(`✅ ${n} empty question boxes created! Ab image select karein...`);
+   837→    setTimeout(() => {
+   838→      imageInputRef.current?.click();
+   839→    }, 100);
+   840→  }
+   841→
+   842→  function fillQuestionsFromExtract(extracted: QuestionForm[]): number {
+   843→    if (!extracted || extracted.length === 0) {
+   844→      setFillStatus({ msg: '⚠️ No questions received from VLM to fill.', type: 'error' });
+   845→      return 0;
+   846→    }
+   847→    setFillStatus({ msg: `🔧 Filling ${extracted.length} questions into boxes...`, type: 'info' });
+   848→    let filledCount = 0;
+   849→    setQuestions(prev => {
+   850→      const next = [...prev];
+   851→      let startIdx = -1;
+   852→      for (let i = 0; i < next.length; i++) {
+   853→        if (!next[i].question.trim()) { startIdx = i; break; }
+   854→      }
+   855→      if (startIdx === -1) {
+   856→        for (const ex of extracted) { next.push(ex); filledCount++; }
+   857→      } else {
+   858→        for (let k = 0; k < extracted.length; k++) {
+   859→          const targetIdx = startIdx + k;
+   860→          if (targetIdx < next.length) { next[targetIdx] = { ...next[targetIdx], ...extracted[k] }; }
+   861→          else { next.push(extracted[k]); }
+   862→          filledCount++;
+   863→        }
+   864→      }
+   865→      return next;
+   866→    });
+   867→    setTimeout(() => {
+   868→      setFillStatus({ msg: `✅ ${extracted.length} questions filled into boxes!`, type: 'success' });
+   869→      setTimeout(() => setFillStatus(null), 8000);
+   870→    }, 100);
+   871→    return filledCount;
+   872→  }
+   873→
+   874→  async function handleImageExtract(e: React.ChangeEvent<HTMLInputElement>) {
+   875→    const files = e.target.files;
+   876→    if (!files || files.length === 0) return;
+   877→    const fileList = Array.from(files);
+   878→    setExtractingImage(true);
+   879→    setExtractElapsed(0);
+   880→    const startTime = Date.now();
+   881→    const timerInterval = setInterval(() => {
+   882→      setExtractElapsed(Math.floor((Date.now() - startTime) / 1000));
+   883→    }, 1000);
+   884→    try {
+   885→      let totalExtracted = 0;
+   886→      let hasError = false;
+   887→      for (let i = 0; i < fileList.length; i++) {
+   888→        const file = fileList[i];
+   889→        const formData = new FormData();
+   890→        formData.append('image', file);
+   891→        const controller = new AbortController();
+   892→        const timeoutId = setTimeout(() => controller.abort(), 300000);
+   893→        try {
+   894→          setFillStatus({ msg: `📤 Uploading image to VLM... (this can take 1-3 minutes)`, type: 'info' });
+   895→          const res = await fetch('/api/admin/extract-question', { method: 'POST', body: formData, signal: controller.signal });
+   896→          clearTimeout(timeoutId);
+   897→          if (!res.ok) {
+   898→            const errText = await res.text().catch(() => 'Unknown error');
+   899→            setFillStatus({ msg: `❌ VLM error (HTTP ${res.status}): ${errText.substring(0, 100)}`, type: 'error' });
+   900→            toast.error(`Image ${i + 1}: VLM returned HTTP ${res.status}`);
+   901→            hasError = true;
+   902→            continue;
+   903→          }
+   904→          const data = await res.json();
+   905→          if (data.success && data.questions && data.questions.length > 0) {
+   906→            const newQuestions: QuestionForm[] = data.questions.map((q: any) => ({
+   907→              question: q.question || '', optionA: q.optionA || '', optionB: q.optionB || '', optionC: q.optionC || '', optionD: q.optionD || '',
+   908→              correctOption: q.correctOption || 'A', explanation: q.explanation || '', section: q.section || 'General', negativeMark: q.negativeMark || '0',
+   909→            }));
+   910→            fillQuestionsFromExtract(newQuestions);
+   911→            totalExtracted += newQuestions.length;
+   912→            toast.success(`Image ${i + 1}: ${newQuestions.length} questions extracted & filled!`);
+   913→          } else if (data.success && data.question) {
+   914→            const newQ: QuestionForm = {
+   915→              question: data.question.question || '', optionA: data.question.optionA || '', optionB: data.question.optionB || '', optionC: data.question.optionC || '', optionD: data.question.optionD || '',
+   916→              correctOption: data.question.correctOption || 'A', explanation: data.question.explanation || '', section: data.question.section || 'General', negativeMark: data.question.negativeMark || '0',
+   917→            };
+   918→            fillQuestionsFromExtract([newQ]);
+   919→            totalExtracted += 1;
+   920→            toast.success(`Image ${i + 1}: 1 question extracted & filled!`);
+   921→          } else {
+   922→            hasError = true;
+   923→            setFillStatus({ msg: `❌ ${data.error || 'Failed to extract questions'}`, type: 'error' });
+   924→            toast.error(`Image ${i + 1}: ${data.error || 'Failed to extract'}`);
+   925→          }
+   926→        } catch (err: any) {
+   927→          clearTimeout(timeoutId);
+   928→          hasError = true;
+   929→          if (err?.name === 'AbortError') {
+   930→            setFillStatus({ msg: '❌ Timed out (5 min). Try a smaller image.', type: 'error' });
+   931→          } else {
+   932→            setFillStatus({ msg: `❌ ${err?.message || 'Failed to extract'}`, type: 'error' });
+   933→          }
+   934→        }
+   935→      }
+   936→      if (totalExtracted > 0) {
+   937→        toast.success(`🎉 Total: ${totalExtracted} questions extracted!`);
+   938→      } else if (!hasError) {
+   939→        toast.error('No questions could be extracted. Empty boxes remain for manual entry.');
+   940→      }
+   941→    } finally {
+   942→      clearInterval(timerInterval);
+   943→      setExtractingImage(false);
+   944→      setExtractElapsed(0);
+   945→      e.target.value = '';
+   946→    }
+   947→  }
+   948→
+   949→  async function handleImportAnswers(e: React.ChangeEvent<HTMLInputElement>) {
+   950→    const file = e.target.files?.[0];
+   951→    if (!file) return;
+   952→    setImportingAnswers(true);
+   953→    try {
+   954→      const formData = new FormData();
+   955→      formData.append('file', file);
+   956→      formData.append('testId', createdTestId);
+   957→      const res = await fetch('/api/admin/import-answers', { method: 'POST', body: formData });
+   958→      const data = await res.json();
+   959→      if (data.success) { toast.success(`Updated ${data.updated} correct answers successfully!`); }
+   960→      else { toast.error(data.error || 'Failed to import answers'); }
+   961→    } catch { toast.error('Failed to import answers.'); }
+   962→    finally { setImportingAnswers(false); e.target.value = ''; }
+   963→  }
+   964→
+   965→  async function handleImportExplanations(e: React.ChangeEvent<HTMLInputElement>) {
+   966→    const file = e.target.files?.[0];
+   967→    if (!file) return;
+   968→    setImportingExplanations(true);
+   969→    try {
+   970→      const formData = new FormData();
+   971→      formData.append('file', file);
+   972→      formData.append('testId', createdTestId);
+   973→      const res = await fetch('/api/admin/import-explanations', { method: 'POST', body: formData });
+   974→      const data = await res.json();
+   975→      if (data.success) { toast.success(`Updated ${data.updated} explanations successfully!`); }
+   976→      else { toast.error(data.error || 'Failed to import explanations'); }
+   977→    } catch { toast.error('Failed to import explanations.'); }
+   978→    finally { setImportingExplanations(false); e.target.value = ''; }
+   979→  }
+   980→
+   981→  return (
+   982→    <div className="space-y-4 sm:space-y-5">
+   983→      {/* Step Indicator — compact on mobile */}
+   984→      <div className="flex items-center gap-1 sm:gap-2 mb-2 overflow-x-auto">
+   985→        {[
+   986→          { n: 1, label: 'Details' },
+   987→          { n: 2, label: 'Questions' },
+   988→          { n: 3, label: 'Done' },
+   989→        ].map((s) => (
+   990→          <div key={s.n} className="flex items-center gap-1 sm:gap-2 shrink-0">
+   991→            <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+   992→              step > s.n ? 'bg-green-600 text-white' : step === s.n ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
+   993→            }`}>
+   994→              {step > s.n ? <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" /> : s.n}
+   995→            </div>
+   996→            <span className={`text-xs font-medium hidden sm:inline ${step === s.n ? 'text-gray-900' : 'text-muted-foreground'}`}>{s.label}</span>
+   997→            {s.n < 3 && <div className={`w-4 sm:w-8 h-0.5 ${step > s.n ? 'bg-green-600' : 'bg-gray-200'}`} />}
+   998→          </div>
+   999→        ))}
+  1000→      </div>
+  1001→
+  1002→      {/* Step 1: Test Details */}
+  1003→      {step === 1 && (
+  1004→        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+  1005→          <Card className="border-0 shadow-sm">
+  1006→            <CardContent className="p-4 sm:p-5 space-y-4">
+  1007→              <div>
+  1008→                <h3 className="text-sm sm:text-base font-bold flex items-center gap-2 mb-1"><FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /> Test Information</h3>
+  1009→                <p className="text-xs text-muted-foreground">Fill in the basic details for your mock test</p>
+  1010→              </div>
+  1011→              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+  1012→                <div className="sm:col-span-2">
+  1013→                  <Label className="text-xs font-medium">Test Title *</Label>
+  1014→                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., SSC CGL 2024 - General Awareness" className="h-11" />
+  1015→                </div>
+  1016→                <div className="sm:col-span-2">
+  1017→                  <Label className="text-xs font-medium">Description</Label>
+  1018→                  <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Brief description..." className="min-h-[70px] sm:min-h-[80px] resize-none" />
+  1019→                </div>
+  1020→                <div>
+  1021→                  <Label className="text-xs font-medium">Category *</Label>
+  1022→                  <select className="w-full border rounded-md px-3 py-2.5 text-sm h-11 bg-white" value={catId} onChange={(e) => setCatId(e.target.value)}>
+  1023→                    <option value="">Select category...</option>
+  1024→                    {categories.map(c => <option key={c.id} value={c.id}>{c.name} ({c.examType})</option>)}
+  1025→                  </select>
+  1026→                </div>
+  1027→                <div>
+  1028→                  <Label className="text-xs font-medium">Exam Name</Label>
+  1029→                  <Input value={examName} onChange={(e) => setExamName(e.target.value)} placeholder="e.g., SSC CGL 2024" className="h-11" />
+  1030→                </div>
+  1031→                <div>
+  1032→                  <Label className="text-xs font-medium">Difficulty</Label>
+  1033→                  <select className="w-full border rounded-md px-3 py-2.5 text-sm h-11 bg-white" value={diff} onChange={(e) => setDiff(e.target.value)}>
+  1034→                    {['easy', 'medium', 'hard'].map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+  1035→                  </select>
+  1036→                </div>
+  1037→                <div>
+  1038→                  <Label className="text-xs font-medium">Time Limit (sec)</Label>
+  1039→                  <Input type="number" value={time} onChange={(e) => setTime(e.target.value)} className="h-11" />
+  1040→                  <p className="text-[10px] text-muted-foreground mt-1">600s = 10min</p>
+  1041→                </div>
+  1042→              </div>
+  1043→              <div className="flex justify-end pt-2">
+  1044→                <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={createTest} disabled={!title || !catId}>
+  1045→                  Next <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
+  1046→                </Button>
+  1047→              </div>
+  1048→            </CardContent>
+  1049→          </Card>
+  1050→        </motion.div>
+  1051→      )}
+  1052→
+  1053→      {/* Step 2: Add Questions */}
+  1054→      {step === 2 && (
+  1055→        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3 sm:space-y-4">
+  1056→          {/* Quick Stats Bar */}
+  1057→          <div className="flex items-center justify-between gap-2 flex-wrap">
+  1058→            <div className="flex items-center gap-2">
+  1059→              <Badge variant="secondary" className="text-xs">{questions.length}Q</Badge>
+  1060→              <Badge variant="outline" className="text-xs">
+  1061→                {questions.filter(q => q.question.trim() && q.optionA.trim()).length} done
+  1062→              </Badge>
+  1063→            </div>
+  1064→            <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
+  1065→              <Plus className="w-3.5 h-3.5" /> Add Q
+  1066→            </Button>
+  1067→          </div>
+  1068→
+  1069→          {/* Hidden file inputs */}
+  1070→          <input type="file" ref={imageInputRef} accept="image/*" onChange={handleImageExtract} className="hidden" />
+  1071→          <input type="file" ref={answersInputRef} accept=".txt,.csv" onChange={handleImportAnswers} className="hidden" />
+  1072→          <input type="file" ref={explanationsInputRef} accept=".txt" onChange={handleImportExplanations} className="hidden" />
+  1073→
+  1074→          {/* Import Actions Bar */}
+  1075→          <div className="flex items-center gap-2 flex-wrap">
+  1076→            {fillStatus && (
+  1077→              <div className={`w-full p-2.5 sm:p-3 rounded-lg border flex items-center gap-2 text-xs sm:text-sm font-medium ${
+  1078→                fillStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+  1079→                fillStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+  1080→                'bg-blue-50 border-blue-200 text-blue-800'
+  1081→              }`}>
+  1082→                {fillStatus.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
+  1083→                 fillStatus.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
+  1084→                 <Loader2 className="w-4 h-4 shrink-0 animate-spin" />}
+  1085→                <span className="break-all">{fillStatus.msg}</span>
+  1086→              </div>
+  1087→            )}
+  1088→            <Button variant="outline" size="sm" onClick={openCountDialog} disabled={extractingImage} className="gap-1.5 text-xs">
+  1089→              {extractingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+  1090→              <span className="hidden sm:inline">{extractingImage ? `Extracting... (${extractElapsed}s)` : '📸 Upload Image'}</span>
+  1091→              <span className="sm:hidden">{extractingImage ? `${extractElapsed}s` : '📸'}</span>
+  1092→            </Button>
+  1093→            {extractingImage && (
+  1094→              <div className="w-full p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+  1095→                <p className="text-xs text-amber-700 font-medium animate-pulse mb-1">
+  1096→                  ⏳ VLM image se questions padh raha hai...
+  1097→                </p>
+  1098→                <div className="w-full bg-amber-200 rounded-full h-1.5 overflow-hidden">
+  1099→                  <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min((extractElapsed / 60) * 100, 95)}%` }} />
+  1100→                </div>
+  1101→              </div>
+  1102→            )}
+  1103→            <Button variant="outline" size="sm" onClick={() => answersInputRef.current?.click()} disabled={importingAnswers} className="gap-1.5 text-xs">
+  1104→              {importingAnswers ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />}
+  1105→              <span className="hidden sm:inline">{importingAnswers ? 'Importing...' : 'Answers'}</span>
+  1106→            </Button>
+  1107→            <Button variant="outline" size="sm" onClick={() => explanationsInputRef.current?.click()} disabled={importingExplanations} className="gap-1.5 text-xs">
+  1108→              {importingExplanations ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+  1109→              <span className="hidden sm:inline">{importingExplanations ? 'Importing...' : 'Explanations'}</span>
+  1110→            </Button>
+  1111→          </div>
+  1112→
+  1113→          {/* Questions */}
+  1114→          <div className="space-y-3">
+  1115→            {questions.map((q, i) => (
+  1116→              <Card key={i} className={`border shadow-sm overflow-hidden ${q.question.trim() && q.optionA.trim() ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-amber-400'}`}>
+  1117→                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+  1118→                  {/* Question Header */}
+  1119→                  <div className="flex items-center justify-between gap-2">
+  1120→                    <div className="flex items-center gap-2 min-w-0">
+  1121→                      <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+  1122→                      <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">Section:</span>
+  1123→                      <Input value={q.section} onChange={(e) => updateQ(i, 'section', e.target.value)} placeholder="General" className="w-24 sm:w-32 h-7 text-xs" />
+  1124→                    </div>
+  1125→                    <div className="flex items-center gap-1 shrink-0">
+  1126→                      <button onClick={() => duplicateQ(i)} className="p-1.5 rounded hover:bg-gray-100 text-muted-foreground hover:text-blue-600 transition-colors" title="Duplicate">
+  1127→                        <Copy className="w-3.5 h-3.5" />
+  1128→                      </button>
+  1129→                      {questions.length > 1 && (
+  1130→                        <button onClick={() => removeQ(i)} className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors" title="Delete">
+  1131→                          <Trash2 className="w-3.5 h-3.5" />
+  1132→                        </button>
+  1133→                      )}
+  1134→                    </div>
+  1135→                  </div>
+  1136→
+  1137→                  {/* Question Text */}
+  1138→                  <Textarea value={q.question} onChange={(e) => updateQ(i, 'question', e.target.value)} placeholder="Type your question here..." className="min-h-[50px] sm:min-h-[60px] resize-none text-sm" />
+  1139→
+  1140→                  {/* Options - stacked on mobile, 2-col on sm+ */}
+  1141→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+  1142→                    {(['A', 'B', 'C', 'D'] as const).map((opt) => (
+  1143→                      <div key={opt} className="relative">
+  1144→                        <div className={`absolute left-0 top-0 w-6 h-6 sm:w-6 sm:h-6 rounded-l-md flex items-center justify-center text-xs font-bold text-white ${q.correctOption === opt ? 'bg-green-600' : 'bg-gray-300'}`}>
+  1145→                          {opt}
+  1146→                        </div>
+  1147→                        <Input
+  1148→                          value={q[`option${opt}` as keyof QuestionForm]}
+  1149→                          onChange={(e) => updateQ(i, `option${opt}` as keyof QuestionForm, e.target.value)}
+  1150→                          placeholder={`Option ${opt}`}
+  1151→                          className={`pl-9 h-10 text-sm ${q.correctOption === opt ? 'border-green-500 bg-green-50/50' : ''}`}
+  1152→                        />
+  1153→                        <button
+  1154→                          onClick={() => updateQ(i, 'correctOption', opt)}
+  1155→                          className={`absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+  1156→                            q.correctOption === opt ? 'border-green-600 bg-green-600' : 'border-gray-300 hover:border-green-400'
+  1157→                          }`}
+  1158→                          title={`Set ${opt} as correct answer`}
+  1159→                        >
+  1160→                          {q.correctOption === opt && <div className="w-2 h-2 rounded-full bg-white" />}
+  1161→                        </button>
+  1162→                      </div>
+  1163→                    ))}
+  1164→                  </div>
+  1165→
+  1166→                  {/* Explanation & Negative Marking */}
+  1167→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+  1168→                    <div>
+  1169→                      <Label className="text-[10px] text-muted-foreground">Explanation</Label>
+  1170→                      <Input value={q.explanation} onChange={(e) => updateQ(i, 'explanation', e.target.value)} placeholder="Why is this correct?" className="h-9 text-xs" />
+  1171→                    </div>
+  1172→                    <div>
+  1173→                      <Label className="text-[10px] text-muted-foreground">Neg. Marking</Label>
+  1174→                      <Input type="number" step="0.25" value={q.negativeMark} onChange={(e) => updateQ(i, 'negativeMark', e.target.value)} placeholder="0" className="h-9 text-xs" />
+  1175→                    </div>
+  1176→                  </div>
+  1177→                </CardContent>
+  1178→              </Card>
+  1179→            ))}
+  1180→          </div>
+  1181→
+  1182→          {/* Action Buttons — stacked on mobile */}
+  1183→          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 sticky bottom-2 bg-gray-50 py-2 px-1 rounded-xl border">
+  1184→            <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5">
+  1185→              <ArrowLeft className="w-4 h-4" /> Back
+  1186→            </Button>
+  1187→            <div className="flex items-center gap-2">
+  1188→              <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
+  1189→                <Plus className="w-3.5 h-3.5" /> Add More
+  1190→              </Button>
+  1191→              <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={saveQuestions} disabled={saving || questions.filter(q => q.question.trim() && q.optionA.trim()).length === 0}>
+  1192→                {saving ? (
+  1193→                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Saving...</>
+  1194→                ) : (
+  1195→                  <><Save className="w-4 h-4 mr-1 sm:mr-2" /> Save {questions.filter(q => q.question.trim() && q.optionA.trim()).length}Q</>
+  1196→                )}
+  1197→              </Button>
+  1198→            </div>
+  1199→          </div>
+  1200→        </motion.div>
+  1201→      )}
+  1202→
+  1203→      {/* Step 3: Success */}
+  1204→      {step === 3 && (
+  1205→        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 sm:py-10">
+  1206→          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+  1207→            <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+  1208→          </div>
+  1209→          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Test Created!</h2>
+  1210→          <p className="text-sm text-muted-foreground mb-1">
+  1211→            <strong>&quot;{title}&quot;</strong> with <strong>{savedCount} questions</strong>
+  1212→          </p>
+  1213→          <p className="text-xs text-muted-foreground mb-6">Students can now attempt this test.</p>
+  1214→          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 px-4">
+  1215→            <Button variant="outline" onClick={resetAll}>
+  1216→              <Plus className="w-4 h-4 mr-2" /> Create Another
+  1217→            </Button>
+  1218→            <Button className="bg-blue-700 hover:bg-blue-800" onClick={() => useAppStore.getState().setView('tests')}>
+  1219→              View All Tests
+  1220→            </Button>
+  1221→          </div>
+  1222→        </motion.div>
+  1223→      )}
+  1224→
+  1225→      {/* Count Dialog */}
+  1226→      <Dialog open={showCountDialog} onOpenChange={setShowCountDialog}>
+  1227→        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+  1228→          <DialogHeader>
+  1229→            <DialogTitle className="flex items-center gap-2 text-base">
+  1230→              <Camera className="w-5 h-5 text-blue-600" />
+  1231→              Kitne questions hain?
+  1232→            </DialogTitle>
+  1233→            <DialogDescription className="text-xs">
+  1234→              Image me jitne questions hain, wo number yahan likhein.
+  1235→            </DialogDescription>
+  1236→          </DialogHeader>
+  1237→          <div className="py-2">
+  1238→            <Label htmlFor="qcount" className="text-xs font-medium mb-1.5 block">Kitne questions? (1-200)</Label>
+  1239→            <Input
+  1240→              id="qcount"
+  1241→              type="number"
+  1242→              min={1} max={200}
+  1243→              autoFocus
+  1244→              value={questionCount}
+  1245→              onChange={(e) => setQuestionCount(e.target.value)}
+  1246→              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmCountAndPickImage(); } }}
+  1247→              placeholder="e.g., 34"
+  1248→              className="h-12 text-lg font-semibold text-center"
+  1249→            />
+  1250→            <div className="flex flex-wrap gap-2 mt-3">
+  1251→              {[10, 25, 34, 50, 75, 100].map(preset => (
+  1252→                <button key={preset} type="button" onClick={() => setQuestionCount(String(preset))}
+  1253→                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+  1254→                    questionCount === String(preset) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+  1255→                  }`}>
+  1256→                  {preset}
+  1257→                </button>
+  1258→              ))}
+  1259→            </div>
+  1260→          </div>
+  1261→          <DialogFooter className="gap-2 sm:gap-2">
+  1262→            <DialogClose asChild>
+  1263→              <Button variant="outline" className="gap-1.5"><X className="w-4 h-4" /> Cancel</Button>
+  1264→            </DialogClose>
+  1265→            <Button className="bg-blue-700 hover:bg-blue-800 gap-1.5" onClick={confirmCountAndPickImage} disabled={!questionCount || parseInt(questionCount) < 1}>
+  1266→              <Camera className="w-4 h-4" /> Select Image
+  1267→            </Button>
+  1268→          </DialogFooter>
+  1269→        </DialogContent>
+  1270→      </Dialog>
+  1271→    </div>
+  1272→  );
+  1273→}
+  1274→
+  1275→// ==================== USERS TAB ====================
+  1276→interface StudentRow {
+  1277→  id: string;
+  1278→  name: string;
+  1279→  email: string | null;
+  1280→  phone: string | null;
+  1281→  deviceId: string;
+  1282→  freeTestsUsed: number;
+  1283→  isSubscribed: boolean;
+  1284→  subscriptionAt: string | null;
+  1285→  createdAt: string;
+  1286→  totalAttempts: number;
+  1287→  totalPayments: number;
+  1288→  lastPayment: { id: string; amount: number; currency: string; status: string; createdAt: string } | null;
+  1289→}
+  1290→
+  1291→function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
+  1292→  const [students, setStudents] = useState<StudentRow[]>([]);
+  1293→  const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
+  1294→  const [search, setSearch] = useState('');
+  1295→  const [loading, setLoading] = useState(true);
+  1296→  const [deleting, setDeleting] = useState<string | null>(null);
+  1297→  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  1298→  const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
+  1299→  const [summary, setSummary] = useState({ totalStudents: 0, totalPaid: 0, totalFree: 0 });
+  1300→  const [reloadKey, setReloadKey] = useState(0);
+  1301→
+  1302→  useEffect(() => {
+  1303→    let cancelled = false;
+  1304→    (async () => {
+  1305→      setLoading(true);
+  1306→      try {
+  1307→        const params = new URLSearchParams({ filter, search });
+  1308→        const res = await fetch(`/api/admin/students?${params}`);
+  1309→        if (res.ok && !cancelled) {
+  1310→          const data = await res.json();
+  1311→          if (!cancelled) { setStudents(data.students); setSummary(data.summary); }
+  1312→        }
+  1313→      } catch {}
+  1314→      if (!cancelled) setLoading(false);
+  1315→    })();
+  1316→    return () => { cancelled = true; };
+  1317→  }, [filter, search, reloadKey]);
+  1318→
+  1319→  async function handleDelete() {
+  1320→    if (!deleteTarget) return;
+  1321→    setDeleting(deleteTarget.id);
+  1322→    try {
+  1323→      const res = await fetch('/api/admin/students', {
+  1324→        method: 'DELETE',
+  1325→        headers: { 'Content-Type': 'application/json' },
+  1326→        body: JSON.stringify({ id: deleteTarget.id }),
+  1327→      });
+  1328→      if (res.ok) {
+  1329→        toast.success(`User "${deleteTarget.name}" deleted`);
+  1330→        setShowDeleteDialog(false);
+  1331→        setDeleteTarget(null);
+  1332→        setReloadKey(k => k + 1);
+  1333→        onRefresh();
+  1334→      }
+  1335→    } catch {}
+  1336→    setDeleting(null);
+  1337→  }
+  1338→
+  1339→  const filters = [
+  1340→    { key: 'all' as const, label: 'All', count: summary.totalStudents },
+  1341→    { key: 'free' as const, label: 'Free', count: summary.totalFree },
+  1342→    { key: 'paid' as const, label: 'Paid', count: summary.totalPaid },
+  1343→  ];
+  1344→
+  1345→  return (
+  1346→    <div className="space-y-3 sm:space-y-4">
+  1347→      {/* Filter Bar */}
+  1348→      <Card className="border-0 shadow-sm">
+  1349→        <CardContent className="p-3 sm:p-4">
+  1350→          <div className="flex flex-col gap-3">
+  1351→            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+  1352→              <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+  1353→              {filters.map(f => (
+  1354→                <button
+  1355→                  key={f.key}
+  1356→                  onClick={() => { setFilter(f.key); }}
+  1357→                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+  1358→                    filter === f.key ? 'bg-blue-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+  1359→                  }`}
+  1360→                >
+  1361→                  {f.label} ({f.count})
+  1362→                </button>
+  1363→              ))}
+  1364→            </div>
+  1365→            <div className="relative w-full">
+  1366→              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+  1367→              <input
+  1368→                type="text"
+  1369→                placeholder="Search name, email, phone..."
+  1370→                value={search}
+  1371→                onChange={(e) => setSearch(e.target.value)}
+  1372→                className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+  1373→              />
+  1374→            </div>
+  1375→          </div>
+  1376→        </CardContent>
+  1377→      </Card>
+  1378→
+  1379→      {/* Users List — Card layout on mobile, Table on desktop */}
+  1380→      {loading ? (
+  1381→        <div className="flex items-center justify-center py-12">
+  1382→          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+  1383→          <span className="ml-2 text-sm text-muted-foreground">Loading users...</span>
+  1384→        </div>
+  1385→      ) : students.length === 0 ? (
+  1386→        <div className="text-center py-12 text-muted-foreground text-sm">No users found</div>
+  1387→      ) : (
+  1388→        <>
+  1389→          {/* Mobile: Card Layout */}
+  1390→          <div className="space-y-2 sm:hidden">
+  1391→            {students.map((student) => (
+  1392→              <Card key={student.id} className="border-0 shadow-sm overflow-hidden">
+  1393→                <div className="p-3 flex items-start justify-between gap-2">
+  1394→                  <div className="flex items-center gap-2 min-w-0">
+  1395→                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+  1396→                      student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+  1397→                    }`}>
+  1398→                      {student.name.charAt(0).toUpperCase()}
+  1399→                    </div>
+  1400→                    <div className="min-w-0">
+  1401→                      <p className="text-sm font-medium truncate">{student.name}</p>
+  1402→                      <p className="text-[10px] text-muted-foreground truncate">{student.email || student.phone || student.deviceId}</p>
+  1403→                      <div className="flex items-center gap-2 mt-1">
+  1404→                        {student.isSubscribed ? (
+  1405→                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5 px-1.5 py-0">
+  1406→                            <Crown className="w-2.5 h-2.5" /> Paid
+  1407→                          </Badge>
+  1408→                        ) : (
+  1409→                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+  1410→                            Free ({student.freeTestsUsed}/5)
+  1411→                          </Badge>
+  1412→                        )}
+  1413→                        <span className="text-[10px] text-muted-foreground">{student.totalAttempts} attempts</span>
+  1414→                      </div>
+  1415→                    </div>
+  1416→                  </div>
+  1417→                  <div className="flex items-center gap-1 shrink-0">
+  1418→                    {student.subscriptionAt && (
+  1419→                      <button className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors" title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}>
+  1420→                        <Receipt className="w-4 h-4" />
+  1421→                      </button>
+  1422→                    )}
+  1423→                    <button
+  1424→                      onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+  1425→                      className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+  1426→                      title="Delete user"
+  1427→                    >
+  1428→                      <Trash2 className="w-4 h-4" />
+  1429→                    </button>
+  1430→                  </div>
+  1431→                </div>
+  1432→              </Card>
+  1433→            ))}
+  1434→          </div>
+  1435→
+  1436→          {/* Desktop: Table Layout */}
+  1437→          <div className="hidden sm:block">
+  1438→            <Card className="border-0 shadow-sm">
+  1439→              <CardContent className="p-0">
+  1440→                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+  1441→                  <div className="col-span-3">User</div>
+  1442→                  <div className="col-span-2">Email</div>
+  1443→                  <div className="col-span-1">Phone</div>
+  1444→                  <div className="col-span-2 text-center">Status</div>
+  1445→                  <div className="col-span-2 text-center">Activity</div>
+  1446→                  <div className="col-span-2 text-right">Actions</div>
+  1447→                </div>
+  1448→                <div className="max-h-[60vh] overflow-y-auto">
+  1449→                  {students.map((student) => (
+  1450→                    <div key={student.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center group">
+  1451→                      <div className="col-span-3">
+  1452→                        <div className="flex items-center gap-2">
+  1453→                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+  1454→                            student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+  1455→                          }`}>
+  1456→                            {student.name.charAt(0).toUpperCase()}
+  1457→                          </div>
+  1458→                          <div className="min-w-0">
+  1459→                            <p className="text-sm font-medium truncate">{student.name}</p>
+  1460→                          </div>
+  1461→                        </div>
+  1462→                      </div>
+  1463→                      <div className="col-span-2"><p className="text-xs truncate">{student.email || '—'}</p></div>
+  1464→                      <div className="col-span-1"><p className="text-xs truncate">{student.phone || '—'}</p></div>
+  1465→                      <div className="col-span-2 flex justify-center">
+  1466→                        {student.isSubscribed ? (
+  1467→                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5">
+  1468→                            <Crown className="w-2.5 h-2.5" /> Paid
+  1469→                          </Badge>
+  1470→                        ) : (
+  1471→                          <Badge variant="secondary" className="text-[10px]">Free ({student.freeTestsUsed}/5)</Badge>
+  1472→                        )}
+  1473→                      </div>
+  1474→                      <div className="col-span-2 flex flex-col items-center gap-0.5">
+  1475→                        <span className="text-xs font-medium">{student.totalAttempts} attempts</span>
+  1476→                        {student.lastPayment && <span className="text-[10px] text-emerald-600">Paid ₹{student.lastPayment.amount / 100}</span>}
+  1477→                      </div>
+  1478→                      <div className="col-span-2 flex justify-end gap-1">
+  1479→                        {student.subscriptionAt && (
+  1480→                          <button className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors" title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}>
+  1481→                            <Receipt className="w-4 h-4" />
+  1482→                          </button>
+  1483→                        )}
+  1484→                        <button
+  1485→                          onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+  1486→                          className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+  1487→                          title="Delete user"
+  1488→                        >
+  1489→                          <Trash2 className="w-4 h-4" />
+  1490→                        </button>
+  1491→                      </div>
+  1492→                    </div>
+  1493→                  ))}
+  1494→                </div>
+  1495→              </CardContent>
+  1496→            </Card>
+  1497→          </div>
+  1498→        </>
+  1499→      )}
+  1500→
+  1501→      {/* Delete Confirmation Dialog */}
+  1502→      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+  1503→        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm">
+  1504→          <DialogHeader>
+  1505→            <DialogTitle className="flex items-center gap-2 text-red-600">
+  1506→              <AlertTriangle className="w-5 h-5" /> Delete User
+  1507→            </DialogTitle>
+  1508→            <DialogDescription className="text-xs">
+  1509→              Delete <strong>{deleteTarget?.name}</strong> permanently? This cannot be undone.
+  1510→            </DialogDescription>
+  1511→          </DialogHeader>
+  1512→          {deleteTarget && (
+  1513→            <div className="bg-red-50 rounded-xl p-3 text-xs space-y-1">
+  1514→              <p><span className="text-muted-foreground">Name:</span> <strong>{deleteTarget.name}</strong></p>
+  1515→              <p><span className="text-muted-foreground">Email:</span> {deleteTarget.email || '—'}</p>
+  1516→              <p><span className="text-muted-foreground">Status:</span> {deleteTarget.isSubscribed ? 'Paid' : 'Free'}</p>
+  1517→            </div>
+  1518→          )}
+  1519→          <DialogFooter>
+  1520→            <DialogClose asChild><Button variant="outline" size="sm">Cancel</Button></DialogClose>
+  1521→            <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleting}>
+  1522→              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
+  1523→              {deleting ? 'Deleting...' : 'Delete'}
+  1524→            </Button>
+  1525→          </DialogFooter>
+  1526→        </DialogContent>
+  1527→      </Dialog>
+  1528→    </div>
+  1529→  );
+  1530→}
+  1531→
+  1532→// ==================== SETTINGS TAB ====================
+  1533→function AdminSettingsTab() {
+  1534→  const [currentPassword, setCurrentPassword] = useState('');
+  1535→  const [newPassword, setNewPassword] = useState('');
+  1536→  const [confirmPassword, setConfirmPassword] = useState('');
+  1537→  const [loading, setLoading] = useState(false);
+  1538→  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  1539→
+  1540→  async function handleResetPassword() {
+  1541→    setMessage(null);
+  1542→    if (!currentPassword || !newPassword || !confirmPassword) {
+  1543→      setMessage({ type: 'error', text: 'All fields are required' });
+  1544→      return;
+  1545→    }
+  1546→    if (newPassword !== confirmPassword) {
+  1547→      setMessage({ type: 'error', text: 'Passwords do not match' });
+  1548→      return;
+  1549→    }
+  1550→    if (newPassword.length < 4) {
+  1551→      setMessage({ type: 'error', text: 'New password must be at least 4 characters' });
+  1552→      return;
+  1553→    }
+  1554→    setLoading(true);
+  1555→    try {
+  1556→      const res = await fetch('/api/admin/reset-password', {
+  1557→        method: 'POST',
+  1558→        headers: { 'Content-Type': 'application/json' },
+  1559→        body: JSON.stringify({ currentPassword, newPassword }),
+  1560→      });
+  1561→      const data = await res.json();
+  1562→      if (data.success) {
+  1563→        setMessage({ type: 'success', text: 'Password updated successfully!' });
+  1564→        setCurrentPassword('');
+  1565→        setNewPassword('');
+  1566→        setConfirmPassword('');
+  1567→      } else {
+  1568→        setMessage({ type: 'error', text: data.error || 'Failed to reset password' });
+  1569→      }
+  1570→    } catch {
+  1571→      setMessage({ type: 'error', text: 'Server error.' });
+  1572→    }
+  1573→    setLoading(false);
+  1574→  }
+  1575→
+  1576→  return (
+  1577→    <div className="space-y-3 sm:space-y-4">
+  1578→      <Card className="border-0 shadow-sm">
+  1579→        <CardContent className="p-4 sm:p-5">
+  1580→          <h3 className="text-sm font-semibold mb-1 flex items-center gap-2">
+  1581→            <Shield className="w-4 h-4 text-blue-600" /> Reset Admin Password
+  1582→          </h3>
+  1583→          <p className="text-xs text-muted-foreground mb-4">Change your admin login password.</p>
+  1584→
+  1585→          {message && (
+  1586→            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+  1587→              className={`mb-4 p-3 rounded-xl text-sm flex items-center gap-2 border ${
+  1588→                message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+  1589→              }`}>
+  1590→              {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+  1591→              <span className="break-all">{message.text}</span>
+  1592→            </motion.div>
+  1593→          )}
+  1594→
+  1595→          <div className="space-y-3 max-w-md">
+  1596→            <div>
+  1597→              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Current Password</Label>
+  1598→              <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Enter current password" className="h-11" />
+  1599→            </div>
+  1600→            <div>
+  1601→              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
+  1602→              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password (min 4 chars)" className="h-11" />
+  1603→            </div>
+  1604→            <div>
+  1605→              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
+  1606→              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="h-11" onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()} />
+  1607→            </div>
+  1608→            <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={handleResetPassword} disabled={loading || !currentPassword || !newPassword || !confirmPassword}>
+  1609→              {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : <><Save className="w-4 h-4 mr-2" />Update Password</>}
+  1610→            </Button>
+  1611→          </div>
+  1612→        </CardContent>
+  1613→      </Card>
+  1614→    </div>
+  1615→  );
+  1616→}
+  1617→
+  1618→// ==================== PAYMENTS TAB ====================
+  1619→interface PaymentRow {
+  1620→  id: string;
+  1621→  studentId: string;
+  1622→  studentName: string;
+  1623→  studentEmail: string | null;
+  1624→  amount: number;
+  1625→  currency: string;
+  1626→  status: string;
+  1627→  razorpayOrderId: string | null;
+  1628→  razorpayPaymentId: string | null;
+  1629→  createdAt: string;
+  1630→}
+  1631→
+  1632→function AdminPaymentsTab() {
+  1633→  const [payments, setPayments] = useState<PaymentRow[]>([]);
+  1634→  const [loading, setLoading] = useState(true);
+  1635→
+  1636→  useEffect(() => {
+  1637→    async function load() {
+  1638→      try {
+  1639→        const res = await fetch('/api/admin/payments');
+  1640→        if (res.ok) setPayments(await res.json());
+  1641→      } catch {}
+  1642→      setLoading(false);
+  1643→    }
+  1644→    load();
+  1645→  }, []);
+  1646→
+  1647→  const totalRevenue = payments.reduce((s, p) => s + (p.status === 'completed' ? p.amount : 0), 0);
+  1648→
+  1649→  return (
+  1650→    <div className="space-y-3 sm:space-y-4">
+  1651→      {/* Revenue Summary */}
+  1652→      <Card className="border-0 shadow-sm">
+  1653→        <CardContent className="p-3 sm:p-4 flex flex-row sm:flex-col items-start sm:items-center justify-between gap-2 sm:gap-3">
+  1654→          <div className="flex items-center gap-3">
+  1655→            <div className="p-2 rounded-xl bg-emerald-100">
+  1656→              <CreditCard className="w-5 h-5 text-emerald-700" />
+  1657→            </div>
+  1658→            <div>
+  1659→              <p className="text-xl sm:text-2xl font-bold text-gray-900">₹{totalRevenue / 100}</p>
+  1660→              <p className="text-[10px] sm:text-[11px] text-muted-foreground">Revenue ({payments.filter(p => p.status === 'completed').length} paid)</p>
+  1661→            </div>
+  1662→          </div>
+  1663→          <Badge variant="secondary" className="text-xs shrink-0">
+  1664→            {payments.length} total
+  1665→          </Badge>
+  1666→        </CardContent>
+  1667→      </Card>
+  1668→
+  1669→      {/* Payments */}
+  1670→      {loading ? (
+  1671→        <div className="flex items-center justify-center py-12">
+  1672→          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+  1673→          <span className="ml-2 text-sm text-muted-foreground">Loading payments...</span>
+  1674→        </div>
+  1675→      ) : payments.length === 0 ? (
+  1676→        <div className="text-center py-12 text-muted-foreground text-sm">No payments yet</div>
+  1677→      ) : (
+  1678→        <>
+  1679→          {/* Mobile: Card Layout */}
+  1680→          <div className="space-y-2 sm:hidden">
+  1681→            {payments.map((p) => (
+  1682→              <Card key={p.id} className="border-0 shadow-sm">
+  1683→                <div className="p-3 flex items-center justify-between gap-2">
+  1684→                  <div className="min-w-0">
+  1685→                    <p className="text-sm font-medium truncate">{p.studentName}</p>
+  1686→                    <p className="text-[10px] text-muted-foreground truncate">{p.studentEmail || '—'}</p>
+  1687→                    <div className="flex items-center gap-2 mt-1">
+  1688→                      <Badge className={`text-[10px] border-0 ${
+  1689→                        p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+  1690→                      }`}>
+  1691→                        {p.status === 'completed' ? '✓ Success' : p.status}
+  1692→                      </Badge>
+  1693→                      <span className="text-[10px] text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</span>
+  1694→                    </div>
+  1695→                  </div>
+  1696→                  <p className="text-base font-bold text-gray-900 shrink-0">₹{p.amount / 100}</p>
+  1697→                </div>
+  1698→              </Card>
+  1699→            ))}
+  1700→          </div>
+  1701→
+  1702→          {/* Desktop: Table Layout */}
+  1703→          <div className="hidden sm:block">
+  1704→            <Card className="border-0 shadow-sm">
+  1705→              <CardContent className="p-0">
+  1706→                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+  1707→                  <div className="col-span-3">Student</div>
+  1708→                  <div className="col-span-2 text-center">Amount</div>
+  1709→                  <div className="col-span-2 text-center">Status</div>
+  1710→                  <div className="col-span-3">Order ID</div>
+  1711→                  <div className="col-span-2 text-right">Date</div>
+  1712→                </div>
+  1713→                <div className="max-h-[60vh] overflow-y-auto">
+  1714→                  {payments.map((p) => (
+  1715→                    <div key={p.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
+  1716→                      <div className="col-span-3">
+  1717→                        <p className="text-sm font-medium truncate">{p.studentName}</p>
+  1718→                        <p className="text-[10px] text-muted-foreground truncate">{p.studentEmail || '—'}</p>
+  1719→                      </div>
+  1720→                      <div className="col-span-2 text-center">
+  1721→                        <p className="text-sm font-bold">₹{p.amount / 100}</p>
+  1722→                      </div>
+  1723→                      <div className="col-span-2 flex justify-center">
+  1724→                        <Badge className={`text-[10px] border-0 ${
+  1725→                          p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+  1726→                        }`}>
+  1727→                          {p.status === 'completed' ? '✓ Success' : p.status}
+  1728→                        </Badge>
+  1729→                      </div>
+  1730→                      <div className="col-span-3">
+  1731→                        <p className="text-[10px] text-muted-foreground font-mono truncate">{p.razorpayOrderId || '—'}</p>
+  1732→                      </div>
+  1733→                      <div className="col-span-2 text-right">
+  1734→                        <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+  1735→                      </div>
+  1736→                    </div>
+  1737→                  ))}
+  1738→                </div>
+  1739→              </CardContent>
+  1740→            </Card>
+  1741→          </div>
+  1742→        </>
+  1743→      )}
+  1744→    </div>
+  1745→  );
+  1746→}
+  1747→

@@ -872,3 +872,31 @@ Stage Summary:
 - Razorpay LIVE payments active (real ₹100 payments will work)
 - Google Search Console verification file accessible at /googleabb88179bbb562dd.html
 - All APIs returning correct data from MongoDB Atlas
+
+---
+Task ID: crash-fix-bug-bash
+Agent: Main Agent
+Task: Fix website crash "Something went wrong" + Login error + Payment failure
+
+Work Log:
+- Analyzed screenshot: user sees "Something went wrong" ErrorBoundary crash page on Vercel
+- Root cause analysis: multiple potential crash points identified
+  - ErrorBoundary did not log/show actual error (no componentDidCatch)
+  - Zustand persist merge function could crash on corrupt localStorage data
+  - HomePage/TestListPage accessed cat._count.tests without null-safety
+  - All components used cat.id which is undefined after lean() + stripMongoFields
+- Fixed ErrorBoundary: added componentDidCatch + stored error on window.__NEXT_ERROR__
+- Fixed Zustand merge: added try-catch + type validation for all persisted fields
+- Fixed HomePage: null-safe access to cat._count?.tests, cat.id || cat._id, cat.color defaults
+- Fixed TestListPage: same null-safety fixes for categories and tests
+- Fixed AuthModal: error display now uses data.message || data.error (was only data.error)
+- Fixed SubscriptionModal: replaced alert() with inline error display, fixed lint error
+- Fixed payment create-order: receipt string was >40 chars (Razorpay max), shortened to rcpt_{timestamp}
+- Verified all fixes via curl API tests: signup, login, wrong password, payment order creation all pass
+- Verified page loads in browser without crash
+
+Stage Summary:
+- 5 files modified: page.tsx, useAppStore.ts, HomePage.tsx, TestListPage.tsx, AuthModal.tsx, SubscriptionModal.tsx, create-order/route.ts
+- All API tests pass: login/signup/payment order creation confirmed working
+- Razorpay LIVE key confirmed working (order_TIwJkiwUX4pGTv created)
+- Lint clean (only pre-existing seed-mongodb.js errors)
