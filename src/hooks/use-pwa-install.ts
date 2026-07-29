@@ -97,8 +97,8 @@ export function usePwaInstall() {
    */
   const canInstall = useMemo(() => {
     if (standalone) return false;
-    if (platform === 'desktop') return false;
     if (platform === 'ios') return true; // iOS always "can" (manual steps)
+    if (platform === 'desktop') return promptReady; // Desktop needs the prompt event
     return promptReady; // Android needs the prompt event
   }, [standalone, platform, promptReady]);
 
