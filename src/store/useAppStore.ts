@@ -51,6 +51,7 @@ interface TestInfo {
   totalQuestions: number;
   examName?: string;
   isActive: boolean;
+  isLocked: boolean;
   category: { id: string; name: string; slug: string; icon: string; color: string; examType?: string };
   questions: TestQuestion[];
   _count?: { questions: number };

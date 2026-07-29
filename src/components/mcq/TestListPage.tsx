@@ -51,13 +51,9 @@ export function TestListPage() {
   function isTestLocked(test: (typeof tests)[0]) {
     // Subscribed users: everything unlocked
     if (isSubscribed) return false;
-    // Test has isLocked flag set by admin → locked for non-subscribed
+    // Admin has explicitly locked this test → locked for non-subscribed
     if (test.isLocked) return true;
-    // Not logged in: locked
-    if (!isLoggedIn) return true;
-    // Free user with no remaining tests: locked
-    if (freeTestsRemaining <= 0) return true;
-    // Default: unlocked (admin can set isLocked to control per-test)
+    // Default: unlocked (free users can take it)
     return false;
   }
 
