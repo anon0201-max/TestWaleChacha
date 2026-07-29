@@ -1,0 +1,11 @@
+{
+  "name": "extract-service",
+  "version": "1.0.0",
+  "description": "Image-to-questions extraction service using Grok (xAI) with VLM fallback",
+  "scripts": {
+    "dev": "bun --hot index.ts"
+  },
+  "dependencies": {
+    "z-ai-web-dev-sdk": "*"
+  }
+}

@@ -898,8 +898,8 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
         const timeoutId = setTimeout(() => controller.abort(), 300000);
         try {
           setFillStatus({ msg: `📤 Image ${i + 1}/${fileList.length}: Scanning with AI... (1-3 min)`, type: 'info' });
-          // Use VLM mini-service (port 3030) instead of Vercel serverless to avoid timeout
-          const res = await fetch('/extract?XTransformPort=3030', { method: 'POST', body: formData, signal: controller.signal });
+          // Use Next.js API route with z-ai-web-dev-sdk VLM + Grok fallback
+          const res = await fetch('/api/admin/extract-question', { method: 'POST', body: formData, signal: controller.signal });
           clearTimeout(timeoutId);
           if (!res.ok) {
             const errText = await res.text().catch(() => 'Unknown error');

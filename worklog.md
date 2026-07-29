@@ -900,3 +900,26 @@ Stage Summary:
 - All API tests pass: login/signup/payment order creation confirmed working
 - Razorpay LIVE key confirmed working (order_TIwJkiwUX4pGTv created)
 - Lint clean (only pre-existing seed-mongodb.js errors)
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix admin image extraction - replace VLM with Grok (xAI) + fix broken mini-service call
+
+Work Log:
+- Identified ROOT CAUSE: Frontend was calling `/extract?XTransformPort=3030` but NO mini-service existed on port 3030
+- Created `mini-services/extract-service/` with Grok (xAI) as primary engine + z-ai-web-dev-sdk VLM fallback
+- Rewrote `/api/admin/extract-question/route.ts` with same dual-engine logic (Grok primary, VLM fallback)
+- Updated `AdminPanel.tsx` to call `/api/admin/extract-question` instead of dead port 3030 endpoint
+- Improved prompt: strict JSON-only output, multi-language support (Hindi/English), field normalization
+- 3-level JSON parsing fallback: direct parse → regex array → individual object regex
+- Added process error handlers and keepalive wrapper for mini-service (for future deployment)
+- Verified admin panel loads, image extract dialog opens, Upload Image button works via Agent Browser
+
+Stage Summary:
+- 3 files created/modified: `mini-services/extract-service/index.ts`, `mini-services/extract-service/package.json`, `api/admin/extract-question/route.ts`, `AdminPanel.tsx`
+- Frontend now calls `/api/admin/extract-question` (Next.js route, works in dev)
+- If `XAI_API_KEY` env var is set → Grok (xAI) engine is used
+- If no key → z-ai-web-dev-sdk VLM (free) is used as fallback
+- Mini-service code ready at `mini-services/extract-service/` for production deployment
+- Browser verified: admin panel, create tab, image extract dialog all working
