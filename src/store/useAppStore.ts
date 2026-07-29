@@ -262,11 +262,22 @@ export const useAppStore = create<AppState>()(
         try {
           if (!persisted || typeof persisted !== 'object') return current;
           const p = persisted as Record<string, unknown>;
+
+          // Deep-validate user object: must have expected fields (id, name)
+          // to prevent crash when old code corrupted localStorage
+          let safeUser: typeof current.user = null;
+          if (p.user && typeof p.user === 'object' && !Array.isArray(p.user)) {
+            const u = p.user as Record<string, unknown>;
+            if (typeof u.id === 'string' && typeof u.name === 'string' && u.name.length > 0) {
+              safeUser = u as typeof current.user;
+            }
+          }
+
           return {
             ...current,
             deviceId: typeof p.deviceId === 'string' ? p.deviceId : current.deviceId,
-            user: (p.user && typeof p.user === 'object') ? p.user : null,
-            isLoggedIn: typeof p.isLoggedIn === 'boolean' ? p.isLoggedIn : false,
+            user: safeUser,
+            isLoggedIn: safeUser ? true : false,
             freeTestsUsed: Number(p.freeTestsUsed) || 0,
             freeTestsRemaining: Number(p.freeTestsRemaining) || 5,
             isSubscribed: typeof p.isSubscribed === 'boolean' ? p.isSubscribed : false,

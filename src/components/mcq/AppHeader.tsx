@@ -105,7 +105,7 @@ export function AppHeader() {
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                       isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-blue-600 text-white'
                     }`}>
-                      {user.name.charAt(0).toUpperCase()}
+                      {(user.name || '?').charAt(0).toUpperCase()}
                     </div>
                     <span className="text-sm font-medium max-w-[100px] truncate text-white">{user.name}</span>
                   </button>
@@ -296,7 +296,7 @@ export function AppHeader() {
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${
                   isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-blue-600 text-white'
                 }`}>
-                  {user.name.charAt(0).toUpperCase()}
+                  {(user.name || '?').charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white truncate">{user.name}</p>
