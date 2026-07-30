@@ -194,11 +194,12 @@ export function ResultsPage() {
       </div>
 
       {/* Detailed Answers */}
+      {Array.isArray(answerDetails) && answerDetails.length > 0 && (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
         <h2 className="text-xl font-bold mb-4">Answer Review</h2>
         <div className="space-y-3">
           {answerDetails.map((detail, i) => {
-            const question = currentTest.questions.find((q) => q.id === detail.questionId);
+            const question = currentTest.questions?.find((q) => q.id === detail.questionId);
             if (!question) return null;
             const optionMap: Record<string, string> = { A: question.optionA, B: question.optionB, C: question.optionC, D: question.optionD };
             return (
@@ -237,6 +238,7 @@ export function ResultsPage() {
           })}
         </div>
       </motion.div>
+      )}
 
       {/* Actions */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex flex-col sm:flex-row gap-3 justify-center">

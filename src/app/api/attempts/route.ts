@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { studentId, deviceId, testId, answers, timeTaken } = body;
 
-    if (!testId || !answers || !timeTaken) {
+    if (!testId || !answers || timeTaken === undefined || timeTaken === null) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 

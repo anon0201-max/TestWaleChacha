@@ -19,6 +19,7 @@ import {
   RotateCcw,
   Languages,
 } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 function formatTime(seconds: number): string {
   const hrs = Math.floor(seconds / 3600);
@@ -129,21 +130,40 @@ export function TestTakingPage() {
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        // API returned an error (400/403/500)
-        if (data.error === 'FREE_LIMIT_REACHED') {
-          setShowSubscriptionModal(true);
-        }
-        setView('home');
+      // Handle free limit reached — show subscription modal but don't go home
+      if (!res.ok && data.error === 'FREE_LIMIT_REACHED') {
+        setShowSubscriptionModal(true);
+        setIsTestActive(true); // re-enable test so user can go back
+        setSubmitting(false);
         return;
       }
 
-      // Validate response has the fields ResultsPage needs
-      if (!data.answerDetails || !Array.isArray(data.answerDetails) || data.answerDetails.length === 0) {
-        console.error('Invalid submit response — missing answerDetails:', data);
-        setView('home');
+      // Handle test locked
+      if (!res.ok && data.error === 'TEST_LOCKED') {
+        toast({ title: 'Test Locked', description: data.message || 'Subscribe to unlock this test.', variant: 'destructive' });
+        setIsTestActive(true);
+        setSubmitting(false);
         return;
       }
+
+      // Handle other API errors — show toast instead of silently going home
+      if (!res.ok) {
+        toast({ title: 'Submit Failed', description: data.error || 'Something went wrong. Please try again.', variant: 'destructive' });
+        setIsTestActive(true); // re-enable test so user can retry
+        setSubmitting(false);
+        return;
+      }
+
+      // API returned 200 — map response to AttemptResult and show results
+      const resultData: Record<string, unknown> = {
+        score: data.score,
+        correctAnswers: data.correctAnswers,
+        totalQuestions: data.totalQuestions,
+        answerDetails: data.answerDetails || [],
+        timeTaken: data.timeTaken,
+        // ResultsPage uses currentTest from store, so test field here is just for type safety
+        test: currentTest ? { title: currentTest.title, category: { name: currentTest.category?.name || '' } } : { title: '', category: { name: '' } },
+      };
 
       // Update student data from response
       if (data.updatedStudent) {
@@ -151,11 +171,12 @@ export function TestTakingPage() {
       } else {
         setStudentData({ freeTestsUsed: 0, isSubscribed: useAppStore.getState().isSubscribed });
       }
-      setLastResult(data);
+      setLastResult(resultData as any);
       setView('results');
     } catch (err) {
       console.error('Submit test exception:', err);
-      setView('home');
+      toast({ title: 'Network Error', description: 'Could not submit test. Check your connection and try again.', variant: 'destructive' });
+      setIsTestActive(true); // re-enable test
     } finally {
       setSubmitting(false);
     }
