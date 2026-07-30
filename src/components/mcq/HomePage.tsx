@@ -235,7 +235,7 @@ export function HomePage() {
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-start gap-2.5 sm:gap-3">
                       <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: cat.color || '#1C1C84' }}>
-                        {cat.name?.charAt(0) || '?'}
+                        {cat.icon || cat.name?.charAt(0) || '?'}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold text-xs sm:text-sm leading-tight group-hover:text-blue-600 transition-colors truncate">{cat.name || 'Unknown'}</h3>

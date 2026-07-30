@@ -23,7 +23,7 @@ function formatDate(dateStr: string): string {
 }
 
 export function MyAttemptsPage() {
-  const { user, isLoggedIn, setView, setShowAuthModal } = useAppStore();
+  const { user, isLoggedIn, setView, setShowAuthModal, setLastResult, setCurrentTest, setCurrentQuestionIndex, setTimeRemaining, setIsTestActive, clearAnswers } = useAppStore();
   const [attempts, setAttempts] = useState<Array<{
     id: string;
     testId: string;
@@ -36,6 +36,40 @@ export function MyAttemptsPage() {
     completed: boolean;
   }>>([]);
   const [loading, setLoading] = useState(true);
+  const [viewingAttempt, setViewingAttempt] = useState<string | null>(null);
+
+  async function handleViewAttempt(attempt: typeof attempts[0]) {
+    if (viewingAttempt) return;
+    setViewingAttempt(attempt.id);
+    try {
+      // Fetch test with questions so results page can show answer review
+      const testRes = await fetch(`/api/tests/${attempt.testId}?testId=${attempt.testId}`);
+      if (testRes.ok) {
+        const testData = await testRes.json();
+        setCurrentTest(testData);
+        clearAnswers();
+        setCurrentQuestionIndex(0);
+        setTimeRemaining(Number(testData.timeLimit) || 600);
+        setIsTestActive(false);
+
+        // Build result data from history attempt
+        setLastResult({
+          score: attempt.score,
+          correctAnswers: attempt.correctAnswers,
+          totalQuestions: attempt.totalQuestions,
+          answerDetails: [],
+          timeTaken: attempt.timeTaken,
+          test: { title: attempt.test?.title || '', category: { name: attempt.test?.category?.name || '' } },
+        } as any);
+        setView('results');
+      } else {
+        setView('tests');
+      }
+    } catch {
+      setView('tests');
+    }
+    setViewingAttempt(null);
+  }
 
   useEffect(() => {
     if (!user?.id) { return; }
@@ -121,7 +155,7 @@ export function MyAttemptsPage() {
         <div className="space-y-3">
           {attempts.map((attempt, i) => (
             <motion.div key={attempt.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.3) }}>
-              <Card className="hover:shadow-md transition-all border-0 shadow-sm">
+              <Card className={`hover:shadow-md transition-all border-0 shadow-sm cursor-pointer ${viewingAttempt === attempt.id ? 'opacity-60 pointer-events-none' : 'hover:border-blue-200'}`} onClick={() => handleViewAttempt(attempt)}>
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white text-sm font-bold" style={{ backgroundColor: attempt.test?.category?.color || '#1e40af' }}>
@@ -145,6 +179,7 @@ export function MyAttemptsPage() {
                       </div>
                       {attempt.score >= 90 && <Medal className="w-5 h-5 text-amber-500" />}
                       {attempt.score >= 70 && attempt.score < 90 && <Star className="w-5 h-5 text-blue-500" />}
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   </div>
                 </CardContent>

@@ -63,7 +63,10 @@ export function TestListPage() {
     try {
       const res = await fetch(`/api/tests/${test.id}?testId=${test.id}`);
       if (res.ok) {
-        setCurrentTest(await res.json());
+        const testData = await res.json();
+        setCurrentTest(testData);
+        // Use fetched test's timeLimit (guaranteed present) with fallback
+        setTimeRemaining(Number(testData.timeLimit) || Number(test.timeLimit) || 600);
       } else {
         toast.error('Failed to load test. Please try again.');
         return;
@@ -74,7 +77,6 @@ export function TestListPage() {
     }
     clearAnswers();
     setCurrentQuestionIndex(0);
-    setTimeRemaining(test.timeLimit);
     setIsTestActive(true);
     useAppStore.getState().setView('test-taking');
   }

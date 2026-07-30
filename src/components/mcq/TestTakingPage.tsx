@@ -22,6 +22,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 
 function formatTime(seconds: number): string {
+  if (!seconds || !isFinite(seconds) || seconds < 0) return '0:00';
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
@@ -113,7 +114,7 @@ export function TestTakingPage() {
     if (!currentTest || submitting) return;
     setSubmitting(true);
     setIsTestActive(false);
-    const timeTaken = currentTest.timeLimit - timeRemaining;
+    const timeTaken = Number(currentTest.timeLimit || 0) - Number(timeRemaining || 0);
     try {
       const body: Record<string, unknown> = {
         testId: currentTest.id,
