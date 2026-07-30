@@ -71,6 +71,9 @@ export async function POST(request: NextRequest) {
       isActive: isActive !== undefined ? isActive : true,
     });
 
+    const testObj = (typeof test.toObject === 'function') ? test.toObject({ virtuals: false }) : { ...test };
+    const testId = String(testObj.id || testObj._id || '');
+
     // Invalidate caches
     clearCacheByPrefix('categories:');
     clearCacheByPrefix('tests:');
@@ -78,7 +81,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Test created successfully',
-      test,
+      id: testId,
+      test: testObj,
     });
   } catch (error) {
     console.error('Create test error:', error);

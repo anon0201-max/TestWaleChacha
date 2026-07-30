@@ -1115,3 +1115,24 @@ Stage Summary:
 - Free limit: Already 2
 - Icons: Already implemented
 - History: Already clickable
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix questions not saving when manually added to a test in admin panel
+
+Work Log:
+- Investigated the 3-step test creation wizard (AdminPanel.tsx) and API routes
+- Found ROOT CAUSE: API `POST /api/admin/tests` returned `{ success, test }` (Mongoose doc) but client read `data.id` which was `undefined`. The test `id` was nested inside `data.test.id`.
+- Found additional bug: `handleDeleteQuestion` sent `questionId` in JSON body but server read from `searchParams.get('id')` — delete question was completely broken.
+- Found missing error handling: `createTest()` never checked `res.ok`, silently moved to step 2 even on API failure. `saveQuestions()` had no error feedback.
+
+Fixes Applied:
+1. **API route** (`src/app/api/admin/tests/route.ts`): Convert Mongoose doc to plain object via `toObject()`, extract `id` explicitly, and return it at top level: `{ success, id, test }`
+2. **createTest()**: Added try/catch, validates `data.success && data.id` before proceeding, shows toast error on failure
+3. **saveQuestions()**: Added try/catch, validates `createdTestId` is set, checks `data.success`, shows toast on success/error
+4. **handleDeleteQuestion()**: Changed from JSON body to query params (`?id=...&testId=...`) matching server's `searchParams.get()`
+
+Stage Summary:
+- Root cause: `createdTestId` was `undefined` because the API response structure didn't match what the client expected
+- Fixed by making API return `id` at top level and adding robust error handling throughout
+- Delete question bug also fixed (query params mismatch)

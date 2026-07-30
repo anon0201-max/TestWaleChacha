@@ -554,10 +554,8 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
 
   async function handleDeleteQuestion(questionId: string, testId: string) {
     if (!confirm('Delete this question?')) return;
-    await fetch('/api/admin/tests/questions', {
+    await fetch(`/api/admin/tests/questions?id=${encodeURIComponent(questionId)}&testId=${encodeURIComponent(testId)}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId }),
     });
     const res = await fetch(`/api/tests/${testId}`);
     if (res.ok) {
@@ -878,29 +876,45 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
 
   async function createTest() {
     if (!title || !catId) return;
-    const res = await fetch('/api/admin/tests', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description: desc, categoryId: catId, difficulty: diff, timeLimit: parseInt(time), examName: examName || 'Practice Test', icon: testIcon }),
-    });
-    const data = await res.json();
-    setCreatedTestId(data.id);
-    setStep(2);
+    try {
+      const res = await fetch('/api/admin/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description: desc, categoryId: catId, difficulty: diff, timeLimit: parseInt(time), examName: examName || 'Practice Test', icon: testIcon }),
+      });
+      const data = await res.json();
+      if (!data.success || !data.id) {
+        toast.error(data.message || 'Failed to create test');
+        return;
+      }
+      setCreatedTestId(data.id);
+      setStep(2);
+    } catch (e) {
+      toast.error('Failed to create test');
+    }
   }
 
   async function saveQuestions() {
     const valid = questions.filter(q => q.question.trim() && q.optionA.trim() && q.optionB.trim() && q.optionC.trim() && q.optionD.trim());
-    if (valid.length === 0) return;
+    if (valid.length === 0) { toast.error('Add at least one complete question'); return; }
+    if (!createdTestId) { toast.error('Test ID missing, please create test again'); return; }
     setSaving(true);
-    const res = await fetch('/api/admin/tests/questions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ testId: createdTestId, questions: valid }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch('/api/admin/tests/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId: createdTestId, questions: valid }),
+      });
       const data = await res.json();
-      setSavedCount(data.created || valid.length);
-      setStep(3);
+      if (res.ok && data.success) {
+        setSavedCount(data.count || valid.length);
+        setStep(3);
+        toast.success(`Saved ${data.count || valid.length} questions!`);
+      } else {
+        toast.error(data.message || 'Failed to save questions');
+      }
+    } catch (e) {
+      toast.error('Network error, failed to save questions');
     }
     setSaving(false);
   }
