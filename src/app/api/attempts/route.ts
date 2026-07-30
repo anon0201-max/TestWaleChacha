@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
       score,
       correctAnswers: correctCount,
       totalQuestions: questions.length,
+      timeTaken,
       updatedStudent: {
         id: updatedStudent.id,
         name: updatedStudent.name,

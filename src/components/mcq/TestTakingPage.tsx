@@ -128,11 +128,23 @@ export function TestTakingPage() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (data.error === 'FREE_LIMIT_REACHED') {
-        setShowSubscriptionModal(true);
+
+      if (!res.ok) {
+        // API returned an error (400/403/500)
+        if (data.error === 'FREE_LIMIT_REACHED') {
+          setShowSubscriptionModal(true);
+        }
         setView('home');
         return;
       }
+
+      // Validate response has required result fields
+      if (!data.attempt || !data.answerDetails) {
+        console.error('Invalid submit response:', data);
+        setView('home');
+        return;
+      }
+
       // Update student data from response
       if (data.updatedStudent) {
         setUser(data.updatedStudent);
@@ -141,7 +153,8 @@ export function TestTakingPage() {
       }
       setLastResult(data);
       setView('results');
-    } catch {
+    } catch (err) {
+      console.error('Submit test exception:', err);
       setView('home');
     } finally {
       setSubmitting(false);
@@ -356,8 +369,8 @@ export function TestTakingPage() {
                   })}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-2">
+                {/* Action Buttons - desktop only (mobile has bottom bar) */}
+                <div className="hidden md:flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" onClick={handleClearResponse} disabled={!answers[currentQuestion.id]} className="text-xs sm:text-sm">
                     <RotateCcw className="w-3.5 h-3.5 mr-1" /> Clear
                   </Button>
@@ -444,17 +457,25 @@ export function TestTakingPage() {
       {/* MOBILE: Bottom bar */}
       <div className="md:hidden border-t bg-white p-2 shrink-0 safe-bottom">
         <div className="flex items-center gap-1.5">
+          <Button variant="outline" size="sm" className="flex-1 text-[11px] px-1.5 h-9" onClick={handleClearResponse} disabled={!answers[currentQuestion?.id]}>
+            <RotateCcw className="w-3.5 h-3.5 mr-0.5" /> Clear
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1 text-[11px] px-1.5 h-9" onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))} disabled={currentQuestionIndex === 0}>
+            <ChevronLeft className="w-3.5 h-3.5 mr-0.5" /> Prev
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1 text-[11px] px-1.5 h-9" onClick={handleMarkForReview}>
+            <Flag className="w-3.5 h-3.5 mr-0.5" /> {markedForReview.has(currentQuestion?.id) ? 'Unmark' : 'Mark'}
+          </Button>
           <Button variant="outline" size="sm" className="flex-1 text-[11px] px-1.5 h-9" onClick={() => setShowProfilePanel(!showProfilePanel)}>
             <BookmarkPlus className="w-3.5 h-3.5 mr-0.5" /> Palette
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 text-[11px] px-1.5 h-9" onClick={handleMarkForReview}>
-            <Flag className="w-3.5 h-3.5 mr-0.5" /> {markedForReview.has(currentQuestion.id) ? 'Unmark' : 'Mark'}
-          </Button>
-          <Button size="sm" className="flex-1 bg-blue-600 hover:bg-blue-700 text-[11px] px-1.5 h-9" onClick={handleSaveAndNext}>
-            Save &amp; Next
+        </div>
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <Button size="sm" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-[11px] px-1.5 h-9" onClick={handleSaveAndNext} disabled={currentQuestionIndex >= totalQuestions - 1}>
+            Save &amp; Next <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
           </Button>
           <Button size="sm" className="flex-1 bg-red-600 hover:bg-red-700 text-[11px] px-1.5 h-9" onClick={() => setShowConfirmSubmit(true)} disabled={submitting}>
-            Submit
+            <Send className="w-3.5 h-3.5 mr-0.5" /> Submit
           </Button>
         </div>
 

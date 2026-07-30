@@ -1,6 +1,6 @@
 'use client';
 
-import { Crown, UserCircle, Zap, Shield, ArrowUp } from 'lucide-react';
+import { Crown, UserCircle, Zap, Shield, ArrowUp, Heart, MessageCircle, Mail, Phone, BookOpen } from 'lucide-react';
 import { useAppStore, handleSubscribeClick } from '@/store/useAppStore';
 
 export function AppFooter() {
@@ -47,23 +47,98 @@ export function AppFooter() {
         </div>
       </div>
 
-      {/* Minimal Bottom Bar */}
-      <div className="bg-gray-900 py-4">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span className="text-xs text-gray-500">© {new Date().getFullYear()} TestWaleChacha. All rights reserved.</span>
-          <div className="flex items-center gap-3 text-xs">
-            <button
-              onClick={() => setView('admin')}
-              className="flex items-center gap-1 text-gray-600 hover:text-gray-400 transition-colors"
-            >
-              <Shield className="w-3 h-3" /> Admin
-            </button>
-            <button
-              onClick={scrollToTop}
-              className="flex items-center gap-1 text-gray-600 hover:text-emerald-400 transition-colors group"
-            >
-              Back to top <ArrowUp className="w-3 h-3 group-hover:-translate-y-0.5 transition-transform" />
-            </button>
+      {/* Main Footer Content */}
+      <div className="bg-gray-900 py-8 sm:py-10">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 mb-8">
+            {/* Brand */}
+            <div className="col-span-2 sm:col-span-1">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
+                  T
+                </div>
+                <span className="text-white font-bold text-lg">TestWaleChacha</span>
+              </div>
+              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed mb-3">
+                Government exam preparation made easy. Real exam interface, detailed solutions, and performance tracking.
+              </p>
+              <a
+                href="https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-green-400 hover:text-green-300 text-xs transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" /> WhatsApp Channel
+              </a>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="text-white font-semibold text-sm mb-3">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><button onClick={() => { setView('home'); scrollToTop(); }} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Home</button></li>
+                <li><button onClick={() => { setView('tests'); scrollToTop(); }} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">All Tests</button></li>
+                <li><button onClick={() => { setView('my-attempts'); scrollToTop(); }} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">My Attempts</button></li>
+                <li><button onClick={handleSubscribeClick} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Subscribe — ₹100</button></li>
+              </ul>
+            </div>
+
+            {/* Exam Categories */}
+            <div>
+              <h4 className="text-white font-semibold text-sm mb-3">Exam Categories</h4>
+              <ul className="space-y-2">
+                {['SSC CGL', 'IBPS PO', 'RRB NTPC', 'UPSC', 'Teaching'].map((exam) => (
+                  <li key={exam}>
+                    <button onClick={() => { setView('tests'); scrollToTop(); }} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">
+                      {exam}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="text-white font-semibold text-sm mb-3">Contact Us</h4>
+              <ul className="space-y-2">
+                <li>
+                  <a
+                    href="https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-gray-400 hover:text-white text-xs sm:text-sm transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:testwalechacha@gmail.com" className="flex items-center gap-1.5 text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">
+                    <Mail className="w-3.5 h-3.5" /> testwalechacha@gmail.com
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span className="text-xs text-gray-500">
+              © {new Date().getFullYear()} TestWaleChacha. All rights reserved.
+            </span>
+            <div className="flex items-center gap-4 text-xs">
+              <button
+                onClick={() => setView('admin')}
+                className="flex items-center gap-1 text-gray-600 hover:text-gray-400 transition-colors"
+              >
+                <Shield className="w-3 h-3" /> Admin
+              </button>
+              <button
+                onClick={scrollToTop}
+                className="flex items-center gap-1 text-gray-600 hover:text-emerald-400 transition-colors group"
+              >
+                Back to top <ArrowUp className="w-3 h-3 group-hover:-translate-y-0.5 transition-transform" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -65,9 +65,15 @@ function CrashFallback() {
         <p className="text-gray-500 mb-6">The app encountered an unexpected error. This is usually fixed by refreshing.</p>
         <Button
           onClick={() => {
-            // Clear corrupted localStorage and reload
+            // Reset view to home but preserve auth state (don't wipe localStorage)
             try {
-              localStorage.removeItem('mcq-app-storage');
+              useAppStore.setState({
+                currentView: 'home',
+                isTestActive: false,
+                currentTest: null,
+                lastResult: null,
+                answers: {},
+              });
             } catch { /* ignore */ }
             window.location.reload();
           }}
