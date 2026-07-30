@@ -1085,3 +1085,33 @@ Stage Summary:
 - Fixed 8 bugs across 5 files: TestTakingPage.tsx, TestListPage.tsx, ResultsPage.tsx, attempts/route.ts, page.tsx, AppFooter.tsx
 - No crashes from undefined questions, null category, setState during render, NaN negative marks, timer interval churn, missing mobile legend, stale timeLimit closure, or width inconsistency
 ---
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix timer not running + test submit going to homepage + verify history/icons/free limit
+
+Work Log:
+- Analyzed TestTakingPage.tsx submit handler and timer code in detail
+- Identified root cause of submit→home issue: ResultsPage had a `useEffect` that called `setView('home')` when `!lastResult || !currentTest`, which could fire due to React rendering timing with lazy-loaded components
+- Identified timer issue: auto-submit useEffect with `handleSubmitTest` in deps caused excessive re-fires; also `isTestActive` was set false before fetch, stopping timer prematurely
+- Rewrote TestTakingPage.tsx submit handler:
+  - Replaced `useCallback` with regular async function using `useAppStore.getState()` for fresh state reads (avoids stale closures)
+  - Added `submittingRef` ref to prevent double-submit across async boundaries
+  - Used `useAppStore.setState()` to atomically set `lastResult`, `currentView: 'results'`, and `isTestActive: false` in one batch
+  - Removed the separate auto-submit `useEffect` — auto-submit now handled inside timer interval when time reaches 0
+  - Added `timeRemaining` to timer effect deps for proper re-evaluation
+- Fixed ResultsPage.tsx:
+  - REMOVED the aggressive `useEffect(() => { if (!lastResult || !currentTest) setView('home'); })` redirect
+  - Replaced with inline check showing 'No test result to display' message with navigation button
+- Fixed AuthModal.tsx `startPendingTest`:
+  - Changed `setTimeRemaining(testData.timeLimit)` to `setTimeRemaining(Number(testData.timeLimit) || 600)` for safety fallback
+- Verified FREE_TEST_LIMIT already set to 2 in api-utils.ts
+- Verified test icons already showing on cards (opacity-[0.06] background watermark)
+- Verified history already clickable (onClick handler on MyAttemptsPage cards)
+
+Stage Summary:
+- Submit fix: Atomic state update via `useAppStore.setState()` eliminates race condition
+- Timer fix: Auto-submit moved into timer interval, no more effect-based race conditions
+- Free limit: Already 2
+- Icons: Already implemented
+- History: Already clickable

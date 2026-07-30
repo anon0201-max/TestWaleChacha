@@ -73,7 +73,7 @@ export function AuthModal() {
         setCurrentTest(testData);
         clearAnswers();
         setCurrentQuestionIndex(0);
-        setTimeRemaining(testData.timeLimit);
+        setTimeRemaining(Number(testData.timeLimit) || 600);
         setIsTestActive(true);
         useAppStore.getState().setView('test-taking');
       }

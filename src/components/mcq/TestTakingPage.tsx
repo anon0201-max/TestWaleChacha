@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +61,9 @@ export function TestTakingPage() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Ref to prevent double-submit and track submit state across async boundaries
+  const submittingRef = useRef(false);
+
   const questions = currentTest?.questions || [];
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
@@ -110,19 +113,29 @@ export function TestTakingPage() {
     }
   }
 
-  const handleSubmitTest = useCallback(async () => {
-    if (!currentTest || submitting) return;
+  // Submit handler — uses refs and getState() to avoid stale closures
+  async function handleSubmitTest() {
+    // Guard against double-submit using ref (not state, which may be stale)
+    if (submittingRef.current) return;
+
+    const state = useAppStore.getState();
+    const test = state.currentTest;
+    if (!test) return;
+
+    submittingRef.current = true;
     setSubmitting(true);
-    setIsTestActive(false);
-    const timeTaken = Number(currentTest.timeLimit || 0) - Number(timeRemaining || 0);
+
+    const timeTaken = Number(test.timeLimit || 0) - Number(state.timeRemaining || 0);
+
     try {
       const body: Record<string, unknown> = {
-        testId: currentTest.id,
-        answers,
+        testId: test.id,
+        answers: state.answers,
         timeTaken,
       };
-      if (studentId) body.studentId = studentId;
-      else if (deviceId) body.deviceId = deviceId;
+      const sid = state.user?.id;
+      if (sid) body.studentId = sid;
+      else if (state.deviceId) body.deviceId = state.deviceId;
 
       const res = await fetch('/api/attempts', {
         method: 'POST',
@@ -131,10 +144,10 @@ export function TestTakingPage() {
       });
       const data = await res.json();
 
-      // Handle free limit reached — show subscription modal but don't go home
+      // Handle free limit reached
       if (!res.ok && data.error === 'FREE_LIMIT_REACHED') {
         setShowSubscriptionModal(true);
-        setIsTestActive(true); // re-enable test so user can go back
+        submittingRef.current = false;
         setSubmitting(false);
         return;
       }
@@ -142,58 +155,73 @@ export function TestTakingPage() {
       // Handle test locked
       if (!res.ok && data.error === 'TEST_LOCKED') {
         toast({ title: 'Test Locked', description: data.message || 'Subscribe to unlock this test.', variant: 'destructive' });
-        setIsTestActive(true);
+        submittingRef.current = false;
         setSubmitting(false);
         return;
       }
 
-      // Handle other API errors — show toast instead of silently going home
+      // Handle other API errors
       if (!res.ok) {
         toast({ title: 'Submit Failed', description: data.error || 'Something went wrong. Please try again.', variant: 'destructive' });
-        setIsTestActive(true); // re-enable test so user can retry
+        submittingRef.current = false;
         setSubmitting(false);
         return;
       }
 
-      // API returned 200 — map response to AttemptResult and show results
-      const resultData: Record<string, unknown> = {
+      // API returned 200 — set result and navigate to results
+      const resultData = {
         score: data.score,
         correctAnswers: data.correctAnswers,
         totalQuestions: data.totalQuestions,
         answerDetails: data.answerDetails || [],
         timeTaken: data.timeTaken,
-        // ResultsPage uses currentTest from store, so test field here is just for type safety
-        test: currentTest ? { title: currentTest.title, category: { name: currentTest.category?.name || '' } } : { title: '', category: { name: '' } },
+        test: { title: test.title, category: { name: test.category?.name || '' } },
       };
 
-      // Update student data from response
+      // Update student data
       if (data.updatedStudent) {
         setUser(data.updatedStudent);
       } else {
-        setStudentData({ freeTestsUsed: 0, isSubscribed: useAppStore.getState().isSubscribed });
+        setStudentData({ freeTestsUsed: 0, isSubscribed: state.isSubscribed });
       }
-      setLastResult(resultData as any);
-      setView('results');
+
+      // Set result FIRST, then change view — both in one Zustand batch
+      useAppStore.setState({
+        lastResult: resultData,
+        currentView: 'results',
+        isTestActive: false,
+      });
     } catch (err) {
       console.error('Submit test exception:', err);
       toast({ title: 'Network Error', description: 'Could not submit test. Check your connection and try again.', variant: 'destructive' });
-      setIsTestActive(true); // re-enable test
-    } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [currentTest, studentId, deviceId, answers, timeRemaining, submitting, setLastResult, setIsTestActive, setView, setShowSubscriptionModal, setUser, setStudentData]);
+  }
 
-  // Timer
+  // Timer — only runs when test is active and time > 0
   useEffect(() => {
     if (!isTestActive || timeRemaining <= 0) return;
-    const timer = setInterval(() => { setTimeRemaining(prev => Math.max(0, prev - 1)); }, 1000);
+    const timer = setInterval(() => {
+      setTimeRemaining((prev: number) => {
+        const next = prev - 1;
+        if (next <= 0) {
+          // Auto-submit when timer reaches 0
+          setTimeout(() => {
+            if (useAppStore.getState().isTestActive) {
+              handleSubmitTest();
+            }
+          }, 100);
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
     return () => clearInterval(timer);
-  }, [isTestActive, setTimeRemaining]);
+  }, [isTestActive, timeRemaining, setTimeRemaining]);
 
-  // Auto-submit
-  useEffect(() => {
-    if (timeRemaining <= 0 && isTestActive) handleSubmitTest();
-  }, [timeRemaining, isTestActive, handleSubmitTest]);
+  // DON'T auto-submit from an effect — it causes infinite loops.
+  // Auto-submit is handled inside the timer interval above when time reaches 0.
 
   if (!currentTest) return null;
 

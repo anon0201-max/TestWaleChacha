@@ -4,7 +4,6 @@ import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import {
@@ -39,17 +38,14 @@ export function ResultsPage() {
     return () => { cancelled = true; };
   }, [lastResult, currentTest]);
 
-  // Redirect to home if no result/test data (useEffect-based to avoid setState during render)
-  useEffect(() => {
-    if (!lastResult || !currentTest) {
-      setView('home');
-    }
-  }, [lastResult, currentTest, setView]);
-
+  // If no result data, show a "no results" message instead of silently redirecting to home
   if (!lastResult || !currentTest) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <p className="text-muted-foreground">No test result to display.</p>
+        <Button variant="outline" onClick={() => setView('tests')}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> Browse Tests
+        </Button>
       </div>
     );
   }
