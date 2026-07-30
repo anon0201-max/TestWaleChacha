@@ -167,7 +167,7 @@ function AppContent() {
         ) : (
           <>
             {currentView === 'home' && <HomePage />}
-            <div className="max-w-6xl mx-auto px-4 py-6">
+            <div className="max-w-[1400px] mx-auto px-4 py-6">
               {currentView === 'tests' && <TestListPage />}
               {currentView === 'results' && <Suspense fallback={<RouteFallback />}><ResultsPage /></Suspense>}
               {currentView === 'my-attempts' && <Suspense fallback={<RouteFallback />}><MyAttemptsPage /></Suspense>}

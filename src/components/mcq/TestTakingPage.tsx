@@ -151,9 +151,9 @@ export function TestTakingPage() {
   // Timer
   useEffect(() => {
     if (!isTestActive || timeRemaining <= 0) return;
-    const timer = setInterval(() => { setTimeRemaining(timeRemaining - 1); }, 1000);
+    const timer = setInterval(() => { setTimeRemaining(prev => Math.max(0, prev - 1)); }, 1000);
     return () => clearInterval(timer);
-  }, [isTestActive, timeRemaining, setTimeRemaining]);
+  }, [isTestActive, setTimeRemaining]);
 
   // Auto-submit
   useEffect(() => {
@@ -163,7 +163,7 @@ export function TestTakingPage() {
   if (!currentTest) return null;
 
   // Handle blank/empty test (no questions)
-  if (currentTest.questions.length === 0) {
+  if ((currentTest.questions?.length ?? 0) === 0) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md w-full">
@@ -276,7 +276,7 @@ export function TestTakingPage() {
             <X className="w-4 h-4" />
           </Button>
           <div className="min-w-0 hidden sm:block">
-            <p className="text-xs text-blue-300 truncate">{currentTest.examName} — {currentTest.category.name}</p>
+            <p className="text-xs text-blue-300 truncate">{currentTest.examName} — {currentTest.category?.name || 'General'}</p>
             <p className="text-sm font-medium truncate">{currentTest.title}</p>
           </div>
           <div className="min-w-0 sm:hidden">
@@ -480,7 +480,7 @@ export function TestTakingPage() {
                   })}
                 </div>
                 <div className="flex flex-wrap gap-3 text-[10px]">
-                  {(['not-visited', 'not-answered', 'answered', 'marked'] as QuestionStatus[]).map((s) => (
+                  {(['not-visited', 'not-answered', 'answered', 'marked', 'marked-answered'] as QuestionStatus[]).map((s) => (
                     <div key={s} className="flex items-center gap-1">
                       <div className={`w-3 h-3 rounded ${paletteColors[s]}`} />
                       <span>{paletteLabels[s]}</span>

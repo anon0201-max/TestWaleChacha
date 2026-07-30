@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, Clock, BookOpen, ArrowLeft, Play, Filter, X, Lock, Zap, RotateCcw, Crown, Target, Users, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function TestListPage() {
   const {
@@ -53,16 +54,24 @@ export function TestListPage() {
     if (isSubscribed) return false;
     // Admin has explicitly locked this test → locked for non-subscribed
     if (test.isLocked) return true;
-    // Default: unlocked (free users can take it)
+    // Not logged in or no free tests remaining
+    if (!isLoggedIn || freeTestsRemaining <= 0) return true;
     return false;
   }
 
   async function handleStartTest(test: (typeof tests)[0]) {
     try {
       const res = await fetch(`/api/tests/${test.id}?testId=${test.id}`);
-      if (res.ok) setCurrentTest(await res.json());
-      else setCurrentTest(test);
-    } catch { setCurrentTest(test); }
+      if (res.ok) {
+        setCurrentTest(await res.json());
+      } else {
+        toast.error('Failed to load test. Please try again.');
+        return;
+      }
+    } catch {
+      toast.error('Network error. Please check your connection and try again.');
+      return;
+    }
     clearAnswers();
     setCurrentQuestionIndex(0);
     setTimeRemaining(test.timeLimit);

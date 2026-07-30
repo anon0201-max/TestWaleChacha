@@ -39,9 +39,19 @@ export function ResultsPage() {
     return () => { cancelled = true; };
   }, [lastResult, currentTest]);
 
+  // Redirect to home if no result/test data (useEffect-based to avoid setState during render)
+  useEffect(() => {
+    if (!lastResult || !currentTest) {
+      setView('home');
+    }
+  }, [lastResult, currentTest, setView]);
+
   if (!lastResult || !currentTest) {
-    setView('home');
-    return null;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   const { score, correctAnswers, totalQuestions, answerDetails, timeTaken } = lastResult;
@@ -63,13 +73,15 @@ export function ResultsPage() {
     setReattemptLoading(true);
     try {
       const res = await fetch(`/api/tests/${currentTest.id}?testId=${currentTest.id}`);
+      let timeLimit = currentTest.timeLimit;
       if (res.ok) {
         const testData = await res.json();
         setCurrentTest(testData);
+        timeLimit = testData.timeLimit;
       }
       clearAnswers();
       setCurrentQuestionIndex(0);
-      setTimeRemaining(currentTest.timeLimit);
+      setTimeRemaining(timeLimit);
       setIsTestActive(true);
       useAppStore.getState().setView('test-taking');
     } catch {

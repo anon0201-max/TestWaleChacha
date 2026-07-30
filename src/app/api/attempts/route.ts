@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       const userAnswer = answersParsed[q.id] || null;
       const isCorrect = userAnswer === q.correctOption;
       if (isCorrect) correctCount++;
-      else if (userAnswer) totalNegative += q.negativeMark;
+      else if (userAnswer) totalNegative += (q.negativeMark || 0);
       return {
         questionId: q.id,
         userAnswer,

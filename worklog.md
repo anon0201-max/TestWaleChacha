@@ -1064,3 +1064,24 @@ Stage Summary:
 - All cards have 3D hover effects (lift, scale, deeper shadow)
 - Entire page is animated - sections animate on scroll, items stagger in, buttons scale on click
 ---
+---
+Task ID: 9
+Agent: Bug Fix Agent
+Task: Fix bugs 3-10 in TestWaleChacha project
+
+Work Log:
+- Bug #3: TestTakingPage line 166 - changed `currentTest.questions.length` to `(currentTest.questions?.length ?? 0)` to prevent crash when questions is undefined
+- Bug #3: TestListPage handleStartTest - added `import { toast } from 'sonner'` and changed error handling to show toast error and return early instead of navigating with stale data
+- Bug #4: TestTakingPage line 279 - changed `currentTest.category.name` to `currentTest.category?.name || 'General'` to prevent null crash
+- Bug #5: ResultsPage lines 42-45 - replaced direct `setView('home')` during render with a useEffect-based redirect + loading spinner
+- Bug #6: attempts/route.ts line 71 - changed `totalNegative += q.negativeMark` to `totalNegative += (q.negativeMark || 0)` to prevent NaN
+- Bug #8: TestTakingPage timer useEffect - changed to functional updater `setTimeRemaining(prev => Math.max(0, prev - 1))` and removed `timeRemaining` from deps, keeping only `[isTestActive, setTimeRemaining]`
+- Bug #9: TestTakingPage mobile palette legend line 483 - added `'marked-answered'` to the legend array
+- Bug #10: ResultsPage handleReAttempt - introduced local `timeLimit` variable that uses `testData.timeLimit` from fresh fetch instead of stale `currentTest.timeLimit` closure
+- Bug #7: page.tsx line 170 - changed `max-w-6xl` to `max-w-[1400px]`
+- Bug #7: AppFooter.tsx lines 18 and 53 - changed both `max-w-6xl` to `max-w-[1400px]`
+
+Stage Summary:
+- Fixed 8 bugs across 5 files: TestTakingPage.tsx, TestListPage.tsx, ResultsPage.tsx, attempts/route.ts, page.tsx, AppFooter.tsx
+- No crashes from undefined questions, null category, setState during render, NaN negative marks, timer interval churn, missing mobile legend, stale timeLimit closure, or width inconsistency
+---
