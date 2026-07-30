@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { AdBanner } from '@/components/AdSense';
+import { getCategoryIcon } from './icons';
 import {
   Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle,
   Play, Shield, TrendingUp, Target, MessageCircle, GraduationCap, Flame, Sparkles,
@@ -235,8 +236,8 @@ export function HomePage() {
                 <Card3D className="h-full overflow-hidden" bgTo="to-indigo-50/40">
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-start gap-2.5 sm:gap-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: cat.color || '#1C1C84' }}>
-                        {cat.icon || cat.name?.charAt(0) || '?'}
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-white shrink-0 shadow-sm group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: cat.color || '#1C1C84' }}>
+                        {(() => { const CatIcon = getCategoryIcon(cat.name || ''); return <CatIcon className="w-4 h-4 sm:w-5 sm:h-5" />; })()}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold text-xs sm:text-sm leading-tight group-hover:text-blue-600 transition-colors truncate">{cat.name || 'Unknown'}</h3>
@@ -270,7 +271,9 @@ export function HomePage() {
             {popularTests.map((test, idx) => (
               <motion.div key={test.id || test._id} custom={idx} variants={fadeUp} className="shrink-0 w-[260px] sm:w-[280px]">
                 <Card3D className="h-full overflow-hidden relative" bgTo="to-teal-50/40" onClick={() => { setSelectedCategory(test.categoryId); setView('tests'); }}>
-                  {test.icon && <div className="absolute -right-1 -bottom-1 text-6xl opacity-[0.07] pointer-events-none select-none leading-none">{test.icon}</div>}
+                  <div className="absolute -right-1 -bottom-1 text-6xl opacity-[0.07] pointer-events-none select-none leading-none text-gray-800">
+                    {(() => { const TIcon = getCategoryIcon(test.category?.name || ''); return <TIcon />; })()}
+                  </div>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="secondary" className="text-[10px]">{test.category?.name || 'General'}</Badge>
