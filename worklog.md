@@ -1136,3 +1136,19 @@ Stage Summary:
 - Root cause: `createdTestId` was `undefined` because the API response structure didn't match what the client expected
 - Fixed by making API return `id` at top level and adding robust error handling throughout
 - Delete question bug also fixed (query params mismatch)
+
+---
+Task ID: fix-image-extract-my-tests
+Agent: Main Agent
+Task: Fix image question extraction + My Tests history not showing
+
+Work Log:
+- Fixed image extract: Changed AdminPanel.tsx from `/extract?XTransformPort=3030` (mini-service, only works locally) to `/api/admin/extract-question` (API route, works on Vercel too)
+- Rewrote MyAttemptsPage.tsx: added error state display, refresh button, deviceId fallback, console logging for debugging, better null handling for test data
+- Added console.log debugging in TestTakingPage submit handler (logs request params, response status, response data)
+- Added console.log debugging in /api/attempts POST (logs incoming data, saved attempt) and GET (logs query params, found count)
+
+Stage Summary:
+- Image extract now uses /api/admin/extract-question API route (Vercel compatible)
+- MyAttemptsPage shows errors instead of silently failing, has refresh button
+- Submit and fetch logging will help debug if attempts still not showing on Vercel

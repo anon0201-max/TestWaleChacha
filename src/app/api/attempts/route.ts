@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
     await dbConnect();
     const body = await request.json();
     const { studentId, deviceId, testId, answers, timeTaken } = body;
+    console.log('[POST /api/attempts] testId:', testId, 'studentId:', studentId, 'deviceId:', deviceId, 'timeTaken:', timeTaken, 'answers count:', answers ? Object.keys(answers).length : 0);
 
     if (!testId || !answers || timeTaken === undefined || timeTaken === null) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
       answers: typeof answers === 'string' ? answers : JSON.stringify(answerDetails),
       completed: true,
     });
+    console.log('[POST /api/attempts] Saved attempt id:', attempt.id, 'score:', score, 'studentId:', student.id);
 
     // Increment freeTestsUsed (only for non-subscribed students)
     let updatedStudent = student;
@@ -136,6 +138,7 @@ export async function GET(request: NextRequest) {
     const studentId = searchParams.get('studentId');
     const testId = searchParams.get('testId');
     const rankings = searchParams.get('rankings');
+    console.log('[GET /api/attempts] studentId:', studentId, 'deviceId:', deviceId, 'testId:', testId, 'rankings:', rankings);
 
     // Rankings endpoint: /api/attempts?rankings=true&testId=xxx
     if (rankings === 'true' && testId) {
@@ -211,8 +214,10 @@ export async function GET(request: NextRequest) {
       .lean();
 
     if (attempts.length === 0) {
+      console.log('[GET /api/attempts] No attempts found for studentId:', student.id);
       return NextResponse.json(stripMongoFields([]), { headers: CACHE_HEADERS });
     }
+    console.log('[GET /api/attempts] Found', attempts.length, 'attempts for studentId:', student.id);
 
     // Fetch tests and categories in parallel
     const testIds = [...new Set(attempts.map(a => a.testId))];

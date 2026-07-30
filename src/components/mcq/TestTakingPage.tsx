@@ -139,12 +139,15 @@ export function TestTakingPage() {
       if (sid) body.studentId = sid;
       else if (state.deviceId) body.deviceId = state.deviceId;
 
+      console.log('[SubmitTest] Sending:', JSON.stringify({ testId: body.testId, studentId: body.studentId, deviceId: body.deviceId, answerCount: Object.keys(body.answers as Record<string, string>).length, timeTaken: body.timeTaken }));
       const res = await fetch('/api/attempts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      console.log('[SubmitTest] Response status:', res.status);
       const data = await res.json();
+      console.log('[SubmitTest] Response data:', JSON.stringify(data).substring(0, 300));
 
       // Handle free limit reached
       if (!res.ok && data.error === 'FREE_LIMIT_REACHED') {

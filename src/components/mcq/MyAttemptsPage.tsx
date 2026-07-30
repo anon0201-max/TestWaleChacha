@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import {
   Trophy, Clock, Target, History, BookOpen, ChevronRight, ArrowLeft,
-  TrendingUp, BarChart3, Star, Zap, Crown, Medal, Award,
+  TrendingUp, BarChart3, Star, Zap, Crown, Medal, Award, RefreshCw, AlertCircle,
 } from 'lucide-react';
 
 function formatTime(seconds: number): string {
@@ -23,11 +23,11 @@ function formatDate(dateStr: string): string {
 }
 
 export function MyAttemptsPage() {
-  const { user, isLoggedIn, setView, setShowAuthModal, setLastResult, setCurrentTest, setCurrentQuestionIndex, setTimeRemaining, setIsTestActive, clearAnswers } = useAppStore();
+  const { user, isLoggedIn, deviceId, setView, setShowAuthModal, setLastResult, setCurrentTest, setCurrentQuestionIndex, setTimeRemaining, setIsTestActive, clearAnswers } = useAppStore();
   const [attempts, setAttempts] = useState<Array<{
     id: string;
     testId: string;
-    test: { id: string; title: string; category: { name: string; color: string } };
+    test: { id: string; title: string; category: { name: string; color: string } } | null;
     score: number;
     correctAnswers: number;
     totalQuestions: number;
@@ -36,13 +36,52 @@ export function MyAttemptsPage() {
     completed: boolean;
   }>>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewingAttempt, setViewingAttempt] = useState<string | null>(null);
 
+  const fetchAttempts = useCallback(async () => {
+    const sid = user?.id;
+    const did = deviceId;
+    if (!sid && !did) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      // Try with studentId first, fallback to deviceId
+      const url = sid ? `/api/attempts?studentId=${sid}` : `/api/attempts?deviceId=${did}`;
+      console.log('[MyAttempts] Fetching:', url);
+      const res = await fetch(url);
+      console.log('[MyAttempts] Status:', res.status);
+      if (res.ok) {
+        const data = await res.json();
+        console.log('[MyAttempts] Got', Array.isArray(data) ? data.length : 0, 'attempts');
+        setAttempts(Array.isArray(data) ? data : []);
+      } else {
+        const errText = await res.text().catch(() => 'Unknown');
+        console.error('[MyAttempts] Error:', res.status, errText);
+        setError(`Server error (${res.status})`);
+        setAttempts([]);
+      }
+    } catch (err: any) {
+      console.error('[MyAttempts] Fetch failed:', err);
+      setError('Network error - check connection');
+      setAttempts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id, deviceId]);
+
+  // Fetch on mount and when user changes
+  useEffect(() => {
+    fetchAttempts();
+  }, [fetchAttempts]);
+
   async function handleViewAttempt(attempt: typeof attempts[0]) {
-    if (viewingAttempt) return;
+    if (viewingAttempt || !attempt.testId) return;
     setViewingAttempt(attempt.id);
     try {
-      // Fetch test with questions so results page can show answer review
       const testRes = await fetch(`/api/tests/${attempt.testId}?testId=${attempt.testId}`);
       if (testRes.ok) {
         const testData = await testRes.json();
@@ -51,12 +90,10 @@ export function MyAttemptsPage() {
         setCurrentQuestionIndex(0);
         setTimeRemaining(Number(testData.timeLimit) || 600);
         setIsTestActive(false);
-
-        // Build result data from history attempt
         setLastResult({
           score: attempt.score,
           correctAnswers: attempt.correctAnswers,
-          totalQuestions: attempt.totalQuestions,
+          totalAnswers: attempt.totalQuestions,
           answerDetails: [],
           timeTaken: attempt.timeTaken,
           test: { title: attempt.test?.title || '', category: { name: attempt.test?.category?.name || '' } },
@@ -70,17 +107,6 @@ export function MyAttemptsPage() {
     }
     setViewingAttempt(null);
   }
-
-  useEffect(() => {
-    if (!user?.id) { return; }
-    let cancelled = false;
-    fetch(`/api/attempts?studentId=${user.id}`)
-      .then(r => r.ok ? r.json() : [])
-      .then(data => { if (!cancelled) setAttempts(data); })
-      .catch(() => { if (!cancelled) setAttempts([]); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [user?.id]);
 
   if (!isLoggedIn) {
     return (
@@ -104,13 +130,28 @@ export function MyAttemptsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => setView('home')}><ArrowLeft className="w-5 h-5" /></Button>
-        <div>
-          <h1 className="text-xl font-bold">My Test History</h1>
-          <p className="text-xs text-muted-foreground">{user.name} — All your past attempts</p>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button variant="ghost" size="icon" onClick={() => setView('home')}><ArrowLeft className="w-5 h-5" /></Button>
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold">My Test History</h1>
+            <p className="text-xs text-muted-foreground">{user.name} — All your past attempts</p>
+          </div>
         </div>
+        <Button variant="outline" size="sm" onClick={fetchAttempts} disabled={loading} className="gap-1.5 shrink-0">
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Refresh</span>
+        </Button>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+          <p className="text-sm text-red-700 flex-1">{error}</p>
+          <Button variant="outline" size="sm" onClick={fetchAttempts} className="shrink-0">Retry</Button>
+        </div>
+      )}
 
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
