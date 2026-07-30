@@ -19,7 +19,7 @@ import {
   RotateCcw,
   Languages,
 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 function formatTime(seconds: number): string {
   if (!seconds || !isFinite(seconds) || seconds < 0) return '0:00';
@@ -156,7 +156,7 @@ export function TestTakingPage() {
 
       // Handle test locked
       if (!res.ok && data.error === 'TEST_LOCKED') {
-        toast({ title: 'Test Locked', description: data.message || 'Subscribe to unlock this test.', variant: 'destructive' });
+        toast.error(data.message || 'Subscribe to unlock this test.');
         submittingRef.current = false;
         setSubmitting(false);
         return;
@@ -164,7 +164,7 @@ export function TestTakingPage() {
 
       // Handle other API errors
       if (!res.ok) {
-        toast({ title: 'Submit Failed', description: data.error || 'Something went wrong. Please try again.', variant: 'destructive' });
+        toast.error(data.error || data.message || 'Submit failed. Try again.');
         submittingRef.current = false;
         setSubmitting(false);
         return;
@@ -195,7 +195,7 @@ export function TestTakingPage() {
       });
     } catch (err) {
       console.error('Submit test exception:', err);
-      toast({ title: 'Network Error', description: 'Could not submit test. Check your connection and try again.', variant: 'destructive' });
+      try { toast.error('Network error. Check connection and try again.'); } catch {}
       submittingRef.current = false;
       setSubmitting(false);
     }
