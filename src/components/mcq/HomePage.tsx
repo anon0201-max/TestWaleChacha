@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { AdBanner } from '@/components/AdSense';
 import {
   Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle,
   Play, Shield, TrendingUp, Target, MessageCircle, GraduationCap, Flame, Sparkles,
@@ -295,6 +296,11 @@ export function HomePage() {
         </ScrollSection>
       )}
 
+      {/* ===== AD BANNER ===== */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
+        <AdBanner />
+      </div>
+
       {/* ===== FEATURES ===== */}
       <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
         <motion.h2 variants={fadeUp} custom={0} className="text-lg sm:text-xl font-bold mb-1">TestWaleChacha Kyun Choose Karein?</motion.h2>
@@ -359,6 +365,11 @@ export function HomePage() {
           </div>
         </motion.div>
       </ScrollSection>
+
+      {/* ===== AD BANNER ===== */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
+        <AdBanner />
+      </div>
 
       {/* ===== PRICING CTA ===== */}
       {!isSubscribed && (

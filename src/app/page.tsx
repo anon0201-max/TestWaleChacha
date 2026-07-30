@@ -10,6 +10,7 @@ import { AuthModal } from '@/components/mcq/AuthModal';
 import { AppHeader } from '@/components/mcq/AppHeader';
 import { AppFooter } from '@/components/mcq/AppFooter';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
+import { AdBanner } from '@/components/AdSense';
 import { Button } from '@/components/ui/button';
 
 // Lazy load heavy/conditionally-rendered components to reduce initial bundle
@@ -164,6 +165,7 @@ function AppContent() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       <AppHeader />
+      {!isAdminOrTestTaking && <AdBanner />}
       <main className="flex-1">
         {isAdminOrTestTaking ? (
           <>
@@ -181,7 +183,12 @@ function AppContent() {
           </>
         )}
       </main>
-      {!isAdminOrTestTaking && <AppFooter />}
+      {!isAdminOrTestTaking && (
+        <>
+          <AdBanner />
+          <AppFooter />
+        </>
+      )}
       <SubscriptionModal />
       <AuthModal />
       <PwaInstallPrompt />
