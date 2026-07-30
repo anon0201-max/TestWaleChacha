@@ -13,6 +13,8 @@ export interface ITest {
   timeLimit: number;
   totalQuestions: number;
   examName: string;
+  icon: string;
+  isLocked: boolean;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -52,6 +54,14 @@ const TestSchema = new Schema<ITest>(
     examName: {
       type: String,
       default: 'Practice Test',
+    },
+    icon: {
+      type: String,
+      default: '',
+    },
+    isLocked: {
+      type: Boolean,
+      default: false,
     },
     isActive: {
       type: Boolean,

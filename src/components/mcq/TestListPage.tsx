@@ -152,7 +152,11 @@ export function TestListPage() {
       <div className="space-y-3">
         {filteredTests.map((test) => (
           <div key={test.id || test._id || test.title} className="animate-fade-in card-hover-transform">
-            <Card className="hover:shadow-md transition-all border-0 shadow-sm relative">
+            <Card className="hover:shadow-md transition-all border-0 shadow-sm relative overflow-hidden">
+              {/* Icon background */}
+              {test.icon && (
+                <div className="absolute -right-2 -bottom-2 text-6xl sm:text-7xl opacity-[0.06] pointer-events-none select-none leading-none">{test.icon}</div>
+              )}
               {/* Lock overlay for locked tests */}
               {isTestLocked(test) && (
                 <div className="absolute top-3 right-3 z-10">

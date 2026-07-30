@@ -268,7 +268,8 @@ export function HomePage() {
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
             {popularTests.map((test, idx) => (
               <motion.div key={test.id || test._id} custom={idx} variants={fadeUp} className="shrink-0 w-[260px] sm:w-[280px]">
-                <Card3D className="h-full overflow-hidden" bgTo="to-teal-50/40" onClick={() => { setSelectedCategory(test.categoryId); setView('tests'); }}>
+                <Card3D className="h-full overflow-hidden relative" bgTo="to-teal-50/40" onClick={() => { setSelectedCategory(test.categoryId); setView('tests'); }}>
+                  {test.icon && <div className="absolute -right-1 -bottom-1 text-6xl opacity-[0.07] pointer-events-none select-none leading-none">{test.icon}</div>}
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="secondary" className="text-[10px]">{test.category?.name || 'General'}</Badge>
@@ -415,7 +416,7 @@ export function HomePage() {
 
       {/* ===== WHATSAPP ===== */}
       <motion.a
-        href="https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
+        href="https://www.whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
         target="_blank"
         rel="noopener noreferrer"
         initial={{ opacity: 0, scale: 0.8 }}

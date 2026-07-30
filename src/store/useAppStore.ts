@@ -50,6 +50,7 @@ interface TestInfo {
   timeLimit: number;
   totalQuestions: number;
   examName?: string;
+  icon?: string;
   isActive: boolean;
   isLocked: boolean;
   category: { id: string; name: string; slug: string; icon: string; color: string; examType?: string };

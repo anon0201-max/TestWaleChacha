@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   try {
     await dbConnect();
     const body = await request.json();
-    const { title, description, categoryId, difficulty, timeLimit, examName, isActive } = body;
+    const { title, description, categoryId, difficulty, timeLimit, examName, isActive, icon } = body;
 
     if (!title || !categoryId) {
       return NextResponse.json(
@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
       timeLimit: timeLimit || 600,
       totalQuestions: 0,
       examName: examName || 'Practice Test',
+      icon: icon || '',
       isActive: isActive !== undefined ? isActive : true,
     });
 

@@ -138,9 +138,9 @@ export function TestTakingPage() {
         return;
       }
 
-      // Validate response has required result fields
-      if (!data.attempt || !data.answerDetails) {
-        console.error('Invalid submit response:', data);
+      // Validate response has the fields ResultsPage needs
+      if (!data.answerDetails || !Array.isArray(data.answerDetails) || data.answerDetails.length === 0) {
+        console.error('Invalid submit response — missing answerDetails:', data);
         setView('home');
         return;
       }
@@ -149,7 +149,7 @@ export function TestTakingPage() {
       if (data.updatedStudent) {
         setUser(data.updatedStudent);
       } else {
-        setStudentData({ freeTestsUsed: (data.attempt?.student?.freeTestsUsed ?? 0), isSubscribed: useAppStore.getState().isSubscribed });
+        setStudentData({ freeTestsUsed: 0, isSubscribed: useAppStore.getState().isSubscribed });
       }
       setLastResult(data);
       setView('results');

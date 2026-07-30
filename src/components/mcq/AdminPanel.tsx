@@ -396,8 +396,8 @@ function AdminDashboardContent({ onNavigate }: { onNavigate: (tab: string) => vo
               tests.map((test) => (
                 <div key={test.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors gap-2">
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
-                      {test.category?.name?.charAt(0) || '?'}
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm shrink-0">
+                      {test.icon || test.category?.name?.charAt(0) || '?'}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{test.title}</p>
@@ -814,6 +814,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   const [diff, setDiff] = useState('medium');
   const [time, setTime] = useState('600');
   const [examName, setExamName] = useState('');
+  const [testIcon, setTestIcon] = useState('');
 
   // Step 2: Questions
   const [questions, setQuestions] = useState<QuestionForm[]>([emptyQuestion()]);
@@ -871,7 +872,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     const res = await fetch('/api/admin/tests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description: desc, categoryId: catId, difficulty: diff, timeLimit: parseInt(time), examName: examName || 'Practice Test' }),
+      body: JSON.stringify({ title, description: desc, categoryId: catId, difficulty: diff, timeLimit: parseInt(time), examName: examName || 'Practice Test', icon: testIcon }),
     });
     const data = await res.json();
     setCreatedTestId(data.id);
@@ -903,6 +904,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     setDiff('medium');
     setTime('600');
     setExamName('');
+    setTestIcon('');
     setQuestions([emptyQuestion()]);
     setCreatedTestId('');
     setSavedCount(0);
@@ -1118,9 +1120,16 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
                 <p className="text-xs text-muted-foreground">Fill in the basic details for your mock test</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="sm:col-span-2">
+                <div>
                   <Label className="text-xs font-medium">Test Title *</Label>
                   <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., SSC CGL 2024 - General Awareness" className="h-11" />
+                </div>
+                <div>
+                  <Label className="text-xs font-medium">Test Icon (emoji)</Label>
+                  <div className="relative">
+                    <Input value={testIcon} onChange={(e) => setTestIcon(e.target.value)} placeholder="📚 🏛️ 🎯 ⚡ etc." className="h-11 pr-10" maxLength={4} />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-lg pointer-events-none">{testIcon || '📄'}</span>
+                  </div>
                 </div>
                 <div className="sm:col-span-2">
                   <Label className="text-xs font-medium">Description</Label>
