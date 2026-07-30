@@ -413,16 +413,6 @@ export function HomePage() {
         </div>
       </ScrollSection>
 
-      {/* ===== FOOTER LINKS ===== */}
-      <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 text-center text-xs text-muted-foreground space-y-2 mt-6 sm:mt-8">
-        <motion.div variants={fadeUp} custom={0} className="flex flex-wrap justify-center gap-x-4 gap-y-1">
-          {['About Us', 'Contact', 'Privacy Policy', 'Terms'].map((link) => (
-            <span key={link} className="cursor-pointer hover:text-blue-600 transition-colors">{link}</span>
-          ))}
-        </motion.div>
-        <motion.p variants={fadeUp} custom={1}>&copy; {new Date().getFullYear()} TestWaleChacha. All rights reserved.</motion.p>
-      </ScrollSection>
-
       {/* ===== WHATSAPP ===== */}
       <motion.a
         href="https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
