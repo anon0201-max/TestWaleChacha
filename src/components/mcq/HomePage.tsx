@@ -94,7 +94,7 @@ export function HomePage() {
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-3xl" />
         </div>
 
-        <div className="relative z-10 px-4 sm:px-6 lg:px-12 xl:px-16 py-10 sm:py-14 md:py-20 max-w-[1400px] mx-auto">
+        <div className="relative z-10 px-4 sm:px-6 lg:px-12 xl:px-16 py-6 sm:py-14 md:py-20 max-w-[1400px] mx-auto">
           <div className="flex flex-col lg:flex-row lg:items-center lg:gap-12 xl:gap-16">
 
             {/* ── Left ── */}
@@ -105,7 +105,7 @@ export function HomePage() {
               className="flex-1 lg:max-w-2xl"
             >
               {/* Pills */}
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
+              <div className="hidden sm:flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6">
                 {examTabs.map((t, i) => (
                   <motion.span
                     key={t}
@@ -122,7 +122,7 @@ export function HomePage() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.25 }}
-                className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-5xl font-extrabold leading-tight mb-3 sm:mb-4"
+                className="text-xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-5xl font-extrabold leading-tight mb-2 sm:mb-4"
               >
                 Mock Tests Jo Dili Ki{' '}
                 <span className="bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent">Tayyari Karayein</span>
@@ -132,7 +132,7 @@ export function HomePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
-                className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm sm:text-base text-white/60 mb-3 sm:mb-4"
+                className="hidden sm:flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm sm:text-base text-white/60 mb-3 sm:mb-4"
               >
                 <span className="text-cyan-400 font-semibold flex items-center gap-1"><Sparkles className="w-4 h-4" />Pehle Practice</span>
                 <span className="text-white/30">▸</span>
@@ -145,7 +145,7 @@ export function HomePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
-                className="text-sm sm:text-base text-white/50 mb-6 sm:mb-8 max-w-lg"
+                className="text-xs sm:text-base text-white/50 mb-4 sm:mb-8 max-w-lg"
               >
                 Government exams ki taiyaari ab aasan hai! SSC CGL, UPSC, IBPS PO, RRB NTPC aur bahut saare exams ke liye real exam jaisa interface — Question Palette, Timer aur detailed analysis ke saath.
               </motion.p>
@@ -154,9 +154,9 @@ export function HomePage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.4 }}
-                className="flex flex-wrap gap-3"
+                className="flex flex-wrap gap-2 sm:gap-3"
               >
-                <Button size="lg" className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-bold px-6 sm:px-8 h-11 sm:h-12 text-sm sm:text-base rounded-xl shadow-lg shadow-cyan-500/25 transition-all" onClick={() => setView('tests')}>
+                <Button size="lg" className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-bold px-5 sm:px-8 h-10 sm:h-12 text-sm sm:text-base rounded-xl shadow-lg shadow-cyan-500/25 transition-all" onClick={() => setView('tests')}>
                   Free Test Shuru Karein <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 {isLoggedIn ? (
@@ -171,12 +171,12 @@ export function HomePage() {
               </motion.div>
             </motion.div>
 
-            {/* ── Right: Stats ── */}
+            {/* ── Right: Stats (desktop only) ── */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="lg:w-80 xl:w-96 mt-10 lg:mt-0 shrink-0"
+              className="hidden lg:block lg:w-80 xl:w-96 shrink-0"
             >
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {[
@@ -390,6 +390,28 @@ export function HomePage() {
           </motion.div>
         </ScrollSection>
       )}
+
+      {/* ===== MOBILE STATS (above footer, mobile/tablet only) ===== */}
+      <ScrollSection className="lg:hidden max-w-[1400px] mx-auto px-4 sm:px-6 mt-6 sm:mt-8">
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { icon: Users, value: '100', label: 'Students Registered', bg: 'bg-blue-50', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+            { icon: Flame, value: '50+', label: 'Tests Delivered', bg: 'bg-orange-50', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+            { icon: GraduationCap, value: '50+', label: 'Questions Bank', bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
+            { icon: Star, value: '4.8★', label: 'Average Rating', bg: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
+          ].map((stat, i) => (
+            <motion.div key={stat.label} custom={i} variants={fadeUp}>
+              <div className={`${stat.bg} rounded-xl p-3.5 border border-gray-100/80 shadow-sm`}>
+                <div className={`w-8 h-8 ${stat.iconBg} rounded-lg flex items-center justify-center mb-2`}>
+                  <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
+                </div>
+                <p className="text-lg sm:text-xl font-extrabold text-gray-900">{stat.value}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </ScrollSection>
 
       {/* ===== FOOTER LINKS ===== */}
       <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 text-center text-xs text-muted-foreground space-y-2 mt-6 sm:mt-8">
