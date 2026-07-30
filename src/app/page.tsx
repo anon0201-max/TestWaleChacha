@@ -104,10 +104,15 @@ function AppContent() {
   const searchParams = useSearchParams();
   const isAdminParam = searchParams.get('admin') === 'true';
 
-  const {
-    currentView, deviceId, user, isLoggedIn,
-    setCategories, setTests, setStudentData, setUser,
-  } = useAppStore();
+  const currentView = useAppStore((s) => s.currentView);
+  const deviceId = useAppStore((s) => s.deviceId);
+  const user = useAppStore((s) => s.user);
+  const isLoggedIn = useAppStore((s) => s.isLoggedIn);
+  const lastResult = useAppStore((s) => s.lastResult);
+  const setCategories = useAppStore((s) => s.setCategories);
+  const setTests = useAppStore((s) => s.setTests);
+  const setStudentData = useAppStore((s) => s.setStudentData);
+  const setUser = useAppStore((s) => s.setUser);
 
   // Handle admin route via query param
   useEffect(() => {
@@ -177,7 +182,7 @@ function AppContent() {
             {currentView === 'home' && <HomePage />}
             <div className="max-w-[1400px] mx-auto px-4 py-6">
               {currentView === 'tests' && <TestListPage />}
-              {currentView === 'results' && <Suspense fallback={<RouteFallback />}><ResultsPage /></Suspense>}
+              {currentView === 'results' && <Suspense fallback={<RouteFallback />}><ResultsPage key={lastResult ? `r-${lastResult.score}-${lastResult.totalQuestions}` : 'no-result'} /></Suspense>}
               {currentView === 'my-attempts' && <Suspense fallback={<RouteFallback />}><MyAttemptsPage /></Suspense>}
             </div>
           </>

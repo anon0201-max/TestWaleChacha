@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,25 +33,15 @@ function formatTime(seconds: number): string {
 type QuestionStatus = 'not-visited' | 'not-answered' | 'answered' | 'marked' | 'marked-answered';
 
 export function TestTakingPage() {
-  const {
-    currentTest,
-    answers,
-    setAnswer,
-    timeRemaining,
-    setTimeRemaining,
-    isTestActive,
-    setIsTestActive,
-    currentQuestionIndex,
-    setCurrentQuestionIndex,
-    deviceId,
-    user,
-    setView,
-    setLastResult,
-    clearAnswers,
-    setShowSubscriptionModal,
-    setUser,
-    setStudentData,
-  } = useAppStore();
+  // Use selective selectors to reduce re-renders
+  const currentTest = useAppStore((s) => s.currentTest);
+  const answers = useAppStore((s) => s.answers);
+  const setAnswer = useAppStore((s) => s.setAnswer);
+  const currentQuestionIndex = useAppStore((s) => s.currentQuestionIndex);
+  const setCurrentQuestionIndex = useAppStore((s) => s.setCurrentQuestionIndex);
+  const deviceId = useAppStore((s) => s.deviceId);
+  const user = useAppStore((s) => s.user);
+  const isSubscribed = useAppStore((s) => s.isSubscribed);
 
   const [markedForReview, setMarkedForReview] = useState<Set<string>>(new Set());
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
@@ -61,18 +51,77 @@ export function TestTakingPage() {
   const [showInstructions, setShowInstructions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Ref to prevent double-submit and track submit state across async boundaries
-  const submittingRef = useRef(false);
-  // Ref for timer interval so it persists across re-renders without needing timeRemaining in deps
+  // Local timer state — more reliable than store-based timer
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Ref to prevent double-submit
+  const submittingRef = useRef(false);
+  // Ref for auto-submit callback (avoids before-declaration lint error)
+  const submitFnRef = useRef<() => void>(() => {});
+  // Track previous test to reset timer on new test
+  const prevTestIdRef = useRef<string | null>(null);
 
   const questions = currentTest?.questions || [];
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
-  const studentId = user?.id || null;
+
+  // Reset timer when a new test is loaded (during render, not in effect)
+  if (currentTest && currentTest.id !== prevTestIdRef.current) {
+    prevTestIdRef.current = currentTest.id;
+    const limit = Number(currentTest.timeLimit);
+    const safeTime = (limit > 0 ? limit : 600);
+    setTimerSeconds(safeTime);
+    useAppStore.setState({ timeRemaining: safeTime });
+  }
+
+  // Start timer ONLY when instructions are dismissed
+  const startTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    setTimerRunning(true);
+    timerRef.current = setInterval(() => {
+      setTimerSeconds((prev) => {
+        if (prev <= 1) {
+          // Time's up — stop timer
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          setTimerRunning(false);
+          // Auto-submit after a brief delay
+          setTimeout(() => {
+            const state = useAppStore.getState();
+            if (state.isTestActive) {
+              submitFnRef.current();
+            }
+          }, 300);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  // Stop timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Also keep store timeRemaining in sync for submit calculation
+  useEffect(() => {
+    useAppStore.setState({ timeRemaining: timerSeconds });
+  }, [timerSeconds]);
 
   // Visit current question when navigating
-  if (currentQuestion && isTestActive && !visited.has(currentQuestion.id)) {
+  if (currentQuestion && !visited.has(currentQuestion.id)) {
     setVisited((prev) => new Set(prev).add(currentQuestion.id));
   }
 
@@ -115,9 +164,18 @@ export function TestTakingPage() {
     }
   }
 
+  // Handle dismiss instructions — start the timer
+  function handleDismissInstructions() {
+    setShowInstructions(false);
+    // Start the timer when user begins the test
+    startTimer();
+  }
+
   // Submit handler — uses refs and getState() to avoid stale closures
   async function handleSubmitTest() {
-    // Guard against double-submit using ref (not state, which may be stale)
+    // Update the ref so auto-submit can call this
+    submitFnRef.current = handleSubmitTest;
+    // Guard against double-submit
     if (submittingRef.current) return;
 
     const state = useAppStore.getState();
@@ -127,13 +185,21 @@ export function TestTakingPage() {
     submittingRef.current = true;
     setSubmitting(true);
 
-    const timeTaken = Number(test.timeLimit || 0) - Number(state.timeRemaining || 0);
+    // Stop timer immediately
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setTimerRunning(false);
+
+    const testLimit = Number(test.timeLimit) || 600;
+    const timeTaken = testLimit - timerSeconds;
 
     try {
       const body: Record<string, unknown> = {
         testId: test.id,
         answers: state.answers,
-        timeTaken,
+        timeTaken: Math.max(0, timeTaken),
       };
       const sid = state.user?.id;
       if (sid) body.studentId = sid;
@@ -147,11 +213,11 @@ export function TestTakingPage() {
       });
       console.log('[SubmitTest] Response status:', res.status);
       const data = await res.json();
-      console.log('[SubmitTest] Response data:', JSON.stringify(data).substring(0, 300));
+      console.log('[SubmitTest] Response data:', JSON.stringify(data).substring(0, 500));
 
       // Handle free limit reached
       if (!res.ok && data.error === 'FREE_LIMIT_REACHED') {
-        setShowSubscriptionModal(true);
+        useAppStore.getState().setShowSubscriptionModal(true);
         submittingRef.current = false;
         setSubmitting(false);
         return;
@@ -185,17 +251,23 @@ export function TestTakingPage() {
 
       // Update student data
       if (data.updatedStudent) {
-        setUser(data.updatedStudent);
+        useAppStore.getState().setUser(data.updatedStudent);
       } else {
-        setStudentData({ freeTestsUsed: 0, isSubscribed: state.isSubscribed });
+        useAppStore.getState().setStudentData({ freeTestsUsed: 0, isSubscribed: state.isSubscribed });
       }
 
-      // Set result FIRST, then change view — both in one Zustand batch
+      // CRITICAL: Set result FIRST, then change view
+      // Use setTimeout to ensure state is committed before view switch
       useAppStore.setState({
         lastResult: resultData,
-        currentView: 'results',
         isTestActive: false,
       });
+
+      // Small delay to ensure lastResult is committed to store
+      // before the view switch unmounts this component
+      setTimeout(() => {
+        useAppStore.setState({ currentView: 'results' });
+      }, 50);
     } catch (err) {
       console.error('Submit test exception:', err);
       try { toast.error('Network error. Check connection and try again.'); } catch {}
@@ -204,51 +276,21 @@ export function TestTakingPage() {
     }
   }
 
-  // Timer — starts when isTestActive, includes built-in guard for timeRemaining=0
-  useEffect(() => {
-    // Clear any existing timer
+  // Quit test
+  function handleQuitTest() {
+    if (!confirm('Quit test? Your progress will be lost.')) return;
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (!isTestActive) return;
-
-    // GUARD: If timeRemaining is 0 or invalid, fix it from currentTest
-    let startTime = useAppStore.getState().timeRemaining;
-    if (!startTime || startTime <= 0 || !isFinite(startTime)) {
-      const testLimit = Number(currentTest?.timeLimit);
-      startTime = (testLimit > 0 ? testLimit : 600);
-      console.log('[Timer] Fixed timeRemaining from', useAppStore.getState().timeRemaining, 'to', startTime, '(test.timeLimit:', currentTest?.timeLimit, ')');
-      useAppStore.setState({ timeRemaining: startTime });
-    }
-
-    const capturedStart = startTime; // capture for closure safety
-    timerRef.current = setInterval(() => {
-      const remaining = useAppStore.getState().timeRemaining;
-      if (remaining <= 1) {
-        // Time's up — stop timer and auto-submit
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
-        useAppStore.setState({ timeRemaining: 0 });
-        setTimeout(() => {
-          if (useAppStore.getState().isTestActive) {
-            handleSubmitTest();
-          }
-        }, 200);
-        return;
-      }
-      useAppStore.setState({ timeRemaining: remaining - 1 });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [isTestActive]);
+    useAppStore.setState({
+      isTestActive: false,
+      currentView: 'tests',
+      currentTest: null,
+      lastResult: null,
+    });
+    useAppStore.getState().clearAnswers();
+  }
 
   if (!currentTest) return null;
 
@@ -268,7 +310,7 @@ export function TestTakingPage() {
               </p>
               <Button
                 className="bg-blue-600 hover:bg-blue-700 font-semibold"
-                onClick={() => { setIsTestActive(false); clearAnswers(); setView('tests'); }}
+                onClick={() => { useAppStore.setState({ isTestActive: false }); useAppStore.getState().clearAnswers(); useAppStore.getState().setView('tests'); }}
               >
                 <ChevronLeft className="w-4 h-4 mr-2" /> Go Back to Tests
               </Button>
@@ -286,7 +328,7 @@ export function TestTakingPage() {
     { key: 'D', value: currentQuestion.optionD },
   ];
 
-  const isTimeLow = timeRemaining <= 60;
+  const isTimeLow = timerSeconds <= 60;
   const answeredCount = Object.keys(answers).length;
   const markedCount = markedForReview.size;
   const notVisitedCount = questions.filter(q => !visited.has(q.id)).length;
@@ -320,7 +362,7 @@ export function TestTakingPage() {
             </div>
             <div className="bg-blue-50 rounded-xl p-3 sm:p-4 mb-5 space-y-2.5 text-sm">
               <div className="flex justify-between"><span>Total Questions:</span><span className="font-semibold">{totalQuestions}</span></div>
-              <div className="flex justify-between"><span>Time Duration:</span><span className="font-semibold">{formatTime(currentTest.timeLimit)}</span></div>
+              <div className="flex justify-between"><span>Time Duration:</span><span className="font-semibold">{formatTime(timerSeconds)}</span></div>
               <div className="flex justify-between"><span>Difficulty:</span><Badge variant="secondary">{currentTest.difficulty}</Badge></div>
               {user && <div className="flex justify-between"><span>Candidate:</span><span className="font-semibold">{user.name}</span></div>}
             </div>
@@ -333,7 +375,7 @@ export function TestTakingPage() {
               <li>Use <strong>Clear Response</strong> to remove your selected answer.</li>
               <li>Test will auto-submit when the timer reaches zero.</li>
             </ul>
-            {/* Legend - responsive grid for mobile */}
+            {/* Legend */}
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center gap-2 sm:gap-3 text-xs mb-5">
               {(['not-visited', 'not-answered', 'answered', 'marked', 'marked-answered'] as QuestionStatus[]).map((status) => (
                 <div key={status} className="flex items-center gap-1.5">
@@ -342,12 +384,12 @@ export function TestTakingPage() {
                 </div>
               ))}
             </div>
-            {/* Buttons - stack on very small screens */}
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
-              <Button variant="outline" className="h-11 sm:h-12 px-6 w-full sm:w-auto" onClick={() => { setIsTestActive(false); clearAnswers(); setView('tests'); }}>
+              <Button variant="outline" className="h-11 sm:h-12 px-6 w-full sm:w-auto" onClick={handleQuitTest}>
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </Button>
-              <Button className="flex-1 h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base" onClick={() => setShowInstructions(false)}>
+              <Button className="flex-1 h-11 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm sm:text-base" onClick={handleDismissInstructions}>
                 I have read the instructions — Start Test
               </Button>
             </div>
@@ -359,10 +401,10 @@ export function TestTakingPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-56px)]">
-      {/* TOP BAR - Government Exam Style */}
+      {/* TOP BAR */}
       <div className="bg-blue-900 text-white px-2 sm:px-3 py-1.5 sm:py-2 flex items-center justify-between shrink-0 z-20">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-          <Button variant="ghost" size="icon" className="text-white hover:bg-blue-800 h-8 w-8 shrink-0" onClick={() => { if (confirm('Quit test? Your progress will be lost.')) { setIsTestActive(false); clearAnswers(); setMarkedForReview(new Set()); setView('tests'); } }}>
+          <Button variant="ghost" size="icon" className="text-white hover:bg-blue-800 h-8 w-8 shrink-0" onClick={handleQuitTest}>
             <X className="w-4 h-4" />
           </Button>
           <div className="min-w-0 hidden sm:block">
@@ -380,7 +422,7 @@ export function TestTakingPage() {
           </button>
           <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-mono font-bold text-sm sm:text-lg ${isTimeLow ? 'bg-red-600 animate-pulse' : 'bg-blue-800'}`}>
             <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>{formatTime(timeRemaining)}</span>
+            <span>{formatTime(timerSeconds)}</span>
           </div>
           <button className="hidden sm:flex items-center gap-1.5 bg-blue-800 hover:bg-blue-700 px-3 py-1.5 rounded-lg text-xs transition-colors">
             <User className="w-3.5 h-3.5" />
@@ -446,7 +488,7 @@ export function TestTakingPage() {
                   })}
                 </div>
 
-                {/* Action Buttons - desktop only (mobile has bottom bar) */}
+                {/* Action Buttons - desktop only */}
                 <div className="hidden md:flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" onClick={handleClearResponse} disabled={!answers[currentQuestion.id]} className="text-xs sm:text-sm">
                     <RotateCcw className="w-3.5 h-3.5 mr-1" /> Clear
@@ -473,7 +515,6 @@ export function TestTakingPage() {
             <h3 className="font-semibold text-sm text-blue-900">Question Palette</h3>
           </div>
 
-          {/* Palette Grid */}
           <div className="p-3 flex-1 overflow-y-auto">
             <div className="grid grid-cols-5 gap-1.5 mb-4">
               {questions.map((q, i) => {
@@ -493,7 +534,6 @@ export function TestTakingPage() {
               })}
             </div>
 
-            {/* Legend */}
             <div className="space-y-1.5 text-xs">
               {(['not-visited', 'not-answered', 'answered', 'marked', 'marked-answered'] as QuestionStatus[]).map((status) => (
                 <div key={status} className="flex items-center gap-2">
@@ -602,6 +642,7 @@ export function TestTakingPage() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Answered:</span><span className="font-semibold text-green-700">{answeredCount}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Not Answered:</span><span className="font-semibold text-red-700">{totalQuestions - answeredCount}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Marked for Review:</span><span className="font-semibold text-purple-700">{markedCount}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Time Remaining:</span><span className="font-semibold">{formatTime(timerSeconds)}</span></div>
               </div>
               {totalQuestions - answeredCount > 0 && (
                 <p className="text-sm text-amber-600 text-center mb-4 font-medium">{totalQuestions - answeredCount} questions are unanswered!</p>

@@ -1152,3 +1152,25 @@ Stage Summary:
 - Image extract now uses /api/admin/extract-question API route (Vercel compatible)
 - MyAttemptsPage shows errors instead of silently failing, has refresh button
 - Submit and fetch logging will help debug if attempts still not showing on Vercel
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix timer not showing/running during test + Fix test submit goes to homepage
+
+Work Log:
+- Analyzed timer code in TestTakingPage.tsx - found timer was starting before instructions dismissed, causing time loss
+- Rewrote timer to use local useState instead of store-based timer for reliability
+- Timer now initializes from currentTest.timeLimit on mount, starts only when user clicks "Start Test"
+- Used prevTestIdRef to reset timer when new test loads (React 19 compliant pattern)
+- Fixed submit handler: two-step state transition (set lastResult first, then switch view after 50ms delay)
+- Added key prop to ResultsPage in page.tsx to force remount on new results
+- Converted AppContent from bulk useAppStore() to selective selectors for performance
+- Used submitFnRef to avoid before-declaration lint error in auto-submit callback
+- Made MongoDB connection non-fatal with timeout options for local dev
+- All lint errors fixed, clean build, no console errors
+
+Stage Summary:
+- Timer: Local state-based timer, starts only after instructions dismissed
+- Submit: Two-step setState ensures lastResult is committed before view switch
+- ResultsPage: Force-remount via key prop on new results
+- Files modified: TestTakingPage.tsx, page.tsx, mongodb.ts
