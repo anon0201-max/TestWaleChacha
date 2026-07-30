@@ -39,27 +39,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update deviceId if different (non-critical — don't fail login if this fails)
+    // Update deviceId if provided (no unique constraint, so no conflict)
     if (deviceId && student.deviceId !== deviceId) {
-      try {
-        // Remove any existing record with the new deviceId to avoid duplicate key
-        const existingWithDevice = await Student.findOne({ deviceId });
-        if (existingWithDevice && existingWithDevice.id !== student.id) {
-          // Transfer free test usage from the other record
-          if (existingWithDevice.freeTestsUsed > student.freeTestsUsed) {
-            await Student.findOneAndUpdate(
-              { id: student.id },
-              { freeTestsUsed: existingWithDevice.freeTestsUsed }
-            );
-          }
-          await Student.deleteOne({ id: existingWithDevice.id });
-        }
-        await Student.findOneAndUpdate({ id: student.id }, { deviceId });
-        student.deviceId = deviceId;
-      } catch (deviceError) {
-        // Don't fail login — just log and continue
-        console.error('DeviceId update failed (non-critical):', deviceError);
-      }
+      await Student.findOneAndUpdate({ id: student.id }, { deviceId });
+      student.deviceId = deviceId;
     }
 
     return NextResponse.json({

@@ -41,8 +41,7 @@ const StudentSchema = new Schema<IStudent>(
     },
     deviceId: {
       type: String,
-      unique: true,
-      sparse: true,
+      // NOT unique — multiple users can share a device (family phone, etc.)
     },
     freeTestsUsed: {
       type: Number,

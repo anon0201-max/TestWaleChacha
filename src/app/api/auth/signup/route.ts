@@ -32,14 +32,14 @@ export async function POST(request: NextRequest) {
 
     let student;
 
+    // If guest exists with this deviceId, upgrade it to real student
     if (deviceId) {
-      // Find any student with this deviceId (guest or real)
-      const existingWithDevice = await Student.findOne({ deviceId });
+      const guestStudent = await Student.findOne({ deviceId, email: { $exists: false } });
 
-      if (existingWithDevice) {
+      if (guestStudent) {
         const hashedPassword = hashPassword(password);
         student = await Student.findOneAndUpdate(
-          { id: existingWithDevice.id },
+          { id: guestStudent.id },
           {
             name,
             email,
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // No guest found — create fresh student
     if (!student) {
       const hashedPassword = hashPassword(password);
       student = await Student.create({
