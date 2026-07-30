@@ -33,12 +33,13 @@ export async function POST(request: NextRequest) {
     let student;
 
     if (deviceId) {
-      const guestStudent = await Student.findOne({ deviceId });
+      // Find any student with this deviceId (guest or real)
+      const existingWithDevice = await Student.findOne({ deviceId });
 
-      if (guestStudent) {
+      if (existingWithDevice) {
         const hashedPassword = hashPassword(password);
         student = await Student.findOneAndUpdate(
-          { id: guestStudent.id },
+          { id: existingWithDevice.id },
           {
             name,
             email,

@@ -39,23 +39,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update deviceId if different (non-critical — don't fail login if this fails)
     if (deviceId && student.deviceId !== deviceId) {
-      // Before updating deviceId, delete any GUEST student that already
-      // has the new deviceId — otherwise the unique index on deviceId will
-      // throw a duplicate-key error (Internal Server Error on mobile login).
-      const existingGuest = await Student.findOne({ deviceId, passwordHash: { $exists: false } });
-      if (existingGuest && existingGuest.id !== student.id) {
-        // Transfer any free test usage from the guest to the real student
-        if (existingGuest.freeTestsUsed > student.freeTestsUsed) {
-          await Student.findOneAndUpdate(
-            { id: student.id },
-            { freeTestsUsed: existingGuest.freeTestsUsed }
-          );
+      try {
+        // Remove any existing record with the new deviceId to avoid duplicate key
+        const existingWithDevice = await Student.findOne({ deviceId });
+        if (existingWithDevice && existingWithDevice.id !== student.id) {
+          // Transfer free test usage from the other record
+          if (existingWithDevice.freeTestsUsed > student.freeTestsUsed) {
+            await Student.findOneAndUpdate(
+              { id: student.id },
+              { freeTestsUsed: existingWithDevice.freeTestsUsed }
+            );
+          }
+          await Student.deleteOne({ id: existingWithDevice.id });
         }
-        await Student.deleteOne({ id: existingGuest.id });
+        await Student.findOneAndUpdate({ id: student.id }, { deviceId });
+        student.deviceId = deviceId;
+      } catch (deviceError) {
+        // Don't fail login — just log and continue
+        console.error('DeviceId update failed (non-critical):', deviceError);
       }
-      await Student.findOneAndUpdate({ id: student.id }, { deviceId });
-      student.deviceId = deviceId;
     }
 
     return NextResponse.json({
