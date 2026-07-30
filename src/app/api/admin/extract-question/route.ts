@@ -3,6 +3,48 @@ import { NextRequest, NextResponse } from 'next/server';
 export const maxDuration = 300;
 export const runtime = 'nodejs';
 
+// ─── Gemini (Google) — FREE, Primary ─────────────────────────
+async function callGemini(dataUrl: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('NO_GEMINI_API_KEY');
+
+  // Extract base64 and mime from data URL
+  const matches = dataUrl.match(/^data:(.+?);base64,(.+)$/);
+  if (!matches) throw new Error('Invalid data URL');
+  const mimeType = matches[1];
+  const base64Data = matches[2];
+
+  const body = {
+    contents: [{
+      parts: [
+        { text: EXTRACT_PROMPT },
+        { inlineData: { mimeType, data: base64Data } },
+      ],
+    }],
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 8000,
+    },
+  };
+
+  const model = 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errTxt = await res.text().catch(() => '');
+    throw new Error(`Gemini HTTP ${res.status}: ${errTxt.substring(0, 200)}`);
+  }
+
+  const data: any = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
 // ─── Grok (xAI) ───────────────────────────────────────────────
 async function callGrok(dataUrl: string): Promise<string> {
   const apiKey = process.env.XAI_API_KEY;
@@ -179,29 +221,48 @@ export async function POST(request: NextRequest) {
     const mimeType = imageFile.type || 'image/jpeg';
     const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    const engine = process.env.XAI_API_KEY ? 'grok' : 'zai-vlm';
-    console.log(`[extract] image: ${imageFile.name} size=${imageFile.size} bytes — engine=${engine}`);
+    // Determine available engines
+    const hasGemini = !!process.env.GEMINI_API_KEY;
+    const hasGrok = !!process.env.XAI_API_KEY;
+    console.log(`[extract] image: ${imageFile.name} size=${imageFile.size} bytes — gemini=${hasGemini} grok=${hasGrok}`);
 
-    // ── Try Grok first if key available, otherwise VLM ──
+    // ── Try engines in priority order: Gemini → Grok → z-ai VLM ──
     let content = '';
     let usedEngine = '';
-    try {
-      if (process.env.XAI_API_KEY) {
+    let lastError = '';
+
+    // 1. Gemini (free, best quality)
+    if (hasGemini && !content) {
+      try {
+        usedEngine = 'gemini';
+        content = await callGemini(dataUrl);
+      } catch (err: any) {
+        lastError = err.message;
+        console.log(`[extract] Gemini failed (${err.message}), trying next...`);
+      }
+    }
+
+    // 2. Grok (xAI)
+    if (hasGrok && !content) {
+      try {
         usedEngine = 'grok';
         content = await callGrok(dataUrl);
-      } else {
-        throw new Error('NO_XAI_API_KEY');
+      } catch (err: any) {
+        lastError = err.message;
+        console.log(`[extract] Grok failed (${err.message}), trying VLM...`);
       }
-    } catch (grokErr: any) {
-      console.log(`[extract] Grok unavailable (${grokErr.message}), falling back to z-ai-web-dev-sdk VLM`);
-      usedEngine = 'zai-vlm';
+    }
+
+    // 3. z-ai-web-dev-sdk VLM (always available fallback)
+    if (!content) {
       try {
+        usedEngine = 'zai-vlm';
         content = await callZaiVLM(dataUrl);
-      } catch (vlmErr: any) {
-        console.error('[extract] VLM also failed:', vlmErr);
+      } catch (err: any) {
+        console.error('[extract] All engines failed:', err);
         return NextResponse.json({
           success: false,
-          error: `Both engines failed. Grok: ${grokErr.message} | VLM: ${vlmErr.message}`,
+          error: `All engines failed. Last error: ${lastError || err.message}`,
         }, { status: 500 });
       }
     }
