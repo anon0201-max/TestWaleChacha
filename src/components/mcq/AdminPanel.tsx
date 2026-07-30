@@ -779,6 +779,14 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
 }
 
 // ==================== CREATE TEST TAB ====================
+
+const ICON_OPTIONS = [
+  '📚','🏛️','🎯','⚡','🧠','📝','🎓','✏️','📊','📈',
+  '🏆','🏅','🥇','⭐','🌟','💡','🔍','🧪','🌍','🇮🇳',
+  '📰','📋','📌','📎','🗓️','⏰','📐','🔬','🖥️','🔒',
+  '💰','🏦','📑','📁','🗂️','📉','✅','❌','🚀','🔥',
+];
+
 interface QuestionForm {
   question: string;
   optionA: string;
@@ -815,6 +823,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
   const [time, setTime] = useState('600');
   const [examName, setExamName] = useState('');
   const [testIcon, setTestIcon] = useState('');
+  const [showIconPicker, setShowIconPicker] = useState(false);
 
   // Step 2: Questions
   const [questions, setQuestions] = useState<QuestionForm[]>([emptyQuestion()]);
@@ -1126,10 +1135,23 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
                 </div>
                 <div>
                   <Label className="text-xs font-medium">Test Icon (emoji)</Label>
-                  <div className="relative">
-                    <Input value={testIcon} onChange={(e) => setTestIcon(e.target.value)} placeholder="📚 🏛️ 🎯 ⚡ etc." className="h-11 pr-10" maxLength={4} />
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-lg pointer-events-none">{testIcon || '📄'}</span>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setShowIconPicker(!showIconPicker)} className="w-11 h-11 border rounded-md flex items-center justify-center text-xl hover:bg-gray-50 transition-colors shrink-0">
+                      {testIcon || '📄'}
+                    </button>
+                    <Input value={testIcon} onChange={(e) => setTestIcon(e.target.value)} placeholder="Or type emoji..." className="h-11 flex-1" maxLength={4} />
                   </div>
+                  {showIconPicker && (
+                    <div className="mt-2 border rounded-lg p-2.5 bg-gray-50 max-h-48 overflow-y-auto">
+                      <div className="grid grid-cols-8 sm:grid-cols-10 gap-1">
+                        {ICON_OPTIONS.map((emoji) => (
+                          <button key={emoji} type="button" onClick={() => { setTestIcon(emoji); setShowIconPicker(false); }} className={`w-9 h-9 rounded-md flex items-center justify-center text-lg hover:bg-white hover:shadow-sm transition-all ${testIcon === emoji ? 'bg-white shadow-sm ring-2 ring-blue-500' : ''}`}>
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <Label className="text-xs font-medium">Description</Label>

@@ -63,7 +63,7 @@ export function AppFooter() {
                 Government exam preparation made easy. Real exam interface, detailed solutions, and performance tracking.
               </p>
               <a
-                href="https://www.whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
+                href="https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-green-400 hover:text-green-300 text-xs transition-colors"
@@ -103,7 +103,7 @@ export function AppFooter() {
               <ul className="space-y-2">
                 <li>
                   <a
-                    href="https://www.whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
+                    href="https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 text-gray-400 hover:text-white text-xs sm:text-sm transition-colors"

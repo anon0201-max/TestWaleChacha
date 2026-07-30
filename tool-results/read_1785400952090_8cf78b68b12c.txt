@@ -1,0 +1,736 @@
+  1130→                    <Input value={testIcon} onChange={(e) => setTestIcon(e.target.value)} placeholder="📚 🏛️ 🎯 ⚡ etc." className="h-11 pr-10" maxLength={4} />
+  1131→                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-lg pointer-events-none">{testIcon || '📄'}</span>
+  1132→                  </div>
+  1133→                </div>
+  1134→                <div className="sm:col-span-2">
+  1135→                  <Label className="text-xs font-medium">Description</Label>
+  1136→                  <Textarea value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Brief description..." className="min-h-[70px] sm:min-h-[80px] resize-none" />
+  1137→                </div>
+  1138→                <div>
+  1139→                  <Label className="text-xs font-medium">Category *</Label>
+  1140→                  <select className="w-full border rounded-md px-3 py-2.5 text-sm h-11 bg-white" value={catId} onChange={(e) => setCatId(e.target.value)}>
+  1141→                    <option value="">Select category...</option>
+  1142→                    {categories.map(c => <option key={c.id} value={c.id}>{c.name} ({c.examType})</option>)}
+  1143→                  </select>
+  1144→                </div>
+  1145→                <div>
+  1146→                  <Label className="text-xs font-medium">Exam Name</Label>
+  1147→                  <Input value={examName} onChange={(e) => setExamName(e.target.value)} placeholder="e.g., SSC CGL 2024" className="h-11" />
+  1148→                </div>
+  1149→                <div>
+  1150→                  <Label className="text-xs font-medium">Difficulty</Label>
+  1151→                  <select className="w-full border rounded-md px-3 py-2.5 text-sm h-11 bg-white" value={diff} onChange={(e) => setDiff(e.target.value)}>
+  1152→                    {['easy', 'medium', 'hard'].map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+  1153→                  </select>
+  1154→                </div>
+  1155→                <div>
+  1156→                  <Label className="text-xs font-medium">Time Limit (sec)</Label>
+  1157→                  <Input type="number" value={time} onChange={(e) => setTime(e.target.value)} className="h-11" />
+  1158→                  <p className="text-[10px] text-muted-foreground mt-1">600s = 10min</p>
+  1159→                </div>
+  1160→              </div>
+  1161→              <div className="flex justify-end pt-2">
+  1162→                <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={createTest} disabled={!title || !catId}>
+  1163→                  Next <ChevronRight className="w-4 h-4 ml-1 sm:ml-2" />
+  1164→                </Button>
+  1165→              </div>
+  1166→            </CardContent>
+  1167→          </Card>
+  1168→        </motion.div>
+  1169→      )}
+  1170→
+  1171→      {/* Step 2: Add Questions */}
+  1172→      {step === 2 && (
+  1173→        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-3 sm:space-y-4">
+  1174→          {/* Quick Stats Bar */}
+  1175→          <div className="flex items-center justify-between gap-2 flex-wrap">
+  1176→            <div className="flex items-center gap-2">
+  1177→              <Badge variant="secondary" className="text-xs">{questions.length}Q</Badge>
+  1178→              <Badge variant="outline" className="text-xs">
+  1179→                {questions.filter(q => q.question.trim() && q.optionA.trim()).length} done
+  1180→              </Badge>
+  1181→            </div>
+  1182→            <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
+  1183→              <Plus className="w-3.5 h-3.5" /> Add Q
+  1184→            </Button>
+  1185→          </div>
+  1186→
+  1187→          {/* Hidden file inputs */}
+  1188→          <input type="file" ref={imageInputRef} accept="image/*" onChange={handleImageExtract} className="hidden" />
+  1189→          <input type="file" ref={answersInputRef} accept=".txt,.csv" onChange={handleImportAnswers} className="hidden" />
+  1190→          <input type="file" ref={explanationsInputRef} accept=".txt" onChange={handleImportExplanations} className="hidden" />
+  1191→
+  1192→          {/* Import Actions Bar */}
+  1193→          <div className="flex items-center gap-2 flex-wrap">
+  1194→            {fillStatus && (
+  1195→              <div className={`w-full p-2.5 sm:p-3 rounded-lg border flex items-center gap-2 text-xs sm:text-sm font-medium ${
+  1196→                fillStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+  1197→                fillStatus.type === 'error' ? 'bg-red-50 border-red-200 text-red-800' :
+  1198→                'bg-blue-50 border-blue-200 text-blue-800'
+  1199→              }`}>
+  1200→                {fillStatus.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> :
+  1201→                 fillStatus.type === 'error' ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
+  1202→                 <Loader2 className="w-4 h-4 shrink-0 animate-spin" />}
+  1203→                <span className="break-all">{fillStatus.msg}</span>
+  1204→              </div>
+  1205→            )}
+  1206→            <Button variant="outline" size="sm" onClick={openCountDialog} disabled={extractingImage} className="gap-1.5 text-xs">
+  1207→              {extractingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+  1208→              <span className="hidden sm:inline">{extractingImage ? `Extracting... (${extractElapsed}s)` : '📸 Upload Image'}</span>
+  1209→              <span className="sm:hidden">{extractingImage ? `${extractElapsed}s` : '📸'}</span>
+  1210→            </Button>
+  1211→            {extractingImage && (
+  1212→              <div className="w-full p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+  1213→                <p className="text-xs text-amber-700 font-medium animate-pulse mb-1">
+  1214→                  ⏳ VLM image se questions padh raha hai...
+  1215→                </p>
+  1216→                <div className="w-full bg-amber-200 rounded-full h-1.5 overflow-hidden">
+  1217→                  <div className="bg-amber-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${Math.min((extractElapsed / 60) * 100, 95)}%` }} />
+  1218→                </div>
+  1219→              </div>
+  1220→            )}
+  1221→            <Button variant="outline" size="sm" onClick={() => answersInputRef.current?.click()} disabled={importingAnswers} className="gap-1.5 text-xs">
+  1222→              {importingAnswers ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileUp className="w-3.5 h-3.5" />}
+  1223→              <span className="hidden sm:inline">{importingAnswers ? 'Importing...' : 'Answers'}</span>
+  1224→            </Button>
+  1225→            <Button variant="outline" size="sm" onClick={() => explanationsInputRef.current?.click()} disabled={importingExplanations} className="gap-1.5 text-xs">
+  1226→              {importingExplanations ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+  1227→              <span className="hidden sm:inline">{importingExplanations ? 'Importing...' : 'Explanations'}</span>
+  1228→            </Button>
+  1229→          </div>
+  1230→
+  1231→          {/* Questions */}
+  1232→          <div className="space-y-3">
+  1233→            {questions.map((q, i) => (
+  1234→              <Card key={i} className={`border shadow-sm overflow-hidden ${q.question.trim() && q.optionA.trim() ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-amber-400'}`}>
+  1235→                <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+  1236→                  {/* Question Header */}
+  1237→                  <div className="flex items-center justify-between gap-2">
+  1238→                    <div className="flex items-center gap-2 min-w-0">
+  1239→                      <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</span>
+  1240→                      <span className="text-[10px] sm:text-xs text-muted-foreground shrink-0">Section:</span>
+  1241→                      <Input value={q.section} onChange={(e) => updateQ(i, 'section', e.target.value)} placeholder="General" className="w-24 sm:w-32 h-7 text-xs" />
+  1242→                    </div>
+  1243→                    <div className="flex items-center gap-1 shrink-0">
+  1244→                      <button onClick={() => duplicateQ(i)} className="p-1.5 rounded hover:bg-gray-100 text-muted-foreground hover:text-blue-600 transition-colors" title="Duplicate">
+  1245→                        <Copy className="w-3.5 h-3.5" />
+  1246→                      </button>
+  1247→                      {questions.length > 1 && (
+  1248→                        <button onClick={() => removeQ(i)} className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors" title="Delete">
+  1249→                          <Trash2 className="w-3.5 h-3.5" />
+  1250→                        </button>
+  1251→                      )}
+  1252→                    </div>
+  1253→                  </div>
+  1254→
+  1255→                  {/* Question Text */}
+  1256→                  <Textarea value={q.question} onChange={(e) => updateQ(i, 'question', e.target.value)} placeholder="Type your question here..." className="min-h-[50px] sm:min-h-[60px] resize-none text-sm" />
+  1257→
+  1258→                  {/* Options - stacked on mobile, 2-col on sm+ */}
+  1259→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+  1260→                    {(['A', 'B', 'C', 'D'] as const).map((opt) => (
+  1261→                      <div key={opt} className="relative">
+  1262→                        <div className={`absolute left-0 top-0 w-6 h-6 sm:w-6 sm:h-6 rounded-l-md flex items-center justify-center text-xs font-bold text-white ${q.correctOption === opt ? 'bg-green-600' : 'bg-gray-300'}`}>
+  1263→                          {opt}
+  1264→                        </div>
+  1265→                        <Input
+  1266→                          value={q[`option${opt}` as keyof QuestionForm]}
+  1267→                          onChange={(e) => updateQ(i, `option${opt}` as keyof QuestionForm, e.target.value)}
+  1268→                          placeholder={`Option ${opt}`}
+  1269→                          className={`pl-9 h-10 text-sm ${q.correctOption === opt ? 'border-green-500 bg-green-50/50' : ''}`}
+  1270→                        />
+  1271→                        <button
+  1272→                          onClick={() => updateQ(i, 'correctOption', opt)}
+  1273→                          className={`absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+  1274→                            q.correctOption === opt ? 'border-green-600 bg-green-600' : 'border-gray-300 hover:border-green-400'
+  1275→                          }`}
+  1276→                          title={`Set ${opt} as correct answer`}
+  1277→                        >
+  1278→                          {q.correctOption === opt && <div className="w-2 h-2 rounded-full bg-white" />}
+  1279→                        </button>
+  1280→                      </div>
+  1281→                    ))}
+  1282→                  </div>
+  1283→
+  1284→                  {/* Explanation & Negative Marking */}
+  1285→                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
+  1286→                    <div>
+  1287→                      <Label className="text-[10px] text-muted-foreground">Explanation</Label>
+  1288→                      <Input value={q.explanation} onChange={(e) => updateQ(i, 'explanation', e.target.value)} placeholder="Why is this correct?" className="h-9 text-xs" />
+  1289→                    </div>
+  1290→                    <div>
+  1291→                      <Label className="text-[10px] text-muted-foreground">Neg. Marking</Label>
+  1292→                      <Input type="number" step="0.25" value={q.negativeMark} onChange={(e) => updateQ(i, 'negativeMark', e.target.value)} placeholder="0" className="h-9 text-xs" />
+  1293→                    </div>
+  1294→                  </div>
+  1295→                </CardContent>
+  1296→              </Card>
+  1297→            ))}
+  1298→          </div>
+  1299→
+  1300→          {/* Action Buttons — stacked on mobile */}
+  1301→          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 sticky bottom-2 bg-gray-50 py-2 px-1 rounded-xl border">
+  1302→            <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5">
+  1303→              <ArrowLeft className="w-4 h-4" /> Back
+  1304→            </Button>
+  1305→            <div className="flex items-center gap-2">
+  1306→              <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
+  1307→                <Plus className="w-3.5 h-3.5" /> Add More
+  1308→              </Button>
+  1309→              <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={saveQuestions} disabled={saving || questions.filter(q => q.question.trim() && q.optionA.trim()).length === 0}>
+  1310→                {saving ? (
+  1311→                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Saving...</>
+  1312→                ) : (
+  1313→                  <><Save className="w-4 h-4 mr-1 sm:mr-2" /> Save {questions.filter(q => q.question.trim() && q.optionA.trim()).length}Q</>
+  1314→                )}
+  1315→              </Button>
+  1316→            </div>
+  1317→          </div>
+  1318→        </motion.div>
+  1319→      )}
+  1320→
+  1321→      {/* Step 3: Success */}
+  1322→      {step === 3 && (
+  1323→        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 sm:py-10">
+  1324→          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+  1325→            <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+  1326→          </div>
+  1327→          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Test Created!</h2>
+  1328→          <p className="text-sm text-muted-foreground mb-1">
+  1329→            <strong>&quot;{title}&quot;</strong> with <strong>{savedCount} questions</strong>
+  1330→          </p>
+  1331→          <p className="text-xs text-muted-foreground mb-6">Students can now attempt this test.</p>
+  1332→          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 px-4">
+  1333→            <Button variant="outline" onClick={resetAll}>
+  1334→              <Plus className="w-4 h-4 mr-2" /> Create Another
+  1335→            </Button>
+  1336→            <Button className="bg-blue-700 hover:bg-blue-800" onClick={() => useAppStore.getState().setView('tests')}>
+  1337→              View All Tests
+  1338→            </Button>
+  1339→          </div>
+  1340→        </motion.div>
+  1341→      )}
+  1342→
+  1343→      {/* Count Dialog */}
+  1344→      <Dialog open={showCountDialog} onOpenChange={setShowCountDialog}>
+  1345→        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+  1346→          <DialogHeader>
+  1347→            <DialogTitle className="flex items-center gap-2 text-base">
+  1348→              <Camera className="w-5 h-5 text-blue-600" />
+  1349→              Kitne questions hain?
+  1350→            </DialogTitle>
+  1351→            <DialogDescription className="text-xs">
+  1352→              Image me jitne questions hain, wo number yahan likhein.
+  1353→            </DialogDescription>
+  1354→          </DialogHeader>
+  1355→          <div className="py-2">
+  1356→            <Label htmlFor="qcount" className="text-xs font-medium mb-1.5 block">Kitne questions? (1-200)</Label>
+  1357→            <Input
+  1358→              id="qcount"
+  1359→              type="number"
+  1360→              min={1} max={200}
+  1361→              autoFocus
+  1362→              value={questionCount}
+  1363→              onChange={(e) => setQuestionCount(e.target.value)}
+  1364→              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); confirmCountAndPickImage(); } }}
+  1365→              placeholder="e.g., 34"
+  1366→              className="h-12 text-lg font-semibold text-center"
+  1367→            />
+  1368→            <div className="flex flex-wrap gap-2 mt-3">
+  1369→              {[10, 25, 34, 50, 75, 100].map(preset => (
+  1370→                <button key={preset} type="button" onClick={() => setQuestionCount(String(preset))}
+  1371→                  className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+  1372→                    questionCount === String(preset) ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+  1373→                  }`}>
+  1374→                  {preset}
+  1375→                </button>
+  1376→              ))}
+  1377→            </div>
+  1378→          </div>
+  1379→          <DialogFooter className="gap-2 sm:gap-2">
+  1380→            <DialogClose asChild>
+  1381→              <Button variant="outline" className="gap-1.5"><X className="w-4 h-4" /> Cancel</Button>
+  1382→            </DialogClose>
+  1383→            <Button className="bg-blue-700 hover:bg-blue-800 gap-1.5" onClick={confirmCountAndPickImage} disabled={!questionCount || parseInt(questionCount) < 1}>
+  1384→              <Camera className="w-4 h-4" /> Select Image
+  1385→            </Button>
+  1386→          </DialogFooter>
+  1387→        </DialogContent>
+  1388→      </Dialog>
+  1389→    </div>
+  1390→  );
+  1391→}
+  1392→
+  1393→// ==================== USERS TAB ====================
+  1394→interface StudentRow {
+  1395→  id: string;
+  1396→  name: string;
+  1397→  email: string | null;
+  1398→  phone: string | null;
+  1399→  deviceId: string;
+  1400→  freeTestsUsed: number;
+  1401→  isSubscribed: boolean;
+  1402→  subscriptionAt: string | null;
+  1403→  createdAt: string;
+  1404→  totalAttempts: number;
+  1405→  totalPayments: number;
+  1406→  lastPayment: { id: string; amount: number; currency: string; status: string; createdAt: string } | null;
+  1407→}
+  1408→
+  1409→function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
+  1410→  const [students, setStudents] = useState<StudentRow[]>([]);
+  1411→  const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
+  1412→  const [search, setSearch] = useState('');
+  1413→  const [loading, setLoading] = useState(true);
+  1414→  const [deleting, setDeleting] = useState<string | null>(null);
+  1415→  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  1416→  const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
+  1417→  const [summary, setSummary] = useState({ totalStudents: 0, totalPaid: 0, totalFree: 0 });
+  1418→  const [reloadKey, setReloadKey] = useState(0);
+  1419→
+  1420→  useEffect(() => {
+  1421→    let cancelled = false;
+  1422→    (async () => {
+  1423→      setLoading(true);
+  1424→      try {
+  1425→        const params = new URLSearchParams({ filter, search });
+  1426→        const res = await fetch(`/api/admin/students?${params}`);
+  1427→        if (res.ok && !cancelled) {
+  1428→          const data = await res.json();
+  1429→          if (!cancelled) { setStudents(data.students); setSummary(data.summary); }
+  1430→        }
+  1431→      } catch {}
+  1432→      if (!cancelled) setLoading(false);
+  1433→    })();
+  1434→    return () => { cancelled = true; };
+  1435→  }, [filter, search, reloadKey]);
+  1436→
+  1437→  async function handleDelete() {
+  1438→    if (!deleteTarget) return;
+  1439→    setDeleting(deleteTarget.id);
+  1440→    try {
+  1441→      const res = await fetch('/api/admin/students', {
+  1442→        method: 'DELETE',
+  1443→        headers: { 'Content-Type': 'application/json' },
+  1444→        body: JSON.stringify({ id: deleteTarget.id }),
+  1445→      });
+  1446→      if (res.ok) {
+  1447→        toast.success(`User "${deleteTarget.name}" deleted`);
+  1448→        setShowDeleteDialog(false);
+  1449→        setDeleteTarget(null);
+  1450→        setReloadKey(k => k + 1);
+  1451→        onRefresh();
+  1452→      }
+  1453→    } catch {}
+  1454→    setDeleting(null);
+  1455→  }
+  1456→
+  1457→  const filters = [
+  1458→    { key: 'all' as const, label: 'All', count: summary.totalStudents },
+  1459→    { key: 'free' as const, label: 'Free', count: summary.totalFree },
+  1460→    { key: 'paid' as const, label: 'Paid', count: summary.totalPaid },
+  1461→  ];
+  1462→
+  1463→  return (
+  1464→    <div className="space-y-3 sm:space-y-4">
+  1465→      {/* Filter Bar */}
+  1466→      <Card className="border-0 shadow-sm">
+  1467→        <CardContent className="p-3 sm:p-4">
+  1468→          <div className="flex flex-col gap-3">
+  1469→            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+  1470→              <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+  1471→              {filters.map(f => (
+  1472→                <button
+  1473→                  key={f.key}
+  1474→                  onClick={() => { setFilter(f.key); }}
+  1475→                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
+  1476→                    filter === f.key ? 'bg-blue-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+  1477→                  }`}
+  1478→                >
+  1479→                  {f.label} ({f.count})
+  1480→                </button>
+  1481→              ))}
+  1482→            </div>
+  1483→            <div className="relative w-full">
+  1484→              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+  1485→              <input
+  1486→                type="text"
+  1487→                placeholder="Search name, email, phone..."
+  1488→                value={search}
+  1489→                onChange={(e) => setSearch(e.target.value)}
+  1490→                className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+  1491→              />
+  1492→            </div>
+  1493→          </div>
+  1494→        </CardContent>
+  1495→      </Card>
+  1496→
+  1497→      {/* Users List — Card layout on mobile, Table on desktop */}
+  1498→      {loading ? (
+  1499→        <div className="flex items-center justify-center py-12">
+  1500→          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+  1501→          <span className="ml-2 text-sm text-muted-foreground">Loading users...</span>
+  1502→        </div>
+  1503→      ) : students.length === 0 ? (
+  1504→        <div className="text-center py-12 text-muted-foreground text-sm">No users found</div>
+  1505→      ) : (
+  1506→        <>
+  1507→          {/* Mobile: Card Layout */}
+  1508→          <div className="space-y-2 sm:hidden">
+  1509→            {students.map((student) => (
+  1510→              <Card key={student.id} className="border-0 shadow-sm overflow-hidden">
+  1511→                <div className="p-3 flex items-start justify-between gap-2">
+  1512→                  <div className="flex items-center gap-2 min-w-0">
+  1513→                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+  1514→                      student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+  1515→                    }`}>
+  1516→                      {student.name.charAt(0).toUpperCase()}
+  1517→                    </div>
+  1518→                    <div className="min-w-0">
+  1519→                      <p className="text-sm font-medium truncate">{student.name}</p>
+  1520→                      <p className="text-[10px] text-muted-foreground truncate">{student.email || student.phone || student.deviceId}</p>
+  1521→                      <div className="flex items-center gap-2 mt-1">
+  1522→                        {student.isSubscribed ? (
+  1523→                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5 px-1.5 py-0">
+  1524→                            <Crown className="w-2.5 h-2.5" /> Paid
+  1525→                          </Badge>
+  1526→                        ) : (
+  1527→                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+  1528→                            Free ({student.freeTestsUsed}/2)
+  1529→                          </Badge>
+  1530→                        )}
+  1531→                        <span className="text-[10px] text-muted-foreground">{student.totalAttempts} attempts</span>
+  1532→                      </div>
+  1533→                    </div>
+  1534→                  </div>
+  1535→                  <div className="flex items-center gap-1 shrink-0">
+  1536→                    {student.subscriptionAt && (
+  1537→                      <button className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors" title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}>
+  1538→                        <Receipt className="w-4 h-4" />
+  1539→                      </button>
+  1540→                    )}
+  1541→                    <button
+  1542→                      onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+  1543→                      className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+  1544→                      title="Delete user"
+  1545→                    >
+  1546→                      <Trash2 className="w-4 h-4" />
+  1547→                    </button>
+  1548→                  </div>
+  1549→                </div>
+  1550→              </Card>
+  1551→            ))}
+  1552→          </div>
+  1553→
+  1554→          {/* Desktop: Table Layout */}
+  1555→          <div className="hidden sm:block">
+  1556→            <Card className="border-0 shadow-sm">
+  1557→              <CardContent className="p-0">
+  1558→                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+  1559→                  <div className="col-span-3">User</div>
+  1560→                  <div className="col-span-2">Email</div>
+  1561→                  <div className="col-span-1">Phone</div>
+  1562→                  <div className="col-span-2 text-center">Status</div>
+  1563→                  <div className="col-span-2 text-center">Activity</div>
+  1564→                  <div className="col-span-2 text-right">Actions</div>
+  1565→                </div>
+  1566→                <div className="max-h-[60vh] overflow-y-auto">
+  1567→                  {students.map((student) => (
+  1568→                    <div key={student.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center group">
+  1569→                      <div className="col-span-3">
+  1570→                        <div className="flex items-center gap-2">
+  1571→                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+  1572→                            student.isSubscribed ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-200 text-gray-600'
+  1573→                          }`}>
+  1574→                            {student.name.charAt(0).toUpperCase()}
+  1575→                          </div>
+  1576→                          <div className="min-w-0">
+  1577→                            <p className="text-sm font-medium truncate">{student.name}</p>
+  1578→                          </div>
+  1579→                        </div>
+  1580→                      </div>
+  1581→                      <div className="col-span-2"><p className="text-xs truncate">{student.email || '—'}</p></div>
+  1582→                      <div className="col-span-1"><p className="text-xs truncate">{student.phone || '—'}</p></div>
+  1583→                      <div className="col-span-2 flex justify-center">
+  1584→                        {student.isSubscribed ? (
+  1585→                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 text-[10px] gap-0.5">
+  1586→                            <Crown className="w-2.5 h-2.5" /> Paid
+  1587→                          </Badge>
+  1588→                        ) : (
+  1589→                          <Badge variant="secondary" className="text-[10px]">Free ({student.freeTestsUsed}/2)</Badge>
+  1590→                        )}
+  1591→                      </div>
+  1592→                      <div className="col-span-2 flex flex-col items-center gap-0.5">
+  1593→                        <span className="text-xs font-medium">{student.totalAttempts} attempts</span>
+  1594→                        {student.lastPayment && <span className="text-[10px] text-emerald-600">Paid ₹{student.lastPayment.amount / 100}</span>}
+  1595→                      </div>
+  1596→                      <div className="col-span-2 flex justify-end gap-1">
+  1597→                        {student.subscriptionAt && (
+  1598→                          <button className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition-colors" title={`Subscribed: ${new Date(student.subscriptionAt).toLocaleDateString()}`}>
+  1599→                            <Receipt className="w-4 h-4" />
+  1600→                          </button>
+  1601→                        )}
+  1602→                        <button
+  1603→                          onClick={() => { setDeleteTarget(student); setShowDeleteDialog(true); }}
+  1604→                          className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition-colors"
+  1605→                          title="Delete user"
+  1606→                        >
+  1607→                          <Trash2 className="w-4 h-4" />
+  1608→                        </button>
+  1609→                      </div>
+  1610→                    </div>
+  1611→                  ))}
+  1612→                </div>
+  1613→              </CardContent>
+  1614→            </Card>
+  1615→          </div>
+  1616→        </>
+  1617→      )}
+  1618→
+  1619→      {/* Delete Confirmation Dialog */}
+  1620→      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+  1621→        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-sm">
+  1622→          <DialogHeader>
+  1623→            <DialogTitle className="flex items-center gap-2 text-red-600">
+  1624→              <AlertTriangle className="w-5 h-5" /> Delete User
+  1625→            </DialogTitle>
+  1626→            <DialogDescription className="text-xs">
+  1627→              Delete <strong>{deleteTarget?.name}</strong> permanently? This cannot be undone.
+  1628→            </DialogDescription>
+  1629→          </DialogHeader>
+  1630→          {deleteTarget && (
+  1631→            <div className="bg-red-50 rounded-xl p-3 text-xs space-y-1">
+  1632→              <p><span className="text-muted-foreground">Name:</span> <strong>{deleteTarget.name}</strong></p>
+  1633→              <p><span className="text-muted-foreground">Email:</span> {deleteTarget.email || '—'}</p>
+  1634→              <p><span className="text-muted-foreground">Status:</span> {deleteTarget.isSubscribed ? 'Paid' : 'Free'}</p>
+  1635→            </div>
+  1636→          )}
+  1637→          <DialogFooter>
+  1638→            <DialogClose asChild><Button variant="outline" size="sm">Cancel</Button></DialogClose>
+  1639→            <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleting}>
+  1640→              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 mr-1" />}
+  1641→              {deleting ? 'Deleting...' : 'Delete'}
+  1642→            </Button>
+  1643→          </DialogFooter>
+  1644→        </DialogContent>
+  1645→      </Dialog>
+  1646→    </div>
+  1647→  );
+  1648→}
+  1649→
+  1650→// ==================== SETTINGS TAB ====================
+  1651→function AdminSettingsTab() {
+  1652→  const [currentPassword, setCurrentPassword] = useState('');
+  1653→  const [newPassword, setNewPassword] = useState('');
+  1654→  const [confirmPassword, setConfirmPassword] = useState('');
+  1655→  const [loading, setLoading] = useState(false);
+  1656→  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  1657→
+  1658→  async function handleResetPassword() {
+  1659→    setMessage(null);
+  1660→    if (!currentPassword || !newPassword || !confirmPassword) {
+  1661→      setMessage({ type: 'error', text: 'All fields are required' });
+  1662→      return;
+  1663→    }
+  1664→    if (newPassword !== confirmPassword) {
+  1665→      setMessage({ type: 'error', text: 'Passwords do not match' });
+  1666→      return;
+  1667→    }
+  1668→    if (newPassword.length < 4) {
+  1669→      setMessage({ type: 'error', text: 'New password must be at least 4 characters' });
+  1670→      return;
+  1671→    }
+  1672→    setLoading(true);
+  1673→    try {
+  1674→      const res = await fetch('/api/admin/reset-password', {
+  1675→        method: 'POST',
+  1676→        headers: { 'Content-Type': 'application/json' },
+  1677→        body: JSON.stringify({ currentPassword, newPassword }),
+  1678→      });
+  1679→      const data = await res.json();
+  1680→      if (data.success) {
+  1681→        setMessage({ type: 'success', text: 'Password updated successfully!' });
+  1682→        setCurrentPassword('');
+  1683→        setNewPassword('');
+  1684→        setConfirmPassword('');
+  1685→      } else {
+  1686→        setMessage({ type: 'error', text: data.error || 'Failed to reset password' });
+  1687→      }
+  1688→    } catch {
+  1689→      setMessage({ type: 'error', text: 'Server error.' });
+  1690→    }
+  1691→    setLoading(false);
+  1692→  }
+  1693→
+  1694→  return (
+  1695→    <div className="space-y-3 sm:space-y-4">
+  1696→      <Card className="border-0 shadow-sm">
+  1697→        <CardContent className="p-4 sm:p-5">
+  1698→          <h3 className="text-sm font-semibold mb-1 flex items-center gap-2">
+  1699→            <Shield className="w-4 h-4 text-blue-600" /> Reset Admin Password
+  1700→          </h3>
+  1701→          <p className="text-xs text-muted-foreground mb-4">Change your admin login password.</p>
+  1702→
+  1703→          {message && (
+  1704→            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+  1705→              className={`mb-4 p-3 rounded-xl text-sm flex items-center gap-2 border ${
+  1706→                message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+  1707→              }`}>
+  1708→              {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+  1709→              <span className="break-all">{message.text}</span>
+  1710→            </motion.div>
+  1711→          )}
+  1712→
+  1713→          <div className="space-y-3 max-w-md">
+  1714→            <div>
+  1715→              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Current Password</Label>
+  1716→              <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Enter current password" className="h-11" />
+  1717→            </div>
+  1718→            <div>
+  1719→              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">New Password</Label>
+  1720→              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password (min 4 chars)" className="h-11" />
+  1721→            </div>
+  1722→            <div>
+  1723→              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Confirm New Password</Label>
+  1724→              <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="h-11" onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()} />
+  1725→            </div>
+  1726→            <Button className="bg-blue-700 hover:bg-blue-800 font-semibold" onClick={handleResetPassword} disabled={loading || !currentPassword || !newPassword || !confirmPassword}>
+  1727→              {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : <><Save className="w-4 h-4 mr-2" />Update Password</>}
+  1728→            </Button>
+  1729→          </div>
+  1730→        </CardContent>
+  1731→      </Card>
+  1732→    </div>
+  1733→  );
+  1734→}
+  1735→
+  1736→// ==================== PAYMENTS TAB ====================
+  1737→interface PaymentRow {
+  1738→  id: string;
+  1739→  studentId: string;
+  1740→  studentName: string;
+  1741→  studentEmail: string | null;
+  1742→  amount: number;
+  1743→  currency: string;
+  1744→  status: string;
+  1745→  razorpayOrderId: string | null;
+  1746→  razorpayPaymentId: string | null;
+  1747→  createdAt: string;
+  1748→}
+  1749→
+  1750→function AdminPaymentsTab() {
+  1751→  const [payments, setPayments] = useState<PaymentRow[]>([]);
+  1752→  const [loading, setLoading] = useState(true);
+  1753→
+  1754→  useEffect(() => {
+  1755→    async function load() {
+  1756→      try {
+  1757→        const res = await fetch('/api/admin/payments');
+  1758→        if (res.ok) setPayments(await res.json());
+  1759→      } catch {}
+  1760→      setLoading(false);
+  1761→    }
+  1762→    load();
+  1763→  }, []);
+  1764→
+  1765→  const totalRevenue = payments.reduce((s, p) => s + (p.status === 'completed' ? p.amount : 0), 0);
+  1766→
+  1767→  return (
+  1768→    <div className="space-y-3 sm:space-y-4">
+  1769→      {/* Revenue Summary */}
+  1770→      <Card className="border-0 shadow-sm">
+  1771→        <CardContent className="p-3 sm:p-4 flex flex-row sm:flex-col items-start sm:items-center justify-between gap-2 sm:gap-3">
+  1772→          <div className="flex items-center gap-3">
+  1773→            <div className="p-2 rounded-xl bg-emerald-100">
+  1774→              <CreditCard className="w-5 h-5 text-emerald-700" />
+  1775→            </div>
+  1776→            <div>
+  1777→              <p className="text-xl sm:text-2xl font-bold text-gray-900">₹{totalRevenue / 100}</p>
+  1778→              <p className="text-[10px] sm:text-[11px] text-muted-foreground">Revenue ({payments.filter(p => p.status === 'completed').length} paid)</p>
+  1779→            </div>
+  1780→          </div>
+  1781→          <Badge variant="secondary" className="text-xs shrink-0">
+  1782→            {payments.length} total
+  1783→          </Badge>
+  1784→        </CardContent>
+  1785→      </Card>
+  1786→
+  1787→      {/* Payments */}
+  1788→      {loading ? (
+  1789→        <div className="flex items-center justify-center py-12">
+  1790→          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+  1791→          <span className="ml-2 text-sm text-muted-foreground">Loading payments...</span>
+  1792→        </div>
+  1793→      ) : payments.length === 0 ? (
+  1794→        <div className="text-center py-12 text-muted-foreground text-sm">No payments yet</div>
+  1795→      ) : (
+  1796→        <>
+  1797→          {/* Mobile: Card Layout */}
+  1798→          <div className="space-y-2 sm:hidden">
+  1799→            {payments.map((p) => (
+  1800→              <Card key={p.id} className="border-0 shadow-sm">
+  1801→                <div className="p-3 flex items-center justify-between gap-2">
+  1802→                  <div className="min-w-0">
+  1803→                    <p className="text-sm font-medium truncate">{p.studentName}</p>
+  1804→                    <p className="text-[10px] text-muted-foreground truncate">{p.studentEmail || '—'}</p>
+  1805→                    <div className="flex items-center gap-2 mt-1">
+  1806→                      <Badge className={`text-[10px] border-0 ${
+  1807→                        p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+  1808→                      }`}>
+  1809→                        {p.status === 'completed' ? '✓ Success' : p.status}
+  1810→                      </Badge>
+  1811→                      <span className="text-[10px] text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</span>
+  1812→                    </div>
+  1813→                  </div>
+  1814→                  <p className="text-base font-bold text-gray-900 shrink-0">₹{p.amount / 100}</p>
+  1815→                </div>
+  1816→              </Card>
+  1817→            ))}
+  1818→          </div>
+  1819→
+  1820→          {/* Desktop: Table Layout */}
+  1821→          <div className="hidden sm:block">
+  1822→            <Card className="border-0 shadow-sm">
+  1823→              <CardContent className="p-0">
+  1824→                <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 border-b text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+  1825→                  <div className="col-span-3">Student</div>
+  1826→                  <div className="col-span-2 text-center">Amount</div>
+  1827→                  <div className="col-span-2 text-center">Status</div>
+  1828→                  <div className="col-span-3">Order ID</div>
+  1829→                  <div className="col-span-2 text-right">Date</div>
+  1830→                </div>
+  1831→                <div className="max-h-[60vh] overflow-y-auto">
+  1832→                  {payments.map((p) => (
+  1833→                    <div key={p.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b last:border-0 hover:bg-gray-50/50 transition-colors items-center">
+  1834→                      <div className="col-span-3">
+  1835→                        <p className="text-sm font-medium truncate">{p.studentName}</p>
+  1836→                        <p className="text-[10px] text-muted-foreground truncate">{p.studentEmail || '—'}</p>
+  1837→                      </div>
+  1838→                      <div className="col-span-2 text-center">
+  1839→                        <p className="text-sm font-bold">₹{p.amount / 100}</p>
+  1840→                      </div>
+  1841→                      <div className="col-span-2 flex justify-center">
+  1842→                        <Badge className={`text-[10px] border-0 ${
+  1843→                          p.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+  1844→                        }`}>
+  1845→                          {p.status === 'completed' ? '✓ Success' : p.status}
+  1846→                        </Badge>
+  1847→                      </div>
+  1848→                      <div className="col-span-3">
+  1849→                        <p className="text-[10px] text-muted-foreground font-mono truncate">{p.razorpayOrderId || '—'}</p>
+  1850→                      </div>
+  1851→                      <div className="col-span-2 text-right">
+  1852→                        <p className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleDateString()}</p>
+  1853→                      </div>
+  1854→                    </div>
+  1855→                  ))}
+  1856→                </div>
+  1857→              </CardContent>
+  1858→            </Card>
+  1859→          </div>
+  1860→        </>
+  1861→      )}
+  1862→    </div>
+  1863→  );
+  1864→}
+  1865→

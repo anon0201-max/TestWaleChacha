@@ -416,7 +416,7 @@ export function HomePage() {
 
       {/* ===== WHATSAPP ===== */}
       <motion.a
-        href="https://www.whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
+        href="https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G"
         target="_blank"
         rel="noopener noreferrer"
         initial={{ opacity: 0, scale: 0.8 }}
