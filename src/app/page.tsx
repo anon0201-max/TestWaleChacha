@@ -171,7 +171,7 @@ function AppContent() {
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
       <AppHeader />
       {!isAdminOrTestTaking && <AdBanner />}
-      <main className="flex-1">
+      <main id="main-content" role="main" className="flex-1">
         {isAdminOrTestTaking ? (
           <>
             {currentView === 'admin' && <Suspense fallback={<RouteFallback />}><AdminPanel /></Suspense>}

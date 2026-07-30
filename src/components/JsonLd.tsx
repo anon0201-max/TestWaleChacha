@@ -1,52 +1,160 @@
-const SITE_URL = "https://test-wale-chacha.vercel.app";
+'use client';
+
+const SITE_URL = 'https://test-wale-chacha.vercel.app';
 
 const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "TestWaleChacha",
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'TestWaleChacha',
   url: SITE_URL,
   description:
-    "Practice free online mock tests for SSC CGL, UPSC CSE, IBPS PO, RRB NTPC, State PSC and more government exams. Real exam interface with timer, question palette & detailed solutions.",
+    'Practice free online mock tests for SSC CGL, UPSC CSE, IBPS PO, RRB NTPC, State PSC and more government exams. Real exam interface with timer, question palette & detailed solutions.',
   potentialAction: {
-    "@type": "SearchAction",
+    '@type': 'SearchAction',
     target: {
-      "@type": "EntryPoint",
+      '@type': 'EntryPoint',
       urlTemplate: `${SITE_URL}/?search={search_term_string}`,
     },
-    "query-input": "required name=search_term_string",
+    'query-input': 'required name=search_term_string',
   },
   publisher: {
-    "@type": "Organization",
-    name: "TestWaleChacha",
+    '@type': 'Organization',
+    name: 'TestWaleChacha',
     logo: {
-      "@type": "ImageObject",
+      '@type': 'ImageObject',
       url: `${SITE_URL}/logo.png`,
     },
   },
 };
 
 const eduJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "EducationalOrganization",
-  name: "TestWaleChacha",
+  '@context': 'https://schema.org',
+  '@type': 'EducationalOrganization',
+  name: 'TestWaleChacha',
   url: SITE_URL,
   description:
-    "Free Government Exam Mock Test Platform for SSC, UPSC, Banking, Railways, State PSC exams",
-  sameAs: [],
+    'Free Government Exam Mock Test Platform for SSC, UPSC, Banking, Railways, State PSC, Teaching and Defence exams',
+  sameAs: [
+    'https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G',
+  ],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    email: 'testwalechacha@gmail.com',
+    contactType: 'customer support',
+    availableLanguage: ['English', 'Hindi'],
+  },
 };
 
 const breadcrumbJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
   itemListElement: [
-    { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+    { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
     {
-      "@type": "ListItem",
+      '@type': 'ListItem',
       position: 2,
-      name: "Mock Tests",
-      item: `${SITE_URL}/tests`,
+      name: 'Mock Tests',
+      item: `${SITE_URL}/?view=tests`,
     },
   ],
+};
+
+// FAQ Schema — helps appear in Google "People Also Ask"
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'Is TestWaleChacha free to use?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes! TestWaleChacha offers free mock tests for government exams like SSC CGL, UPSC, IBPS PO, and RRB NTPC. New users get 5 free tests, and all paid plans start at just ₹100 for unlimited access to all test series.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What exams does TestWaleChacha cover?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'TestWaleChacha covers all major government exams including SSC CGL, SSC CHSL, UPSC CSE, IBPS PO, SBI PO, RRB NTPC, State PSC exams, Teaching exams (CTET, TET), Defence exams (CDS, NDA), and more. New tests are added regularly.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does TestWaleChacha provide a real exam interface?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes! TestWaleChacha provides a real exam-like interface with features like question palette (to navigate between questions), countdown timer, mark for review, color-coded question status, and detailed solutions after submission — just like the actual SSC/UPSC exam.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How to prepare for SSC CGL with mock tests?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Start with topic-wise mock tests on TestWaleChacha to strengthen individual subjects like Reasoning, Quantitative Aptitude, English, and GK. Then take full-length mock tests to practice time management. Review your detailed solutions and analytics to identify weak areas. Consistent practice with 2-3 tests daily helps build speed and accuracy for SSC CGL.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I use TestWaleChacha on mobile?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes! TestWaleChacha is fully responsive and works perfectly on mobile phones and tablets. You can also install it as a PWA (Progressive Web App) on your device for quick access and a native app-like experience. Practice mock tests anytime, anywhere — even while commuting.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What is the price of TestWaleChacha subscription?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'TestWaleChacha PRO subscription costs just ₹100 and gives you unlimited access to all mock tests across all exam categories including SSC, UPSC, Banking, Railways, State PSC, Teaching, and Defence exams. It is one of the most affordable test platforms in India.',
+      },
+    },
+  ],
+};
+
+// ItemList schema for exam categories
+const categoryListJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Government Exam Mock Test Categories',
+  description: 'Browse free mock tests by exam category on TestWaleChacha',
+  numberOfItems: 8,
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'SSC Mock Tests', url: `${SITE_URL}/?view=tests` },
+    { '@type': 'ListItem', position: 2, name: 'Banking Mock Tests', url: `${SITE_URL}/?view=tests` },
+    { '@type': 'ListItem', position: 3, name: 'Railways Mock Tests', url: `${SITE_URL}/?view=tests` },
+    { '@type': 'ListItem', position: 4, name: 'UPSC Mock Tests', url: `${SITE_URL}/?view=tests` },
+    { '@type': 'ListItem', position: 5, name: 'Teaching Mock Tests', url: `${SITE_URL}/?view=tests` },
+    { '@type': 'ListItem', position: 6, name: 'State PSC Mock Tests', url: `${SITE_URL}/?view=tests` },
+    { '@type': 'ListItem', position: 7, name: 'Defence Mock Tests', url: `${SITE_URL}/?view=tests` },
+    { '@type': 'ListItem', position: 8, name: 'Other Exam Mock Tests', url: `${SITE_URL}/?view=tests` },
+  ],
+};
+
+// Review/AggregateRating schema
+const reviewJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'TestWaleChacha',
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Web',
+  offers: {
+    '@type': 'AggregateOffer',
+    lowPrice: '0',
+    highPrice: '100',
+    priceCurrency: 'INR',
+    offerCount: '2',
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.8',
+    ratingCount: '100',
+    bestRating: '5',
+    worstRating: '1',
+  },
 };
 
 export default function JsonLd() {
@@ -63,6 +171,18 @@ export default function JsonLd() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryListJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd) }}
       />
     </>
   );

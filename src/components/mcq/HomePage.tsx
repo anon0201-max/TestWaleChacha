@@ -6,15 +6,71 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { AdBanner } from '@/components/AdSense';
 import { getCategoryIcon } from './icons';
 import {
   Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle,
-  Play, Shield, TrendingUp, Target, MessageCircle, GraduationCap, Flame, Sparkles,
+  Play, Shield, TrendingUp, Target, MessageCircle, GraduationCap, Flame, Sparkles, ChevronDown,
 } from 'lucide-react';
 
 const examTabs = ['SSC', 'Banking', 'Railways', 'UPSC', 'Teaching', 'State', 'Defence', 'Other'];
+
+// ── FAQ Accordion ──
+const faqs = [
+  {
+    q: 'Is TestWaleChacha free to use?',
+    a: 'Yes! TestWaleChacha offers free mock tests for government exams like SSC CGL, UPSC, IBPS PO, and RRB NTPC. New users get 5 free tests, and PRO subscription for unlimited access starts at just ₹100.',
+  },
+  {
+    q: 'What exams does TestWaleChacha cover?',
+    a: 'We cover all major government exams — SSC CGL, SSC CHSL, UPSC CSE, IBPS PO, SBI PO, RRB NTPC, State PSC, Teaching (CTET/TET), Defence (CDS/NDA), and more. New tests are added regularly.',
+  },
+  {
+    q: 'Does it have a real exam-like interface?',
+    a: 'Yes! You get a real exam-like interface with question palette to navigate between questions, countdown timer, mark for review, color-coded status, and detailed solutions after submission — exactly like the actual SSC/UPSC exam.',
+  },
+  {
+    q: 'How to prepare for SSC CGL with mock tests?',
+    a: 'Start with topic-wise tests to strengthen individual subjects (Reasoning, Quant, English, GK). Then take full-length mocks for time management practice. Review detailed solutions to identify weak areas. Consistent practice of 2-3 tests daily builds speed and accuracy.',
+  },
+  {
+    q: 'Can I use TestWaleChacha on mobile?',
+    a: 'Absolutely! TestWaleChacha is fully responsive and works perfectly on mobile phones and tablets. You can also install it as a PWA (Progressive Web App) for quick access and a native app-like experience. Practice anytime, anywhere.',
+  },
+  {
+    q: 'What is the price of PRO subscription?',
+    a: 'TestWaleChacha PRO costs just ₹100 and gives you unlimited access to all mock tests across all exam categories — SSC, UPSC, Banking, Railways, State PSC, Teaching, and Defence. One of the most affordable platforms in India.',
+  },
+];
+
+function FaqAccordion() {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  return (
+    <div className="max-w-3xl mx-auto space-y-2">
+      {faqs.map((faq, i) => (
+        <motion.div
+          key={i}
+          custom={i}
+          variants={fadeUp}
+          className="border border-gray-200 rounded-xl overflow-hidden bg-white"
+        >
+          <button
+            onClick={() => setOpenIdx(openIdx === i ? null : i)}
+            className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 text-left hover:bg-gray-50 transition-colors"
+            aria-expanded={openIdx === i}
+          >
+            <h3 className="font-semibold text-sm sm:text-base pr-4">{faq.q}</h3>
+            <ChevronDown className={`w-4 h-4 shrink-0 text-muted-foreground transition-transform duration-200 ${openIdx === i ? 'rotate-180' : ''}`} />
+          </button>
+          <div className={`overflow-hidden transition-all duration-200 ${openIdx === i ? 'max-h-60' : 'max-h-0'}`}>
+            <p className="px-4 sm:px-5 pb-4 text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 // ── Scroll-triggered animation helpers ──
 const fadeUp = {
@@ -426,6 +482,15 @@ export function HomePage() {
             </motion.div>
           ))}
         </div>
+      </ScrollSection>
+
+      {/* ===== FAQ SECTION ===== */}
+      <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
+        <motion.div variants={fadeUp} custom={0} className="text-center mb-5">
+          <h2 className="text-lg sm:text-xl font-bold">Frequently Asked Questions</h2>
+          <p className="text-xs text-muted-foreground mt-1">Mock tests, exams aur platform ke baare mein common sawaal</p>
+        </motion.div>
+        <FaqAccordion />
       </ScrollSection>
 
       {/* ===== WHATSAPP ===== */}

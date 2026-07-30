@@ -88,7 +88,7 @@ export function AppHeader() {
           </button>
 
           {/* Desktop Nav (sm and above) */}
-          <nav className="hidden sm:flex items-center gap-2 relative z-10">
+          <nav className="hidden sm:flex items-center gap-2 relative z-10" aria-label="Main navigation">
             {/* Mock Tests - show on home page */}
             {currentView === 'home' && (
               <Button variant="ghost" size="sm" className="text-sm text-white hover:bg-white/10" onClick={() => setView('tests')}>Mock Tests</Button>
@@ -279,7 +279,7 @@ export function AppHeader() {
 
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && currentView !== 'test-taking' && (
-          <div className="sm:hidden bg-[#15156a] border-t border-white/10 px-4 py-3 z-40">
+          <div className="sm:hidden bg-[#15156a] border-t border-white/10 px-4 py-3 z-40" role="navigation" aria-label="Mobile navigation">
             <div className="flex flex-col gap-1">
               {/* Navigation Links */}
               {currentView !== 'home' && currentView !== 'admin' && (
