@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +63,8 @@ export function TestTakingPage() {
 
   // Ref to prevent double-submit and track submit state across async boundaries
   const submittingRef = useRef(false);
+  // Ref for timer interval so it persists across re-renders without needing timeRemaining in deps
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const questions = currentTest?.questions || [];
   const currentQuestion = questions[currentQuestionIndex];
@@ -199,29 +201,51 @@ export function TestTakingPage() {
     }
   }
 
-  // Timer — only runs when test is active and time > 0
+  // Timer — starts when isTestActive, includes built-in guard for timeRemaining=0
   useEffect(() => {
-    if (!isTestActive || timeRemaining <= 0) return;
-    const timer = setInterval(() => {
-      setTimeRemaining((prev: number) => {
-        const next = prev - 1;
-        if (next <= 0) {
-          // Auto-submit when timer reaches 0
-          setTimeout(() => {
-            if (useAppStore.getState().isTestActive) {
-              handleSubmitTest();
-            }
-          }, 100);
-          return 0;
-        }
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isTestActive, timeRemaining, setTimeRemaining]);
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (!isTestActive) return;
 
-  // DON'T auto-submit from an effect — it causes infinite loops.
-  // Auto-submit is handled inside the timer interval above when time reaches 0.
+    // GUARD: If timeRemaining is 0 or invalid, fix it from currentTest
+    let startTime = useAppStore.getState().timeRemaining;
+    if (!startTime || startTime <= 0 || !isFinite(startTime)) {
+      const testLimit = Number(currentTest?.timeLimit);
+      startTime = (testLimit > 0 ? testLimit : 600);
+      console.log('[Timer] Fixed timeRemaining from', useAppStore.getState().timeRemaining, 'to', startTime, '(test.timeLimit:', currentTest?.timeLimit, ')');
+      useAppStore.setState({ timeRemaining: startTime });
+    }
+
+    const capturedStart = startTime; // capture for closure safety
+    timerRef.current = setInterval(() => {
+      const remaining = useAppStore.getState().timeRemaining;
+      if (remaining <= 1) {
+        // Time's up — stop timer and auto-submit
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        useAppStore.setState({ timeRemaining: 0 });
+        setTimeout(() => {
+          if (useAppStore.getState().isTestActive) {
+            handleSubmitTest();
+          }
+        }, 200);
+        return;
+      }
+      useAppStore.setState({ timeRemaining: remaining - 1 });
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [isTestActive]);
 
   if (!currentTest) return null;
 

@@ -64,9 +64,11 @@ export function TestListPage() {
       const res = await fetch(`/api/tests/${test.id}?testId=${test.id}`);
       if (res.ok) {
         const testData = await res.json();
+        console.log('[StartTest] testData.timeLimit:', testData.timeLimit, 'type:', typeof testData.timeLimit, '| test.timeLimit:', test.timeLimit);
+        const safeTime = Number(testData.timeLimit) || Number(test.timeLimit) || 600;
+        console.log('[StartTest] Setting timeRemaining to:', safeTime);
         setCurrentTest(testData);
-        // Use fetched test's timeLimit (guaranteed present) with fallback
-        setTimeRemaining(Number(testData.timeLimit) || Number(test.timeLimit) || 600);
+        setTimeRemaining(safeTime);
       } else {
         toast.error('Failed to load test. Please try again.');
         return;
