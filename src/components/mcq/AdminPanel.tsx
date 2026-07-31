@@ -1019,9 +1019,9 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 300000);
         try {
-          setFillStatus({ msg: `📤 Image ${i + 1}/${fileList.length}: Scanning with AI... (1-3 min)`, type: 'info' });
-          // Use API route — works on both local and Vercel
-          const res = await fetch('/api/admin/extract-question', { method: 'POST', body: formData, signal: controller.signal });
+          setFillStatus({ msg: `📤 Image ${i + 1}/${fileList.length}: Scanning with AI...`, type: 'info' });
+          // Use mini-service (no Vercel timeout) via gateway
+          const res = await fetch('/extract?XTransformPort=3005', { method: 'POST', body: formData, signal: controller.signal });
           clearTimeout(timeoutId);
           if (!res.ok) {
             const errText = await res.text().catch(() => 'Unknown error');

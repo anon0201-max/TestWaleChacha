@@ -5,7 +5,7 @@
     "": {
       "name": "extract-service",
       "dependencies": {
-        "z-ai-web-dev-sdk": "*",
+        "z-ai-web-dev-sdk": "latest",
       },
     },
   },
