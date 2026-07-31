@@ -85,6 +85,7 @@ export function AppFooter() {
                 <li><a href="https://test-wale-chacha.vercel.app/terms" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Terms &amp; Conditions</a></li>
                 <li><a href="https://test-wale-chacha.vercel.app/refund-policy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Refund Policy</a></li>
                 <li><a href="https://test-wale-chacha.vercel.app/about" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">About Us</a></li>
+                <li><a href="https://test-wale-chacha.vercel.app/contact" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Contact Us</a></li>
               </ul>
             </div>
 
@@ -139,6 +140,8 @@ export function AppFooter() {
                 <a href="https://test-wale-chacha.vercel.app/refund-policy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Refund Policy</a>
                 {' · '}
                 <a href="https://test-wale-chacha.vercel.app/about" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">About Us</a>
+                {' · '}
+                <a href="https://test-wale-chacha.vercel.app/contact" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Contact</a>
               </span>
               <button
                 onClick={scrollToTop}

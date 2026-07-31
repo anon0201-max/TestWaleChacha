@@ -33,6 +33,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
     },
     {
+      url: "https://test-wale-chacha.vercel.app/contact",
+      lastModified: new Date("2026-07-31"),
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
       url: "https://test-wale-chacha.vercel.app/ssc-mock-tests",
       lastModified: new Date("2026-07-31"),
       changeFrequency: "weekly",
