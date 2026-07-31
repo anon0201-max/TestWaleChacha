@@ -19,6 +19,7 @@ import {
   HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
   Menu, Lock, Unlock,
 } from 'lucide-react';
+import { Logo } from './Logo';
 
 // ==================== ADMIN LOGIN ====================
 function AdminLogin() {
@@ -96,8 +97,8 @@ function AdminLogin() {
         <Card className="w-full max-w-md mx-auto shadow-xl border-0">
           <CardContent className="p-5 sm:p-6">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-blue-700 flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-white" />
+              <div className="flex justify-center mb-3">
+                <Logo size="lg" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">Admin Login</h2>
               <p className="text-xs text-muted-foreground mt-1">Enter credentials to manage tests & questions</p>
