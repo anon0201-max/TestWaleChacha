@@ -44,7 +44,7 @@ export default function AboutPage() {
               <li><strong>Detailed Solutions:</strong> Step-by-step explanations for every question to help you understand concepts</li>
               <li><strong>Performance Analytics:</strong> Subject-wise and topic-wise analysis of your test performance</li>
               <li><strong>Progress Tracking:</strong> Track your improvement over time with detailed attempt history</li>
-              <li><strong>Free &amp; Affordable Plans:</strong> Start with 5 free tests and unlock unlimited access for just &#8377;100</li>
+              <li><strong>Free &amp; Affordable Plans:</strong> Start with 2 free tests and unlock unlimited access for just &#8377;100</li>
               <li><strong>Mobile-First Design:</strong> Practice anytime, anywhere on any device</li>
             </ul>
           </section>

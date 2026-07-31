@@ -20,7 +20,7 @@ const examTabs = ['SSC', 'Banking', 'Railways', 'UPSC', 'Teaching', 'State', 'De
 const faqs = [
   {
     q: 'Is TestWaleChacha free to use?',
-    a: 'Yes! TestWaleChacha offers free mock tests for government exams like SSC CGL, UPSC, IBPS PO, and RRB NTPC. New users get 5 free tests, and PRO subscription for unlimited access starts at just ₹100.',
+    a: 'Yes! TestWaleChacha offers free mock tests for government exams like SSC CGL, UPSC, IBPS PO, and RRB NTPC. New users get 2 free tests, and PRO subscription for unlimited access starts at just ₹100.',
   },
   {
     q: 'What exams does TestWaleChacha cover?',
@@ -52,7 +52,7 @@ const faqs = [
   },
   {
     q: 'How to get free mock test for UPSC CSE Prelims online?',
-    a: 'Sign up free on TestWaleChacha and get 5 free mock tests including UPSC CSE Prelims GS Paper 1 and CSAT. Questions cover History, Geography, Polity, Economy, Science and Current Affairs with detailed explanations.',
+    a: 'Sign up free on TestWaleChacha and get 2 free mock tests including UPSC CSE Prelims GS Paper 1 and CSAT. Questions cover History, Geography, Polity, Economy, Science and Current Affairs with detailed explanations.',
   },
   {
     q: 'Which is the best free mock test platform for government exams in India?',

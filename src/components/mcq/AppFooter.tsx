@@ -20,7 +20,7 @@ export function AppFooter() {
             <h3 className="font-bold text-lg flex items-center gap-2 justify-center sm:justify-start">
               <Zap className="w-5 h-5" /> Ready to crack your exam?
             </h3>
-            <p className="text-emerald-100 text-sm mt-1">Start with 5 free tests — No credit card needed!</p>
+            <p className="text-emerald-100 text-sm mt-1">Start with 2 free tests — No credit card needed!</p>
           </div>
           <div className="flex gap-3">
             {!isLoggedIn ? (

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     default: "Free Mock Tests for SSC, UPSC, IBPS, RRB NTPC Online | TestWaleChacha",
     template: "%s | TestWaleChacha",
   },
-  description: "Practice free online mock tests for SSC CGL, UPSC CSE, IBPS PO, RRB NTPC, CTET, CDS, NDA and more government exams. Real exam interface with question palette, timer, detailed solutions & performance analytics. 5 free tests on signup.",
+  description: "Practice free online mock tests for SSC CGL, UPSC CSE, IBPS PO, RRB NTPC, CTET, CDS, NDA and more government exams. Real exam interface with question palette, timer, detailed solutions & performance analytics. 2 free tests on signup.",
   keywords: [
     "mock test", "free mock test online", "SSC CGL mock test", "SSC CHSL mock test", "SSC MTS mock test",
     "UPSC mock test", "UPSC CSE Prelims mock test", "UPSC CSAT mock test",
