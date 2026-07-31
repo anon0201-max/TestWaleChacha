@@ -85,7 +85,7 @@ const faqJsonLd = {
       name: 'Does TestWaleChacha provide a real exam interface?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes! TestWaleChacha provides a real exam-like interface with features like question palette (to navigate between questions), countdown timer, mark for review, color-coded question status, and detailed solutions after submission — just like the actual SSC/UPSC exam.',
+        text: 'Yes! TestWaleChacha provides a real exam-like interface with features like question palette, countdown timer, mark for review, color-coded question status, and detailed solutions after submission — just like the actual SSC/UPSC exam.',
       },
     },
     {
@@ -93,7 +93,7 @@ const faqJsonLd = {
       name: 'How to prepare for SSC CGL with mock tests?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Start with topic-wise mock tests on TestWaleChacha to strengthen individual subjects like Reasoning, Quantitative Aptitude, English, and GK. Then take full-length mock tests to practice time management. Review your detailed solutions and analytics to identify weak areas. Consistent practice with 2-3 tests daily helps build speed and accuracy for SSC CGL.',
+        text: 'Start with topic-wise mock tests on TestWaleChacha to strengthen individual subjects like Reasoning, Quantitative Aptitude, English, and GK. Then take full-length mock tests to practice time management. Review detailed solutions to identify weak areas. Consistent practice with 2-3 tests daily helps build speed and accuracy for SSC CGL.',
       },
     },
     {
@@ -101,7 +101,7 @@ const faqJsonLd = {
       name: 'Can I use TestWaleChacha on mobile?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes! TestWaleChacha is fully responsive and works perfectly on mobile phones and tablets. You can also install it as a PWA (Progressive Web App) on your device for quick access and a native app-like experience. Practice mock tests anytime, anywhere — even while commuting.',
+        text: 'Yes! TestWaleChacha is fully responsive and works perfectly on mobile phones and tablets. You can also install it as a PWA (Progressive Web App) for quick access and a native app-like experience. Practice mock tests anytime, anywhere.',
       },
     },
     {
@@ -110,6 +110,54 @@ const faqJsonLd = {
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'TestWaleChacha PRO subscription costs just ₹100 and gives you unlimited access to all mock tests across all exam categories including SSC, UPSC, Banking, Railways, State PSC, Teaching, and Defence exams. It is one of the most affordable test platforms in India.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Where can I find free SSC CGL mock test online?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'TestWaleChacha provides free SSC CGL mock tests online with real exam pattern — 100 questions, 60 minutes, covering Quantitative Aptitude, Reasoning, English, and General Awareness. Detailed solutions included after every test.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is there a free mock test for IBPS PO Prelims?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes! TestWaleChacha offers free IBPS PO Prelims mock tests with Reasoning, Quantitative Aptitude, English Language, and General Awareness sections. Practice with timer and question palette just like the actual IBPS exam.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How to get free mock test for UPSC CSE Prelims online?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Sign up free on TestWaleChacha and get 5 free mock tests including UPSC CSE Prelims GS Paper 1 and CSAT. Questions cover History, Geography, Polity, Economy, Science and Current Affairs with detailed explanations.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Which is the best free mock test platform for government exams in India?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'TestWaleChacha is one of the best free mock test platforms in India with real exam-like interface, question palette, timer, detailed solutions, and performance analytics. Covers SSC, UPSC, Banking, Railways, and more. PRO plan at just ₹100.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I practice RRB NTPC mock test free online?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes! TestWaleChacha offers free RRB NTPC mock tests with CBT-based interface. Practice Mathematics, General Intelligence, General Science, and General Awareness questions with timer and detailed solutions.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Are there free CTET mock tests with answers and explanation?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'TestWaleChacha provides free CTET Paper 1 and Paper 2 mock tests with detailed answers and explanations. Practice Child Development, Pedagogy, Language, Mathematics, Science, and Social Studies questions.',
       },
     },
   ],

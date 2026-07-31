@@ -8,12 +8,6 @@ const nextConfig: NextConfig = {
     "space-z.ai",
     "*.space-z.ai",
   ],
-  // Rewrite /sitemap.xml to API route (bypass Vercel static file headers)
-  async rewrites() {
-    return [
-      { source: '/sitemap.xml', destination: '/api/sitemap-xml' },
-    ];
-  },
   async headers() {
     return [
       // Security & SEO headers for all routes
@@ -56,6 +50,14 @@ const nextConfig: NextConfig = {
         source: "/ads\.txt",
         headers: [
           { key: "Cache-Control", value: "public, max-age=86400" },
+        ],
+      },
+      // Cache sitemap.xml (short cache so Google sees updates quickly)
+      {
+        source: "/sitemap\.xml",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=3600, s-maxage=3600" },
+          { key: "Content-Type", value: "application/xml" },
         ],
       },
     ];

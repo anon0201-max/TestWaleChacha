@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import JsonLd from "@/components/JsonLd";
+import SeoContent from "@/components/SeoContent";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -12,17 +13,24 @@ const SITE_URL = "https://test-wale-chacha.vercel.app";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "TestWaleChacha - Free Government Exam Mock Tests | SSC, UPSC, Banking, Railways",
+    default: "Free Mock Tests for SSC, UPSC, IBPS, RRB NTPC Online | TestWaleChacha",
     template: "%s | TestWaleChacha",
   },
-  description: "Practice free online mock tests for SSC CGL, UPSC CSE, IBPS PO, RRB NTPC, State PSC and more. Real exam interface with question palette, timer, detailed solutions. 100+ questions updated daily.",
+  description: "Practice free online mock tests for SSC CGL, UPSC CSE, IBPS PO, RRB NTPC, CTET, CDS, NDA and more government exams. Real exam interface with question palette, timer, detailed solutions & performance analytics. 5 free tests on signup.",
   keywords: [
-    "mock test", "SSC CGL mock test", "SSC CHSL mock test", "UPSC mock test", "UPSC CSE",
-    "IBPS PO mock test", "SBI PO mock test", "RRB NTPC mock test", "Railway exam",
-    "State PSC mock test", "online test series", "free mock test", "government exam preparation",
-    "MCQ questions", "GK questions", "current affairs", "aptitude questions",
-    "reasoning questions", "quantitative aptitude", "English grammar",
-    "testwalechacha", "free online test", "India exam preparation",
+    "mock test", "free mock test online", "SSC CGL mock test", "SSC CHSL mock test", "SSC MTS mock test",
+    "UPSC mock test", "UPSC CSE Prelims mock test", "UPSC CSAT mock test",
+    "IBPS PO mock test", "IBPS Clerk mock test", "SBI PO mock test",
+    "RRB NTPC mock test", "RRB Group D mock test", "Railway exam mock test",
+    "State PSC mock test", "CTET mock test", "TET mock test",
+    "CDS mock test", "NDA mock test", "online test series",
+    "government exam preparation", "free online test",
+    "MCQ questions", "GK questions", "current affairs",
+    "aptitude questions", "reasoning questions", "quantitative aptitude",
+    "English grammar", "testwalechacha", "India exam preparation",
+    "free mock test with answers", "mock test online free",
+    "government exam mock test free", "SSC CGL free mock test online",
+    "IBPS PO free mock test", "UPSC free mock test online",
   ],
   authors: [{ name: "TestWaleChacha", url: SITE_URL }],
   creator: "TestWaleChacha",
@@ -56,8 +64,8 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: SITE_URL,
     siteName: "TestWaleChacha",
-    title: "TestWaleChacha - Free Government Exam Mock Tests | SSC, UPSC, Banking",
-    description: "Practice 100+ free mock tests for SSC CGL, UPSC, IBPS PO, RRB NTPC. Real exam interface with timer, question palette & detailed solutions. Start now!",
+    title: "Free Mock Tests for SSC, UPSC, IBPS, RRB NTPC | TestWaleChacha",
+    description: "Practice free mock tests for SSC CGL, UPSC, IBPS PO, RRB NTPC, CTET, CDS. Real exam interface with timer, question palette & detailed solutions. Start now!",
     images: [
       {
         url: "/og-image.png",
@@ -69,8 +77,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TestWaleChacha - Free Government Exam Mock Tests",
-    description: "Practice 100+ free mock tests for SSC, UPSC, IBPS, RRB. Real exam interface with timer & solutions.",
+    title: "Free Mock Tests for SSC, UPSC, IBPS, RRB | TestWaleChacha",
+    description: "Free mock tests for SSC CGL, UPSC, IBPS PO, RRB NTPC, CTET, CDS. Real exam interface with timer & solutions.",
     images: ["/og-image.png"],
     creator: "@testwalechacha",
   },
@@ -114,6 +122,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
+        <SeoContent />
         {children}
         <ServiceWorkerRegister />
         <JsonLd />

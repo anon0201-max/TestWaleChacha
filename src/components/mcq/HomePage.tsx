@@ -42,6 +42,30 @@ const faqs = [
     q: 'What is the price of PRO subscription?',
     a: 'TestWaleChacha PRO costs just ₹100 and gives you unlimited access to all mock tests across all exam categories — SSC, UPSC, Banking, Railways, State PSC, Teaching, and Defence. One of the most affordable platforms in India.',
   },
+  {
+    q: 'Where can I find free SSC CGL mock test online?',
+    a: 'TestWaleChacha provides free SSC CGL mock tests online with real exam pattern — 100 questions, 60 minutes, covering Quantitative Aptitude, Reasoning, English, and General Awareness. Detailed solutions included after every test.',
+  },
+  {
+    q: 'Is there a free mock test for IBPS PO Prelims?',
+    a: 'Yes! TestWaleChacha offers free IBPS PO Prelims mock tests with Reasoning, Quantitative Aptitude, English Language, and General Awareness sections. Practice with timer and question palette just like the actual IBPS exam.',
+  },
+  {
+    q: 'How to get free mock test for UPSC CSE Prelims online?',
+    a: 'Sign up free on TestWaleChacha and get 5 free mock tests including UPSC CSE Prelims GS Paper 1 and CSAT. Questions cover History, Geography, Polity, Economy, Science and Current Affairs with detailed explanations.',
+  },
+  {
+    q: 'Which is the best free mock test platform for government exams in India?',
+    a: 'TestWaleChacha is one of the best free mock test platforms in India with real exam-like interface, question palette, timer, detailed solutions, and performance analytics. Covers SSC, UPSC, Banking, Railways, and more. PRO plan at just ₹100.',
+  },
+  {
+    q: 'Can I practice RRB NTPC mock test free online?',
+    a: 'Yes! TestWaleChacha offers free RRB NTPC mock tests with CBT-based interface. Practice Mathematics, General Intelligence, General Science, and General Awareness questions with timer and detailed solutions.',
+  },
+  {
+    q: 'Are there free CTET mock tests with answers and explanation?',
+    a: 'TestWaleChacha provides free CTET Paper 1 and Paper 2 mock tests with detailed answers and explanations. Practice Child Development, Pedagogy, Language, Mathematics, Science, and Social Studies questions.',
+  },
 ];
 
 function FaqAccordion() {
@@ -182,9 +206,12 @@ export function HomePage() {
                 transition={{ duration: 0.6, delay: 0.25 }}
                 className="text-xl sm:text-3xl md:text-4xl lg:text-[2.75rem] xl:text-5xl font-extrabold leading-tight mb-2 sm:mb-4"
               >
-                Mock Tests Jo Dili Ki{' '}
-                <span className="bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent">Tayyari Karayein</span>
+                Free Online Mock Tests for{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-teal-300 bg-clip-text text-transparent">SSC, UPSC, IBPS &amp; RRB</span>
               </motion.h1>
+              <p className="text-sm sm:text-base text-white/70 mb-3 sm:mb-4 max-w-lg leading-relaxed">
+                Mock tests jo dil ki tayyari karayein! SSC CGL, UPSC, IBPS PO, RRB NTPC aur bahut saare government exams ke liye real exam jaisa interface — Question Palette, Timer aur detailed analysis ke saath.
+              </p>
 
               <motion.div
                 initial={{ opacity: 0 }}
@@ -203,9 +230,9 @@ export function HomePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
-                className="text-xs sm:text-base text-white/50 mb-4 sm:mb-8 max-w-lg"
+                className="text-xs sm:text-sm text-white/40 mb-4 sm:mb-8 max-w-lg"
               >
-                Government exams ki taiyaari ab aasan hai! SSC CGL, UPSC, IBPS PO, RRB NTPC aur bahut saare exams ke liye real exam jaisa interface — Question Palette, Timer aur detailed analysis ke saath.
+                Government exam preparation platform with free MCQ practice tests, detailed solutions, and performance analytics. Works on mobile, tablet &amp; desktop.
               </motion.p>
 
               <motion.div
