@@ -42,7 +42,7 @@ export function CookieConsent() {
         <p className="text-sm text-gray-300 text-center sm:text-left">
           We use cookies to improve your experience and for Google Ads.{' '}
           <a
-            href="/privacy-policy"
+            href="https://test-wale-chacha.vercel.app/privacy-policy"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-white transition-colors"
