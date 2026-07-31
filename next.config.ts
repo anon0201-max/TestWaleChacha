@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
     "space-z.ai",
     "*.space-z.ai",
   ],
+  // Rewrite /sitemap.xml to API route (bypass Vercel static file headers)
+  async rewrites() {
+    return [
+      { source: '/sitemap.xml', destination: '/api/sitemap-xml' },
+    ];
+  },
   async headers() {
     return [
       // Security & SEO headers for all routes
