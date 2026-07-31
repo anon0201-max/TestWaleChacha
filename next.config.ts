@@ -52,14 +52,6 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=86400" },
         ],
       },
-      // Cache sitemap.xml (short cache so Google sees updates quickly)
-      {
-        source: "/sitemap\.xml",
-        headers: [
-          { key: "Cache-Control", value: "public, max-age=3600, s-maxage=3600" },
-          { key: "Content-Type", value: "application/xml" },
-        ],
-      },
     ];
   },
 };
