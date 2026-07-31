@@ -23,3 +23,25 @@ Stage Summary:
 - Page compiles successfully (GET / 200)
 - 12 FAQ Q&As with long-tail keyword targeting
 - Hero H1 now contains primary English keywords
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Create legal/compliance pages for Google Ads approval (Privacy Policy, Terms, Refund Policy, About, Cookie Consent)
+
+Work Log:
+- Created `/src/app/privacy-policy/page.tsx` — Server component with full Privacy Policy covering: data collection, cookies, third-party services (Google Ads, Razorpay), user rights, data security, DPDPA 2023 compliance, children's privacy, data retention, international transfers, changes to policy, contact info. Metadata export included.
+- Created `/src/app/terms/page.tsx` — Server component with full Terms & Conditions covering: acceptance, services description, user accounts, subscription & payments (₹100 via Razorpay), intellectual property, user conduct, user-generated content, limitation of liability, disclaimer, indemnification, governing law (India), termination, severability, modifications, contact. Metadata export included.
+- Created `/src/app/refund-policy/page.tsx` — Server component with full Refund & Cancellation Policy covering: eligibility for refund (within 24 hours, technical issues, duplicate payment, service deficiency), non-refundable situations, how to request refund, processing time (3-5 day review, 5-10 day crediting), subscription cancellation, free tier, chargebacks, changes to policy, contact. Metadata export included.
+- Created `/src/app/about/page.tsx` — Server component with About Us page covering: mission, what TestWaleChacha does, exam categories (SSC, UPSC, IBPS, RRB, CTET, CDS, NDA, State PSC) with visual cards, team info (generic), why choose us (5 numbered points), growing community stats, contact. Metadata export included.
+- Created `/src/components/CookieConsent.tsx` — Client component with fixed bottom banner, gray-900 background, "Accept" and "Decline" buttons, localStorage persistence, privacy policy link, responsive design.
+- Updated `/src/components/mcq/AppFooter.tsx` — Added 4 legal page links (Privacy Policy, Terms & Conditions, Refund Policy, About Us) to Quick Links column as `<a>` tags with `target="_blank"`. Added separated legal links (Privacy · Terms · Refund Policy · About Us) in bottom bar before Admin button. Imported and rendered `<CookieConsent />` at end of footer return.
+- Updated `/src/app/sitemap.ts` — Added all 4 new pages (privacy-policy, terms, refund-policy, about) with lastModified: 2026-07-31, changeFrequency: 'monthly', priority: 0.3.
+
+Stage Summary:
+- 4 legal/compliance pages created with professional styling, proper heading hierarchy, and metadata exports
+- Cookie consent banner with localStorage persistence
+- Footer updated with legal page links in both Quick Links and bottom bar
+- Sitemap updated with 4 new pages
+- All pages use consistent styling: min-h-screen, max-w-3xl, py-12, white background, emerald accent colors
+- All lint checks pass (no new errors introduced)

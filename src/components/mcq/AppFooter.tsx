@@ -2,6 +2,7 @@
 
 import { Crown, UserCircle, Zap, Shield, ArrowUp, Heart, MessageCircle, Mail, Phone, BookOpen } from 'lucide-react';
 import { useAppStore, handleSubscribeClick } from '@/store/useAppStore';
+import { CookieConsent } from '@/components/CookieConsent';
 
 export function AppFooter() {
   const { isSubscribed, isLoggedIn, setShowAuthModal, setView } = useAppStore();
@@ -80,6 +81,10 @@ export function AppFooter() {
                 <li><button onClick={() => { setView('tests'); scrollToTop(); }} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">All Tests</button></li>
                 <li><button onClick={() => { setView('my-attempts'); scrollToTop(); }} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">My Attempts</button></li>
                 <li><button onClick={handleSubscribeClick} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Subscribe — ₹100</button></li>
+                <li><a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Privacy Policy</a></li>
+                <li><a href="/terms" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Terms &amp; Conditions</a></li>
+                <li><a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Refund Policy</a></li>
+                <li><a href="/about" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">About Us</a></li>
               </ul>
             </div>
 
@@ -126,6 +131,15 @@ export function AppFooter() {
               © {new Date().getFullYear()} TestWaleChacha. All rights reserved.
             </span>
             <div className="flex items-center gap-4 text-xs">
+              <span className="text-gray-600">
+                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Privacy</a>
+                {' · '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Terms</a>
+                {' · '}
+                <a href="/refund-policy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Refund Policy</a>
+                {' · '}
+                <a href="/about" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">About Us</a>
+              </span>
               <button
                 onClick={() => setView('admin')}
                 className="flex items-center gap-1 text-gray-600 hover:text-gray-400 transition-colors"
@@ -142,6 +156,7 @@ export function AppFooter() {
           </div>
         </div>
       </div>
+      <CookieConsent />
     </footer>
   );
 }
