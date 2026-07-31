@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
     "space-z.ai",
     "*.space-z.ai",
   ],
+  async rewrites() {
+    return [
+      {
+        source: "/ads.txt",
+        destination: "/api/ads-txt",
+      },
+    ];
+  },
   async headers() {
     return [
       // Security & SEO headers for all routes
@@ -43,13 +51,6 @@ const nextConfig: NextConfig = {
         source: "/googleabb88179bbb562dd\.html",
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
-        ],
-      },
-      // Cache ads.txt
-      {
-        source: "/ads\.txt",
-        headers: [
-          { key: "Cache-Control", value: "public, max-age=86400" },
         ],
       },
     ];
