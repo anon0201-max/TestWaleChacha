@@ -6,25 +6,35 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'TestWaleChacha',
+  alternateName: 'TestWale Chacha',
   url: SITE_URL,
   description:
     'Practice free online mock tests for SSC CGL, UPSC CSE, IBPS PO, RRB NTPC, State PSC and more government exams. Real exam interface with timer, question palette & detailed solutions.',
-  potentialAction: {
-    '@type': 'SearchAction',
-    target: {
-      '@type': 'EntryPoint',
-      urlTemplate: `${SITE_URL}/?search={search_term_string}`,
-    },
-    'query-input': 'required name=search_term_string',
-  },
   publisher: {
     '@type': 'Organization',
     name: 'TestWaleChacha',
+    url: SITE_URL,
     logo: {
       '@type': 'ImageObject',
       url: `${SITE_URL}/logo.png`,
     },
   },
+};
+
+// Separate Organization schema — helps Google identify site name
+const orgJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'TestWaleChacha',
+  alternateName: 'TestWale Chacha',
+  url: SITE_URL,
+  logo: {
+    '@type': 'ImageObject',
+    url: `${SITE_URL}/logo.png`,
+  },
+  sameAs: [
+    'https://whatsapp.com/channel/0029VbDsNS4A2pL5AnlWwm1G',
+  ],
 };
 
 const eduJsonLd = {
@@ -211,6 +221,10 @@ export default function JsonLd() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
       />
       <script
         type="application/ld+json"
