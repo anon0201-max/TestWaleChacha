@@ -1,6 +1,6 @@
 'use client';
 
-import { Crown, UserCircle, Zap, Shield, ArrowUp, Heart, MessageCircle, Mail, Phone, BookOpen } from 'lucide-react';
+import { Crown, UserCircle, Zap, ArrowUp, Heart, MessageCircle, Mail, Phone, BookOpen } from 'lucide-react';
 import { useAppStore, handleSubscribeClick } from '@/store/useAppStore';
 import { CookieConsent } from '@/components/CookieConsent';
 
@@ -140,12 +140,6 @@ export function AppFooter() {
                 {' · '}
                 <a href="https://test-wale-chacha.vercel.app/about" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">About Us</a>
               </span>
-              <button
-                onClick={() => setView('admin')}
-                className="flex items-center gap-1 text-gray-600 hover:text-gray-400 transition-colors"
-              >
-                <Shield className="w-3 h-3" /> Admin
-              </button>
               <button
                 onClick={scrollToTop}
                 className="flex items-center gap-1 text-gray-600 hover:text-emerald-400 transition-colors group"

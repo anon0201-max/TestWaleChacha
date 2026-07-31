@@ -140,12 +140,12 @@ export default function AboutPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">Our Growing Community</h2>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-2xl font-bold text-emerald-600">10,000+</p>
-                <p className="text-xs text-gray-600 mt-1">Questions</p>
+                <p className="text-2xl font-bold text-emerald-600">50+</p>
+                <p className="text-xs text-gray-600 mt-1">Mock Tests</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-2xl font-bold text-emerald-600">100+</p>
-                <p className="text-xs text-gray-600 mt-1">Mock Tests</p>
+                <p className="text-2xl font-bold text-emerald-600">₹100</p>
+                <p className="text-xs text-gray-600 mt-1">PRO Plan</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-2xl font-bold text-emerald-600">8+</p>

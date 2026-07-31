@@ -10,7 +10,7 @@ import React, { useState, useRef } from 'react';
 import { AdBanner } from '@/components/AdSense';
 import { getCategoryIcon } from './icons';
 import {
-  Trophy, ArrowRight, BookOpen, Crown, Star, BarChart3, Users, Clock, Lock, UserCircle,
+  Trophy, ArrowRight, BookOpen, Crown, BarChart3, Users, Clock, Lock, UserCircle,
   Play, Shield, TrendingUp, Target, MessageCircle, GraduationCap, Flame, Sparkles, ChevronDown,
 } from 'lucide-react';
 
@@ -265,10 +265,10 @@ export function HomePage() {
             >
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { icon: Users, value: '100', label: 'Students Registered', color: 'from-blue-500/20 to-blue-600/10', iconColor: 'text-blue-400' },
-                  { icon: Flame, value: '50+', label: 'Tests Delivered', color: 'from-orange-500/20 to-orange-600/10', iconColor: 'text-orange-400' },
-                  { icon: GraduationCap, value: '50+', label: 'Questions Bank', color: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400' },
-                  { icon: Star, value: '4.8★', label: 'Average Rating', color: 'from-amber-500/20 to-amber-600/10', iconColor: 'text-amber-400' },
+                  { icon: Users, value: '8+', label: 'Exam Categories', color: 'from-blue-500/20 to-blue-600/10', iconColor: 'text-blue-400' },
+                  { icon: Flame, value: '50+', label: 'Mock Tests', color: 'from-orange-500/20 to-orange-600/10', iconColor: 'text-orange-400' },
+                  { icon: GraduationCap, value: 'Free', label: '5 Tests on Signup', color: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400' },
+                  { icon: Crown, value: '₹100', label: 'PRO Unlimited', color: 'from-amber-500/20 to-amber-600/10', iconColor: 'text-amber-400' },
                 ].map((stat, i) => (
                   <motion.div
                     key={stat.label}
@@ -413,44 +413,7 @@ export function HomePage() {
         </div>
       </ScrollSection>
 
-      {/* ===== REVIEWS ===== */}
-      <ScrollSection className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
-        <motion.div variants={fadeUp} custom={0} className="rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 p-6 sm:p-8 shadow-md">
-          <motion.div variants={fadeUp} custom={1} className="text-center mb-6">
-            <h2 className="text-lg sm:text-xl font-bold">Hamare Students Kya Kehte Hain</h2>
-            <p className="text-xs text-muted-foreground mt-1">Thousands of students ne exams crack kiye hamare saath</p>
-          </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { name: 'Rahul K.', exam: 'SSC CGL 2024', text: 'TestWaleChacha ki wajah se mera prep level bahut badha. Real exam interface se confidence aaya.', rating: 5 },
-              { name: 'Priya S.', exam: 'IBPS PO 2024', text: 'Detailed solutions aur performance tracking ne meri galtiyon ko samajhne me bahut help ki.', rating: 5 },
-              { name: 'Amit T.', exam: 'RRB NTPC', text: 'Mobile pe bhi smooth chalta hai. Train me practice kar sakte hain — best part!', rating: 4 },
-            ].map((review, idx) => (
-              <motion.div key={review.name} custom={idx + 2} variants={fadeUp}>
-                <Card3D bgTo="to-yellow-50/30">
-                  <CardContent className="p-4 sm:p-5">
-                    <div className="flex items-center gap-1 mb-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'}`} />
-                      ))}
-                    </div>
-                    <p className="text-sm text-gray-700 leading-relaxed mb-3">&ldquo;{review.text}&rdquo;</p>
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">
-                        {review.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">{review.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{review.exam}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card3D>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </ScrollSection>
+
 
       {/* ===== AD BANNER ===== */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 mt-6 sm:mt-8">
@@ -493,10 +456,10 @@ export function HomePage() {
       <ScrollSection className="lg:hidden max-w-[1400px] mx-auto px-4 sm:px-6 mt-6 sm:mt-8">
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: Users, value: '100', label: 'Students Registered', bg: 'bg-blue-50', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-            { icon: Flame, value: '50+', label: 'Tests Delivered', bg: 'bg-orange-50', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
-            { icon: GraduationCap, value: '50+', label: 'Questions Bank', bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
-            { icon: Star, value: '4.8★', label: 'Average Rating', bg: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
+            { icon: Users, value: '8+', label: 'Exam Categories', bg: 'bg-blue-50', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+            { icon: Flame, value: '50+', label: 'Mock Tests', bg: 'bg-orange-50', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+            { icon: GraduationCap, value: 'Free', label: '5 Tests on Signup', bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
+            { icon: Crown, value: '₹100', label: 'PRO Unlimited', bg: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
           ].map((stat, i) => (
             <motion.div key={stat.label} custom={i} variants={fadeUp}>
               <div className={`${stat.bg} rounded-xl p-3.5 border border-gray-100/80 shadow-sm`}>
