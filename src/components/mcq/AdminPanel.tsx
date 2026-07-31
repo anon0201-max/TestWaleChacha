@@ -17,7 +17,7 @@ import {
   Save, Shield, FileText, Settings, Edit2, Eye, EyeOff, Copy, CheckCircle2,
   Crown, ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
   HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
-  Menu, Lock, Unlock,
+  Menu, Lock, Unlock, MessageSquare, MessageCircle, Trash2 as Trash2Icon,
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -287,6 +287,7 @@ export function AdminPanel() {
                 { value: 'tests', icon: FileText, label: 'Tests' },
                 { value: 'create-test', icon: Plus, label: 'Create' },
                 { value: 'users', icon: Users, label: 'Users' },
+                { value: 'messages', icon: MessageSquare, label: 'Messages' },
                 { value: 'payments', icon: Wallet, label: 'Payments' },
                 { value: 'settings', icon: Settings, label: 'Settings' },
               ].map((tab) => (
@@ -316,6 +317,9 @@ export function AdminPanel() {
           </TabsContent>
           <TabsContent value="users">
             <AdminUsersTab onRefresh={fetchStats} />
+          </TabsContent>
+          <TabsContent value="messages">
+            <AdminMessagesTab />
           </TabsContent>
           <TabsContent value="payments">
             <AdminPaymentsTab />
@@ -1680,6 +1684,178 @@ function AdminUsersTab({ onRefresh }: { onRefresh: () => void }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ==================== MESSAGES TAB ====================
+interface ContactMessage {
+  id: string;
+  name: string;
+  mobile: string;
+  email: string;
+  description: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+function AdminMessagesTab() {
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/contact-submissions');
+        if (res.ok && !cancelled) setMessages(await res.json());
+      } catch {}
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  async function markRead(id: string) {
+    await fetch('/api/admin/contact-submissions', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, isRead: true } : m));
+  }
+
+  async function deleteMessage(id: string) {
+    await fetch('/api/admin/contact-submissions', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    setMessages(prev => prev.filter(m => m.id !== id));
+    if (expandedId === id) setExpandedId(null);
+    toast.success('Message deleted');
+  }
+
+  const unreadCount = messages.filter(m => !m.isRead).length;
+
+  return (
+    <div className="space-y-3 sm:space-y-4">
+      {/* Header */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-3 sm:p-4 flex flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-100">
+              <MessageCircle className="w-5 h-5 text-blue-700" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{messages.length}</p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground">Contact messages</p>
+            </div>
+          </div>
+          {unreadCount > 0 && (
+            <Badge className="bg-red-500 text-white border-0 text-xs gap-1">
+              {unreadCount} unread
+            </Badge>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Messages List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+          <span className="ml-2 text-sm text-muted-foreground">Loading messages...</span>
+        </div>
+      ) : messages.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No messages yet</p>
+          <p className="text-xs mt-1">Messages from the contact form will appear here</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {messages.map((msg) => (
+            <Card key={msg.id} className={`border-0 shadow-sm overflow-hidden transition-colors ${!msg.isRead ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : ''}`}>
+              <div 
+                className="p-3 sm:p-4 cursor-pointer hover:bg-gray-50/80 transition-colors"
+                onClick={() => {
+                  setExpandedId(expandedId === msg.id ? null : msg.id);
+                  if (!msg.isRead) markRead(msg.id);
+                }}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${!msg.isRead ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                      {msg.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-medium truncate ${!msg.isRead ? 'text-gray-900' : 'text-gray-700'}`}>{msg.name}</p>
+                        {!msg.isRead && <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate">{msg.mobile} · {msg.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                      {new Date(msg.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteMessage(msg.id); }}
+                      className="p-1.5 rounded-md hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"
+                      title="Delete message"
+                    >
+                      <Trash2Icon className="w-3.5 h-3.5" />
+                    </button>
+                    {expandedId === msg.id ? (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Mobile date */}
+                <p className="text-[10px] text-muted-foreground mt-1 sm:hidden">
+                  {new Date(msg.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </p>
+
+                {/* Preview */}
+                <p className="text-xs text-gray-500 mt-2 line-clamp-1">{msg.description}</p>
+              </div>
+
+              {/* Expanded Content */}
+              <AnimatePresence>
+                {expandedId === msg.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-3 sm:px-4 pb-3 sm:pb-4 pt-0 border-t bg-white">
+                      <div className="grid grid-cols-2 gap-2 py-3">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Mobile</p>
+                          <a href={`tel:+91${msg.mobile}`} className="text-sm font-medium text-blue-600 hover:underline">+91 {msg.mobile}</a>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Email</p>
+                          <a href={`mailto:${msg.email}`} className="text-sm font-medium text-blue-600 hover:underline truncate block">{msg.email}</a>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Message</p>
+                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-lg p-3">{msg.description}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -117,3 +117,38 @@ Stage Summary:
 - 13 pages discovered by Google
 - No need for manual URL submission anymore
 - Waiting 1-3 days for Google to crawl and index all pages
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Add contact form to contact page and display submissions in admin panel
+
+Work Log:
+- Added `ContactSubmission` model to Prisma schema (id, name, mobile, email, description, isRead, createdAt)
+- Ran `bun run db:push` to sync schema to SQLite DB
+- Created `/src/app/api/contact/route.ts` — POST endpoint with validation (name min 2 chars, 10-digit Indian mobile starting 6-9, valid email, description min 10 chars)
+- Created `/src/app/api/admin/contact-submissions/route.ts` — GET (list all), PATCH (mark read), DELETE (remove message)
+- Rewrote `/src/app/contact/page.tsx` as client component with:
+  - Contact form (Name, Mobile with +91 prefix, Email, Message/Description, Submit button)
+  - Client-side validation matching backend
+  - Success animation with CheckCircle2 icon
+  - WhatsApp Channel and Email cards as direct contact options
+  - FAQ section retained
+  - Metadata moved to `/src/app/contact/layout.tsx`
+- Added `MessageSquare` tab to admin panel tabs list (between Users and Payments)
+- Created `AdminMessagesTab` component with:
+  - Total count header with unread badge
+  - Message cards with avatar, name, mobile, email preview
+  - Unread indicator (blue left border + dot)
+  - Expand/collapse to show full message, clickable mobile and email links
+  - Mark as read on expand, delete with confirmation toast
+  - Empty state with MessageSquare icon
+ - Added `MessageSquare, MessageCircle, Trash2 as Trash2Icon` to lucide imports
+- Verified: form submission stores in DB, API returns data, validation works
+
+Stage Summary:
+- Contact form fully functional — submissions saved to SQLite via Prisma
+- Admin panel has new "Messages" tab showing all contact submissions
+- Unread messages highlighted with blue indicator, auto-marked as read when opened
+- Messages can be deleted from admin panel
+- API validation ensures clean data (10-digit Indian mobile, valid email)
