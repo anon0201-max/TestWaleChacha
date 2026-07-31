@@ -231,10 +231,10 @@ export function AdminPanel() {
   return (
     <div className="min-h-[80vh] bg-gray-50">
       {/* Admin Header */}
-      <div className="bg-white border-b sticky top-14 z-20">
+      <div className="bg-white border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <Button variant="ghost" size="icon" onClick={() => setView('home')} className="h-9 w-9 shrink-0">
+            <Button variant="ghost" size="icon" onClick={() => { window.location.href = '/'; }} className="h-9 w-9 shrink-0">
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-2 min-w-0">

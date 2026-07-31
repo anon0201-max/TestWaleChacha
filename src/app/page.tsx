@@ -114,12 +114,12 @@ function AppContent() {
   const setStudentData = useAppStore((s) => s.setStudentData);
   const setUser = useAppStore((s) => s.setUser);
 
-  // Handle admin route via query param
+  // Handle admin route via query param (only on mount, not on view change)
   useEffect(() => {
     if (isAdminParam && currentView !== 'test-taking') {
       useAppStore.setState({ currentView: 'admin' });
     }
-  }, [isAdminParam, currentView]);
+    }, [isAdminParam]);
 
   // Load initial data
   useEffect(() => {
@@ -169,7 +169,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
-      <AppHeader />
+      {!isAdminOrTestTaking && <AppHeader />}
       {!isAdminOrTestTaking && <AdBanner />}
       <main id="main-content" role="main" className="flex-1">
         {isAdminOrTestTaking ? (
