@@ -21,3 +21,6 @@ export type { IPayment } from './Payment';
 
 export { Otp } from './Otp';
 export type { IOtp } from './Otp';
+
+export { ContactSubmission } from './ContactSubmission';
+export type { IContactSubmission } from './ContactSubmission';
