@@ -152,3 +152,4 @@ Stage Summary:
 - Unread messages highlighted with blue indicator, auto-marked as read when opened
 - Messages can be deleted from admin panel
 - API validation ensures clean data (10-digit Indian mobile, valid email)
+- Fixed: API routes now use MongoDB on Vercel (MONGODB_URI env), SQLite locally (fallback)
