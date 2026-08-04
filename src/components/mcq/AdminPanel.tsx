@@ -12,12 +12,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   ArrowLeft, LogOut, Plus, Trash2, BarChart3, BookOpen, Users, CreditCard,
   Save, Shield, FileText, Settings, Edit2, Eye, EyeOff, Copy, CheckCircle2,
   Crown, ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
   HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
-  Menu, Lock, Unlock, MessageSquare, MessageCircle, Trash2 as Trash2Icon,
+  Menu, Lock, Unlock, MessageSquare, MessageCircle, Trash2 as Trash2Icon, SquarePen, Delete,
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -524,13 +525,41 @@ function AdminCategoriesTab({ onRefresh }: { onRefresh: () => void }) {
 
 // ==================== TESTS TAB ====================
 function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
-  const { tests } = useAppStore();
+  const { tests, categories } = useAppStore();
   const [expandedTestId, setExpandedTestId] = useState<string | null>(null);
   const [testQuestions, setTestQuestions] = useState<Record<string, unknown[]>>({});
   const [loadingQ, setLoadingQ] = useState<string | null>(null);
   const [togglingLock, setTogglingLock] = useState<string | null>(null);
 
+  // Multi-select state
+  const [selectedQIds, setSelectedQIds] = useState<Set<string>>(new Set());
+  const [deletingBulk, setDeletingBulk] = useState(false);
+
+  // Edit test dialog state
+  const [editTestOpen, setEditTestOpen] = useState(false);
+  const [editTest, setEditTest] = useState<any>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editCatId, setEditCatId] = useState('');
+  const [editDiff, setEditDiff] = useState('medium');
+  const [editTime, setEditTime] = useState('600');
+  const [editExamName, setEditExamName] = useState('');
+  const [editIcon, setEditIcon] = useState('');
+  const [savingTest, setSavingTest] = useState(false);
+
+  // Edit question dialog state
+  const [editQOpen, setEditQOpen] = useState(false);
+  const [editQ, setEditQ] = useState<any>(null);
+  const [editQData, setEditQData] = useState({ question: '', optionA: '', optionB: '', optionC: '', optionD: '', correctOption: 'A', explanation: '', negativeMark: '0', section: 'General' });
+  const [savingQ, setSavingQ] = useState(false);
+
+  // Icon picker for edit
+  const ICON_OPTIONS = ['📚','🏛️','🎯','⚡','🧠','📝','🎓','✏️','📊','📈','🏆','🏅','🥇','⭐','🌟','💡','🔍','🧪','🌍','🇮🇳','📰','📋','📌','📎','🗓️','⏰','📐','🔬','🖥️','🔒','💰','🏦','📑','📁','🗂️','📉','✅','❌','🚀','🔥'];
+  const [showEditIconPicker, setShowEditIconPicker] = useState(false);
+
   async function fetchQuestions(testId: string) {
+    // Clear selection when switching tests
+    setSelectedQIds(new Set());
     if (testQuestions[testId]) {
       setExpandedTestId(expandedTestId === testId ? null : testId);
       return;
@@ -554,6 +583,10 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
+    if (expandedTestId === id) {
+      setExpandedTestId(null);
+      setTestQuestions(prev => { const n = { ...prev }; delete n[id]; return n; });
+    }
     onRefresh();
   }
 
@@ -567,7 +600,154 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
       const data = await res.json();
       setTestQuestions(prev => ({ ...prev, [testId]: data.questions || [] }));
     }
+    setSelectedQIds(prev => { const n = new Set(prev); n.delete(questionId); return n; });
     onRefresh();
+  }
+
+  async function handleDeleteSelected(testId: string) {
+    const ids = Array.from(selectedQIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} selected question${ids.length > 1 ? 's' : ''}?`)) return;
+    setDeletingBulk(true);
+    try {
+      const res = await fetch(`/api/admin/tests/questions?ids=${ids.join(',')}&testId=${encodeURIComponent(testId)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`🗑️ ${data.count} questions deleted!`);
+        setSelectedQIds(new Set());
+        const qRes = await fetch(`/api/tests/${testId}`);
+        if (qRes.ok) {
+          const qData = await qRes.json();
+          setTestQuestions(prev => ({ ...prev, [testId]: qData.questions || [] }));
+        }
+        onRefresh();
+      } else {
+        toast.error(data.message || 'Failed to delete');
+      }
+    } catch { toast.error('Network error'); }
+    setDeletingBulk(false);
+  }
+
+  async function handleDeleteAll(testId: string) {
+    const count = (testQuestions[testId] || []).length;
+    if (count === 0) return;
+    if (!confirm(`Delete ALL ${count} questions in this test? This cannot be undone.`)) return;
+    setDeletingBulk(true);
+    try {
+      const res = await fetch(`/api/admin/tests/questions?deleteAll=true&testId=${encodeURIComponent(testId)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`🗑️ All ${data.count} questions deleted!`);
+        setSelectedQIds(new Set());
+        setTestQuestions(prev => ({ ...prev, [testId]: [] }));
+        onRefresh();
+      } else {
+        toast.error(data.message || 'Failed to delete');
+      }
+    } catch { toast.error('Network error'); }
+    setDeletingBulk(false);
+  }
+
+  // Toggle select all
+  function toggleSelectAll(testId: string) {
+    const questions = (testQuestions[testId] || []) as Array<Record<string, unknown>>;
+    const allIds = questions.map(q => String(q.id));
+    if (selectedQIds.size === allIds.length && allIds.every(id => selectedQIds.has(id))) {
+      setSelectedQIds(new Set());
+    } else {
+      setSelectedQIds(new Set(allIds));
+    }
+  }
+
+  function toggleSelectQ(qId: string) {
+    setSelectedQIds(prev => {
+      const n = new Set(prev);
+      if (n.has(qId)) n.delete(qId); else n.add(qId);
+      return n;
+    });
+  }
+
+  // Edit test functions
+  function openEditTest(test: any) {
+    setEditTest(test);
+    setEditTitle(test.title || '');
+    setEditDesc(test.description || '');
+    setEditCatId(test.categoryId || '');
+    setEditDiff(test.difficulty || 'medium');
+    setEditTime(String(test.timeLimit || 600));
+    setEditExamName(test.examName || '');
+    setEditIcon(test.icon || '');
+    setEditTestOpen(true);
+  }
+
+  async function saveEditTest() {
+    if (!editTest?.id || !editTitle) return;
+    setSavingTest(true);
+    try {
+      const res = await fetch('/api/admin/tests', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editTest.id, title: editTitle, description: editDesc, categoryId: editCatId, difficulty: editDiff, timeLimit: parseInt(editTime), examName: editExamName, icon: editIcon }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('✅ Test updated!');
+        setEditTestOpen(false);
+        onRefresh();
+      } else {
+        toast.error(data.message || 'Failed to update');
+      }
+    } catch { toast.error('Network error'); }
+    setSavingTest(false);
+  }
+
+  // Edit question functions
+  function openEditQuestion(q: any) {
+    setEditQ(q);
+    setEditQData({
+      question: String(q.question || ''),
+      optionA: String(q.optionA || ''),
+      optionB: String(q.optionB || ''),
+      optionC: String(q.optionC || ''),
+      optionD: String(q.optionD || ''),
+      correctOption: String(q.correctOption || 'A'),
+      explanation: String(q.explanation || ''),
+      negativeMark: String(q.negativeMark ?? '0'),
+      section: String(q.section || 'General'),
+    });
+    setEditQOpen(true);
+  }
+
+  async function saveEditQuestion() {
+    if (!editQ?.id) return;
+    setSavingQ(true);
+    try {
+      const res = await fetch('/api/admin/tests/questions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editQ.id, ...editQData }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('✅ Question updated!');
+        setEditQOpen(false);
+        // Refresh questions
+        if (expandedTestId) {
+          const qRes = await fetch(`/api/tests/${expandedTestId}`);
+          if (qRes.ok) {
+            const qData = await qRes.json();
+            setTestQuestions(prev => ({ ...prev, [expandedTestId]: qData.questions || [] }));
+          }
+        }
+      } else {
+        toast.error(data.message || 'Failed to update');
+      }
+    } catch { toast.error('Network error'); }
+    setSavingQ(false);
   }
 
   async function toggleLock(testId: string, currentState: boolean) {
@@ -660,123 +840,343 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
           </CardContent>
         </Card>
       ) : (
-        tests.map((test) => (
-          <Card key={test.id} className="border-0 shadow-sm overflow-hidden">
-            <div
-              className="p-3 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors gap-2"
-              onClick={() => fetchQuestions(test.id)}
-            >
-              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: test.category?.color || '#1e40af' }}>
-                  {test.category?.name?.charAt(0) || 'T'}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{test.title}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <Badge variant="secondary" className="text-[10px]">{test.category?.name}</Badge>
-                    {test.isLocked && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-0"><Lock className="w-2.5 h-2.5 mr-0.5" />Locked</Badge>}
-                    {!test.isLocked && <Badge className="text-[10px] bg-green-100 text-green-700 border-0"><Unlock className="w-2.5 h-2.5 mr-0.5" />Free</Badge>}
-                    <span className="text-[10px] text-muted-foreground">{test._count?.questions || test.totalQuestions}Q</span>
-                    <span className="text-[10px] text-muted-foreground hidden sm:inline">{test.difficulty}</span>
-                    <span className="text-[10px] text-muted-foreground">{Math.floor(test.timeLimit / 60)}m</span>
+        tests.map((test) => {
+          const questions = (testQuestions[test.id] || []) as Array<Record<string, unknown>>;
+          const allSelected = questions.length > 0 && questions.every(q => selectedQIds.has(String(q.id)));
+
+          return (
+            <Card key={test.id} className="border-0 shadow-sm overflow-hidden">
+              <div
+                className="p-3 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors gap-2"
+                onClick={() => fetchQuestions(test.id)}
+              >
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: test.category?.color || '#1e40af' }}>
+                    {test.icon || test.category?.name?.charAt(0) || 'T'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{test.title}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <Badge variant="secondary" className="text-[10px]">{test.category?.name}</Badge>
+                      {test.isLocked && <Badge className="text-[10px] bg-amber-100 text-amber-700 border-0"><Lock className="w-2.5 h-2.5 mr-0.5" />Locked</Badge>}
+                      {!test.isLocked && <Badge className="text-[10px] bg-green-100 text-green-700 border-0"><Unlock className="w-2.5 h-2.5 mr-0.5" />Free</Badge>}
+                      <span className="text-[10px] text-muted-foreground">{test._count?.questions || test.totalQuestions}Q</span>
+                      <span className="text-[10px] text-muted-foreground hidden sm:inline">{test.difficulty}</span>
+                      <span className="text-[10px] text-muted-foreground">{Math.floor(test.timeLimit / 60)}m</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                {/* Lock/Unlock Toggle */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); toggleLock(test.id, !!test.isLocked); }}
-                  disabled={togglingLock === test.id}
-                  className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
-                    test.isLocked
-                      ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                      : 'bg-green-100 text-green-700 hover:bg-green-200'
-                  }`}
-                  title={test.isLocked ? 'Unlock (Free access)' : 'Lock (Paid only)'}
-                >
-                  {togglingLock === test.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : test.isLocked ? (
-                    <Lock className="w-4 h-4" />
-                  ) : (
-                    <Unlock className="w-4 h-4" />
-                  )}
-                </button>
-                {loadingQ === test.id ? (
-                  <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteTest(test.id); }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                    {expandedTestId === test.id ? (
-                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                  {/* Edit test button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openEditTest(test); }}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 bg-blue-50 text-blue-600 hover:bg-blue-100"
+                    title="Edit Test"
+                  >
+                    <SquarePen className="w-4 h-4" />
+                  </button>
+                  {/* Lock/Unlock Toggle */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleLock(test.id, !!test.isLocked); }}
+                    disabled={togglingLock === test.id}
+                    className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 ${
+                      test.isLocked
+                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
+                    title={test.isLocked ? 'Unlock (Free access)' : 'Lock (Paid only)'}
+                  >
+                    {togglingLock === test.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : test.isLocked ? (
+                      <Lock className="w-4 h-4" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      <Unlock className="w-4 h-4" />
                     )}
-                  </>
-                )}
+                  </button>
+                  {loadingQ === test.id ? (
+                    <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteTest(test.id); }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                      {expandedTestId === test.id ? (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Questions List */}
-            <AnimatePresence>
-              {expandedTestId === test.id && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="border-t bg-gray-50 p-3 sm:p-4 space-y-2">
-                    <h4 className="text-xs font-semibold text-muted-foreground">
-                      Questions ({(testQuestions[test.id] || []).length})
-                    </h4>
-                    {(testQuestions[test.id] || []).length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">No questions in this test</p>
-                    ) : (
-                      (testQuestions[test.id] as Array<Record<string, unknown>>).map((q, i) => (
-                        <div key={String(q.id)} className="bg-white rounded-lg p-3 border text-xs group">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-bold text-blue-700 shrink-0">Q{i + 1}.</span>
-                                <span className="text-gray-700">{String(q.question).substring(0, 80)}{String(q.question).length > 80 ? '...' : ''}</span>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5 ml-5 text-muted-foreground">
-                                <div className={String(q.correctOption) === 'A' ? 'text-green-700 font-medium' : ''}>
-                                  A. {String(q.optionA)}
+              {/* Questions List */}
+              <AnimatePresence>
+                {expandedTestId === test.id && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                    <div className="border-t bg-gray-50 p-3 sm:p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={() => toggleSelectAll(test.id)}
+                            className="h-4 w-4"
+                          />
+                          <h4 className="text-xs font-semibold text-muted-foreground">
+                            Questions ({questions.length})
+                          </h4>
+                          {selectedQIds.size > 0 && (
+                            <Badge className="text-[10px] bg-blue-100 text-blue-700 border-0">
+                              {selectedQIds.size} selected
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {selectedQIds.size > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => handleDeleteSelected(test.id)}
+                              disabled={deletingBulk}
+                            >
+                              {deletingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                              Delete Selected ({selectedQIds.size})
+                            </Button>
+                          )}
+                          {questions.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1 text-xs h-7 text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => handleDeleteAll(test.id)}
+                              disabled={deletingBulk}
+                            >
+                              {deletingBulk ? <Loader2 className="w-3 h-3 animate-spin" /> : <Delete className="w-3 h-3" />}
+                              Delete All
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      {questions.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-4">No questions in this test</p>
+                      ) : (
+                        questions.map((q, i) => {
+                          const qId = String(q.id);
+                          const isSelected = selectedQIds.has(qId);
+                          return (
+                            <div key={qId} className={`bg-white rounded-lg p-3 border text-xs group transition-colors ${isSelected ? 'border-blue-300 bg-blue-50/30' : ''}`}>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-start gap-2 flex-1 min-w-0">
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleSelectQ(qId)}
+                                    className="h-4 w-4 mt-0.5 shrink-0"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-bold text-blue-700 shrink-0">Q{i + 1}.</span>
+                                      <span className="text-gray-700">{String(q.question).substring(0, 80)}{String(q.question).length > 80 ? '...' : ''}</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5 ml-5 text-muted-foreground">
+                                      <div className={String(q.correctOption) === 'A' ? 'text-green-700 font-medium' : ''}>
+                                        A. {String(q.optionA)}
+                                      </div>
+                                      <div className={String(q.correctOption) === 'B' ? 'text-green-700 font-medium' : ''}>
+                                        B. {String(q.optionB)}
+                                      </div>
+                                      <div className={String(q.correctOption) === 'C' ? 'text-green-700 font-medium' : ''}>
+                                        C. {String(q.optionC)}
+                                      </div>
+                                      <div className={String(q.correctOption) === 'D' ? 'text-green-700 font-medium' : ''}>
+                                        D. {String(q.optionD)}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className={String(q.correctOption) === 'B' ? 'text-green-700 font-medium' : ''}>
-                                  B. {String(q.optionB)}
-                                </div>
-                                <div className={String(q.correctOption) === 'C' ? 'text-green-700 font-medium' : ''}>
-                                  C. {String(q.optionC)}
-                                </div>
-                                <div className={String(q.correctOption) === 'D' ? 'text-green-700 font-medium' : ''}>
-                                  D. {String(q.optionD)}
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-blue-500 hover:text-blue-700 hover:bg-blue-50 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                                    onClick={() => openEditQuestion(q)}
+                                    title="Edit Question"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleDeleteQuestion(qId, test.id)}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
                                 </div>
                               </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleDeleteQuestion(String(q.id), test.id)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Card>
-        ))
+                          );
+                        })
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          );
+        })
       )}
+
+      {/* Edit Test Dialog */}
+      <Dialog open={editTestOpen} onOpenChange={(open) => { if (!open) { setEditTestOpen(false); setShowEditIconPicker(false); } }}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base"><SquarePen className="w-5 h-5 text-blue-600" />Edit Test</DialogTitle>
+            <DialogDescription className="text-xs">Update test details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Test Title *</Label>
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-10" />
+            </div>
+            <div>
+              <Label className="text-xs">Description</Label>
+              <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} className="min-h-[60px]" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Category *</Label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm h-10 bg-white" value={editCatId} onChange={(e) => setEditCatId(e.target.value)}>
+                  <option value="">Select category</option>
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs">Difficulty</Label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm h-10 bg-white" value={editDiff} onChange={(e) => setEditDiff(e.target.value)}>
+                  {['easy', 'medium', 'hard'].map(d => <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Time (seconds)</Label>
+                <Input type="number" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs">Exam Name</Label>
+                <Input value={editExamName} onChange={(e) => setEditExamName(e.target.value)} className="h-10" />
+              </div>
+            </div>
+            {/* Icon Picker */}
+            <div>
+              <Label className="text-xs">Test Icon</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowEditIconPicker(!showEditIconPicker)}
+                  className="w-10 h-10 border rounded-lg flex items-center justify-center text-lg hover:bg-gray-50 transition-colors shrink-0"
+                >
+                  {editIcon || 'T'}
+                </button>
+                <span className="text-xs text-muted-foreground">Click to change icon</span>
+              </div>
+              {showEditIconPicker && (
+                <div className="mt-2 grid grid-cols-10 gap-1 p-2 border rounded-lg bg-gray-50 max-h-40 overflow-y-auto">
+                  {ICON_OPTIONS.map(icon => (
+                    <button
+                      key={icon}
+                      type="button"
+                      onClick={() => { setEditIcon(icon); setShowEditIconPicker(false); }}
+                      className={`w-8 h-8 rounded flex items-center justify-center text-sm hover:bg-gray-100 transition-colors ${editIcon === icon ? 'bg-blue-100 ring-2 ring-blue-400' : ''}`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <DialogClose asChild>
+              <Button variant="outline" className="flex-1">Cancel</Button>
+            </DialogClose>
+            <Button className="flex-1 bg-blue-700 hover:bg-blue-800" onClick={saveEditTest} disabled={savingTest || !editTitle || !editCatId}>
+              {savingTest ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Saving...</> : <><Save className="w-4 h-4 mr-1.5" />Save Changes</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Question Dialog */}
+      <Dialog open={editQOpen} onOpenChange={(open) => { if (!open) setEditQOpen(false); }}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base"><Pencil className="w-5 h-5 text-blue-600" />Edit Question</DialogTitle>
+            <DialogDescription className="text-xs">Update question details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Question *</Label>
+              <Textarea value={editQData.question} onChange={(e) => setEditQData(p => ({ ...p, question: e.target.value }))} className="min-h-[60px]" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Option A *</Label>
+                <Input value={editQData.optionA} onChange={(e) => setEditQData(p => ({ ...p, optionA: e.target.value }))} className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs">Option B *</Label>
+                <Input value={editQData.optionB} onChange={(e) => setEditQData(p => ({ ...p, optionB: e.target.value }))} className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs">Option C *</Label>
+                <Input value={editQData.optionC} onChange={(e) => setEditQData(p => ({ ...p, optionC: e.target.value }))} className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs">Option D *</Label>
+                <Input value={editQData.optionD} onChange={(e) => setEditQData(p => ({ ...p, optionD: e.target.value }))} className="h-10" />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">Correct Answer</Label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm h-10 bg-white" value={editQData.correctOption} onChange={(e) => setEditQData(p => ({ ...p, correctOption: e.target.value }))}>
+                  {['A', 'B', 'C', 'D'].map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs">Negative Mark</Label>
+                <Input type="number" step="0.25" value={editQData.negativeMark} onChange={(e) => setEditQData(p => ({ ...p, negativeMark: e.target.value }))} className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs">Section</Label>
+                <select className="w-full border rounded-md px-3 py-2 text-sm h-10 bg-white" value={editQData.section} onChange={(e) => setEditQData(p => ({ ...p, section: e.target.value }))}>
+                  {['General', 'Reasoning', 'Maths', 'English', 'GK', 'Science', 'Computer', 'Hindi'].map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Explanation</Label>
+              <Textarea value={editQData.explanation} onChange={(e) => setEditQData(p => ({ ...p, explanation: e.target.value }))} className="min-h-[60px]" />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <DialogClose asChild>
+              <Button variant="outline" className="flex-1">Cancel</Button>
+            </DialogClose>
+            <Button className="flex-1 bg-blue-700 hover:bg-blue-800" onClick={saveEditQuestion} disabled={savingQ || !editQData.question}>
+              {savingQ ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Saving...</> : <><Save className="w-4 h-4 mr-1.5" />Save Changes</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

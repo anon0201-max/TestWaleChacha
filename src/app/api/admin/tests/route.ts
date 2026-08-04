@@ -93,6 +93,46 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PUT — edit test details
+export async function PUT(request: NextRequest) {
+  try {
+    await dbConnect();
+    const body = await request.json();
+    const { id, title, description, categoryId, difficulty, timeLimit, examName, icon } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: 'Test ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    if (difficulty !== undefined) updateData.difficulty = difficulty;
+    if (timeLimit !== undefined) updateData.timeLimit = timeLimit;
+    if (examName !== undefined) updateData.examName = examName;
+    if (icon !== undefined) updateData.icon = icon;
+
+    await Test.updateOne({ id }, { $set: updateData });
+    clearCacheByPrefix('categories:');
+    clearCacheByPrefix('tests:');
+
+    return NextResponse.json({
+      success: true,
+      message: 'Test updated successfully',
+    });
+  } catch (error) {
+    console.error('Update test error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 // PATCH — toggle lock/unlock or bulk update
 export async function PATCH(request: NextRequest) {
   try {
