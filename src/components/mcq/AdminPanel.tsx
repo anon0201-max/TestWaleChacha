@@ -193,6 +193,7 @@ function AdminLogin() {
 export function AdminPanel() {
   const { setView, setAdminData, adminData, categories, setCategories, tests, setTests } = useAppStore();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [addQuestionTestId, setAddQuestionTestId] = useState<string | null>(null);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -311,10 +312,10 @@ export function AdminPanel() {
             <AdminCategoriesTab onRefresh={fetchCategories} />
           </TabsContent>
           <TabsContent value="tests">
-            <AdminTestsTab onRefresh={fetchTests} />
+            <AdminTestsTab onRefresh={fetchTests} onAddQuestions={(testId) => { setAddQuestionTestId(testId); setActiveTab('create-test'); }} />
           </TabsContent>
           <TabsContent value="create-test">
-            <AdminCreateTestTab onCreated={fetchTests} />
+            <AdminCreateTestTab onCreated={() => { fetchTests(); setAddQuestionTestId(null); }} existingTestId={addQuestionTestId} />
           </TabsContent>
           <TabsContent value="users">
             <AdminUsersTab onRefresh={fetchStats} />
@@ -524,7 +525,7 @@ function AdminCategoriesTab({ onRefresh }: { onRefresh: () => void }) {
 }
 
 // ==================== TESTS TAB ====================
-function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
+function AdminTestsTab({ onRefresh, onAddQuestions }: { onRefresh: () => void; onAddQuestions: (testId: string) => void }) {
   const { tests, categories } = useAppStore();
   const [expandedTestId, setExpandedTestId] = useState<string | null>(null);
   const [testQuestions, setTestQuestions] = useState<Record<string, unknown[]>>({});
@@ -867,6 +868,14 @@ function AdminTestsTab({ onRefresh }: { onRefresh: () => void }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                  {/* Add questions button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAddQuestions(test.id); }}
+                    className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 bg-green-50 text-green-600 hover:bg-green-100"
+                    title="Add Questions"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                   {/* Edit test button */}
                   <button
                     onClick={(e) => { e.stopPropagation(); openEditTest(test); }}
@@ -1214,9 +1223,9 @@ const emptyQuestion = (): QuestionForm => ({
   negativeMark: '0',
 });
 
-function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
-  const { categories } = useAppStore();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => void; existingTestId: string | null }) {
+  const { categories, tests } = useAppStore();
+  const [step, setStep] = useState<1 | 2 | 3>(existingTestId ? 2 : 1);
 
   // Step 1: Test details
   const [title, setTitle] = useState('');
@@ -1230,7 +1239,7 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
 
   // Step 2: Questions
   const [questions, setQuestions] = useState<QuestionForm[]>([emptyQuestion()]);
-  const [createdTestId, setCreatedTestId] = useState('');
+  const [createdTestId, setCreatedTestId] = useState(existingTestId || '');
 
   // Step 3: Done
   const [savedCount, setSavedCount] = useState(0);
@@ -1521,21 +1530,35 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
     <div className="space-y-4 sm:space-y-5">
       {/* Step Indicator — compact on mobile */}
       <div className="flex items-center gap-1 sm:gap-2 mb-2 overflow-x-auto">
-        {[
-          { n: 1, label: 'Details' },
-          { n: 2, label: 'Questions' },
-          { n: 3, label: 'Done' },
-        ].map((s) => (
-          <div key={s.n} className="flex items-center gap-1 sm:gap-2 shrink-0">
-            <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-              step > s.n ? 'bg-green-600 text-white' : step === s.n ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
-            }`}>
-              {step > s.n ? <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" /> : s.n}
+        {existingTestId ? (
+          <div className="flex items-center gap-2 mr-2">
+            <div className="w-8 h-8 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+              <Plus className="w-4 h-4" />
             </div>
-            <span className={`text-xs font-medium hidden sm:inline ${step === s.n ? 'text-gray-900' : 'text-muted-foreground'}`}>{s.label}</span>
-            {s.n < 3 && <div className={`w-4 sm:w-8 h-0.5 ${step > s.n ? 'bg-green-600' : 'bg-gray-200'}`} />}
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate">Adding to: {tests.find(t => t.id === existingTestId)?.title || 'Test'}</p>
+              <p className="text-[10px] text-muted-foreground">New questions will be added to existing test</p>
+            </div>
           </div>
-        ))}
+        ) : (
+          <>
+            {[
+              { n: 1, label: 'Details' },
+              { n: 2, label: 'Questions' },
+              { n: 3, label: 'Done' },
+            ].map((s) => (
+              <div key={s.n} className="flex items-center gap-1 sm:gap-2 shrink-0">
+                <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                  step > s.n ? 'bg-green-600 text-white' : step === s.n ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {step > s.n ? <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" /> : s.n}
+                </div>
+                <span className={`text-xs font-medium hidden sm:inline ${step === s.n ? 'text-gray-900' : 'text-muted-foreground'}`}>{s.label}</span>
+                {s.n < 3 && <div className={`w-4 sm:w-8 h-0.5 ${step > s.n ? 'bg-green-600' : 'bg-gray-200'}`}></div>}
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Step 1: Test Details */}
@@ -1740,8 +1763,8 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
 
           {/* Action Buttons — stacked on mobile */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 sticky bottom-2 bg-gray-50 py-2 px-1 rounded-xl border">
-            <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5">
-              <ArrowLeft className="w-4 h-4" /> Back
+            <Button variant="outline" onClick={existingTestId ? () => onCreated() : () => setStep(1)} className="gap-1.5">
+              <ArrowLeft className="w-4 h-4" /> {existingTestId ? 'Back to Tests' : 'Back'}
             </Button>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={addQuestion} className="gap-1.5 text-xs">
@@ -1765,18 +1788,39 @@ function AdminCreateTestTab({ onCreated }: { onCreated: () => void }) {
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Test Created!</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+            {existingTestId ? 'Questions Added!' : 'Test Created!'}
+          </h2>
           <p className="text-sm text-muted-foreground mb-1">
-            <strong>&quot;{title}&quot;</strong> with <strong>{savedCount} questions</strong>
+            {existingTestId ? (
+              <><strong>{savedCount} questions</strong> added to <strong>{tests.find(t => t.id === existingTestId)?.title || 'test'}</strong></>
+            ) : (
+              <><strong>&quot;{title}&quot;</strong> with <strong>{savedCount} questions</strong></>
+            )}
           </p>
-          <p className="text-xs text-muted-foreground mb-6">Students can now attempt this test.</p>
+          <p className="text-xs text-muted-foreground mb-6">
+            {existingTestId ? 'Students will see the new questions in this test.' : 'Students can now attempt this test.'}
+          </p>
           <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 px-4">
-            <Button variant="outline" onClick={resetAll}>
-              <Plus className="w-4 h-4 mr-2" /> Create Another
-            </Button>
-            <Button className="bg-blue-700 hover:bg-blue-800" onClick={() => useAppStore.getState().setView('tests')}>
-              View All Tests
-            </Button>
+            {existingTestId ? (
+              <>
+                <Button variant="outline" onClick={() => { setQuestions([emptyQuestion()]); setStep(2); }}>
+                  <Plus className="w-4 h-4 mr-2" /> Add More Questions
+                </Button>
+                <Button className="bg-blue-700 hover:bg-blue-800" onClick={onCreated}>
+                  Back to Tests
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={resetAll}>
+                  <Plus className="w-4 h-4 mr-2" /> Create Another
+                </Button>
+                <Button className="bg-blue-700 hover:bg-blue-800" onClick={() => useAppStore.getState().setView('tests')}>
+                  View All Tests
+                </Button>
+              </>
+            )}
           </div>
         </motion.div>
       )}
