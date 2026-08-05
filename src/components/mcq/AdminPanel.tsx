@@ -876,11 +876,11 @@ function AdminTestsTab({ onRefresh, onAddQuestions }: { onRefresh: () => void; o
                   >
                     <Plus className="w-4 h-4" />
                   </button>
-                  {/* Edit test button */}
+                  {/* Edit test button - opens Create flow to add questions */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); openEditTest(test); }}
+                    onClick={(e) => { e.stopPropagation(); onAddQuestions(test.id); }}
                     className="h-8 w-8 rounded-lg flex items-center justify-center transition-colors shrink-0 bg-blue-50 text-blue-600 hover:bg-blue-100"
-                    title="Edit Test"
+                    title="Edit & Add Questions"
                   >
                     <SquarePen className="w-4 h-4" />
                   </button>
