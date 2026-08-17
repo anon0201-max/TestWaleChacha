@@ -28,9 +28,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: "https://test-wale-chacha.vercel.app/about",
-      lastModified: new Date("2026-07-31"),
+      lastModified: new Date("2026-08-17"),
       changeFrequency: "monthly",
-      priority: 0.3,
+      priority: 0.5,
+    },
+    {
+      url: "https://test-wale-chacha.vercel.app/faq",
+      lastModified: new Date("2026-08-17"),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
+      url: "https://test-wale-chacha.vercel.app/how-it-works",
+      lastModified: new Date("2026-08-17"),
+      changeFrequency: "monthly",
+      priority: 0.6,
     },
     {
       url: "https://test-wale-chacha.vercel.app/contact",
