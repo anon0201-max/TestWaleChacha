@@ -1538,38 +1538,131 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
       const buffer = await file.arrayBuffer();
       const wb = XLSX.read(buffer, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-      if (rows.length === 0) {
-        toast.error('Excel file is empty or has no data rows.');
-        return;
-      }
+      // Try raw array format first (for PDF-layout detection)
+      const rawRows: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-      // Map column headers (case-insensitive, flexible matching)
-      const getVal = (row: Record<string, unknown>, ...possibleKeys: string[]) => {
-        const lowerKeys = Object.keys(row).map(k => k.toLowerCase().trim());
-        for (const key of possibleKeys) {
-          const idx = lowerKeys.indexOf(key.toLowerCase());
-          if (idx !== -1) return String(row[Object.keys(row)[idx]] || '').trim();
+      // Detect PDF-layout: 6+ columns, first cell looks like a header, rows have (A)/(B)/(C)/(D) patterns
+      const isPdfLayout = rawRows.length > 3 &&
+        (rawRows[0].length >= 6) &&
+        !String(rawRows[0][0] || '').toLowerCase().includes('question') &&
+        String(rawRows[0][0] || '').includes('प्र');
+
+      // Also detect by checking if any cell has उत्तर pattern
+      const hasUttar = rawRows.some(r => r.some(c => String(c || '').includes('उत्तर')));
+
+      let imported: QuestionForm[] = [];
+
+      if (isPdfLayout || (hasUttar && rawRows[0].length >= 4)) {
+        // ===== PDF-LAYOUT PARSER =====
+        // Format: 3 column-pairs, each pair has Q text + (A)(B) + (C)(D) + उत्तर: (X)
+        // Col pairs: (0,1), (2,3), (4,5)
+        const pairs: [number, number][] = [[0, 1], [2, 3], [4, 5]];
+
+        for (const [colQ, colO] of pairs) {
+          if (colQ >= (rawRows[0]?.length || 0)) continue;
+
+          let i = 0;
+          while (i < rawRows.length) {
+            const row: string[] = rawRows[i].map(c => String(c || '').trim());
+
+            // Find a question row (starts with number + .)
+            const qText = (row[colQ] || '').trim();
+            const qMatch = qText.match(/^(\d+)\.\s*(.+)/);
+
+            if (qMatch) {
+              // Next row should have (A) and (B)
+              const optRow1 = i + 1 < rawRows.length ? rawRows[i + 1].map(c => String(c || '').trim()) : [];
+              // Row after should have (C) and (D)
+              const optRow2 = i + 2 < rawRows.length ? rawRows[i + 2].map(c => String(c || '').trim()) : [];
+              // Row after should have उत्तर
+              const ansRow = i + 3 < rawRows.length ? rawRows[i + 3].map(c => String(c || '').trim()) : [];
+
+              const optA = (optRow1[colQ] || '').replace(/^\(A\)\s*/i, '');
+              const optB = (optRow1[colO] || '').replace(/^\(B\)\s*/i, '');
+              const optC = (optRow2[colQ] || '').replace(/^\(C\)\s*/i, '');
+              const optD = (optRow2[colO] || '').replace(/^\(D\)\s*/i, '');
+
+              // Extract answer from उत्तर: (X) or उत्तर : (X)
+              const ansText = ansRow[colQ] || ansRow[colO] || '';
+              const ansMatch = ansText.match(/[\(\[]([A-Da-d])[\)\]]/);
+              const correctOpt = ansMatch ? ansMatch[1].toUpperCase() : 'A';
+
+              if (optA && optB && optC && optD) {
+                imported.push({
+                  question: qMatch[2].trim(),
+                  optionA: optA,
+                  optionB: optB,
+                  optionC: optC,
+                  optionD: optD,
+                  correctOption: correctOpt,
+                  explanation: '',
+                  section: 'General',
+                  negativeMark: '0.25',
+                });
+              }
+
+              i += 4; // skip past the 4 rows of this question
+            } else {
+              i++;
+            }
+          }
         }
-        return '';
-      };
 
-      const imported: QuestionForm[] = rows.map(row => ({
-        question: getVal(row, 'question', 'q', 'ques', 'questiontext'),
-        optionA: getVal(row, 'optiona', 'a', 'option a', 'opta'),
-        optionB: getVal(row, 'optionb', 'b', 'option b', 'optb'),
-        optionC: getVal(row, 'optionc', 'c', 'option c', 'optc'),
-        optionD: getVal(row, 'optiond', 'd', 'option d', 'optd'),
-        correctOption: String(getVal(row, 'correctoption', 'correct', 'answer', 'correct_option', 'ans')).toUpperCase().charAt(0) || 'A',
-        explanation: getVal(row, 'explanation', 'explanationtext', 'solution', 'explain'),
-        section: getVal(row, 'section', 'subject', 'topic', 'category') || 'General',
-        negativeMark: getVal(row, 'negativemark', 'negative_mark', 'negmark', 'negative') || '0.25',
-      }));
+        if (imported.length === 0) {
+          // Fallback: try standard column format
+          const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+          imported = rows.map(row => {
+            const getVal = (r: Record<string, unknown>, ...keys: string[]) => {
+              const lk = Object.keys(r).map(k => k.toLowerCase().trim());
+              for (const key of keys) {
+                const idx = lk.indexOf(key.toLowerCase());
+                if (idx !== -1) return String(r[Object.keys(r)[idx]] || '').trim();
+              }
+              return '';
+            };
+            return {
+              question: getVal(row, 'question', 'q', 'ques'),
+              optionA: getVal(row, 'optiona', 'a', 'option a'),
+              optionB: getVal(row, 'optionb', 'b', 'option b'),
+              optionC: getVal(row, 'optionc', 'c', 'option c'),
+              optionD: getVal(row, 'optiond', 'd', 'option d'),
+              correctOption: String(getVal(row, 'correctoption', 'correct', 'answer', 'ans')).toUpperCase().charAt(0) || 'A',
+              explanation: getVal(row, 'explanation', 'solution'),
+              section: getVal(row, 'section', 'subject', 'topic') || 'General',
+              negativeMark: getVal(row, 'negativemark', 'negative') || '0.25',
+            };
+          });
+        }
+      } else {
+        // ===== STANDARD COLUMN FORMAT =====
+        const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+        const getVal = (row: Record<string, unknown>, ...possibleKeys: string[]) => {
+          const lowerKeys = Object.keys(row).map(k => k.toLowerCase().trim());
+          for (const key of possibleKeys) {
+            const idx = lowerKeys.indexOf(key.toLowerCase());
+            if (idx !== -1) return String(row[Object.keys(row)[idx]] || '').trim();
+          }
+          return '';
+        };
+
+        imported = rows.map(row => ({
+          question: getVal(row, 'question', 'q', 'ques', 'questiontext'),
+          optionA: getVal(row, 'optiona', 'a', 'option a', 'opta'),
+          optionB: getVal(row, 'optionb', 'b', 'option b', 'optb'),
+          optionC: getVal(row, 'optionc', 'c', 'option c', 'optc'),
+          optionD: getVal(row, 'optiond', 'd', 'option d', 'optd'),
+          correctOption: String(getVal(row, 'correctoption', 'correct', 'answer', 'correct_option', 'ans')).toUpperCase().charAt(0) || 'A',
+          explanation: getVal(row, 'explanation', 'explanationtext', 'solution', 'explain'),
+          section: getVal(row, 'section', 'subject', 'topic', 'category') || 'General',
+          negativeMark: getVal(row, 'negativemark', 'negative_mark', 'negmark', 'negative') || '0.25',
+        }));
+      }
 
       const valid = imported.filter(q => q.question && q.optionA && q.optionB && q.optionC && q.optionD);
       if (valid.length === 0) {
-        toast.error('No valid questions found. Make sure columns are: Question, OptionA, OptionB, OptionC, OptionD, CorrectOption');
+        toast.error('No valid questions found. Check your Excel format.');
         return;
       }
 
@@ -1579,7 +1672,7 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
         return [...nonEmpty, ...valid];
       });
 
-      toast.success(`📊 ${valid.length} questions imported from Excel! ${rows.length - valid.length > 0 ? `(${rows.length - valid.length} skipped — incomplete data)` : ''}`);
+      toast.success(`📊 ${valid.length} questions imported from Excel! ${imported.length - valid.length > 0 ? `(${imported.length - valid.length} skipped)` : ''}`);
     } catch (err: any) {
       toast.error(`Failed to read Excel: ${err?.message || 'Unknown error'}`);
     } finally {
