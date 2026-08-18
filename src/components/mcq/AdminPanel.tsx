@@ -1551,9 +1551,41 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
       // Also detect by checking if any cell has उत्तर pattern
       const hasUttar = rawRows.some(r => r.some(c => String(c || '').includes('उत्तर')));
 
+      // Detect 1-column format: 1 col, has उत्तर pattern, no standard headers
+      const isOneCol = rawRows.length > 5 &&
+        (rawRows[0]?.length || 0) <= 2 &&
+        hasUttar;
+
       let imported: QuestionForm[] = [];
 
-      if (isPdfLayout || (hasUttar && rawRows[0].length >= 4)) {
+      if (isOneCol) {
+        // ===== SINGLE-COLUMN PARSER =====
+        // Format: Q text, (A), (B), (C), (D), उत्तर: (X) — 6 rows per question
+        let i = 0;
+        while (i < rawRows.length) {
+          const cell = String(rawRows[i][0] || '').trim();
+          const qMatch = cell.match(/^(\d+)\.\s*(.+)/);
+          if (qMatch && i + 5 < rawRows.length) {
+            const optA = String(rawRows[i+1][0] || '').replace(/^\(A\)\s*/i, '');
+            const optB = String(rawRows[i+2][0] || '').replace(/^\(B\)\s*/i, '');
+            const optC = String(rawRows[i+3][0] || '').replace(/^\(C\)\s*/i, '');
+            const optD = String(rawRows[i+4][0] || '').replace(/^\(D\)\s*/i, '');
+            const ansText = String(rawRows[i+5][0] || '');
+            const ansMatch = ansText.match(/[\(\[]([A-Da-d])[\)\]]/);
+            const correctOpt = ansMatch ? ansMatch[1].toUpperCase() : 'A';
+            if (optA && optB && optC && optD) {
+              imported.push({
+                question: qMatch[2].trim(), optionA: optA, optionB: optB,
+                optionC: optC, optionD: optD, correctOption: correctOpt,
+                explanation: '', section: 'General', negativeMark: '0.25',
+              });
+            }
+            i += 6;
+          } else {
+            i++;
+          }
+        }
+      } else if (isPdfLayout || (hasUttar && rawRows[0].length >= 4)) {
         // ===== PDF-LAYOUT PARSER =====
         // Format: 3 column-pairs, each pair has Q text + (A)(B) + (C)(D) + उत्तर: (X)
         // Col pairs: (0,1), (2,3), (4,5)
