@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ import {
   Crown, ChevronRight, ChevronDown, GripVertical, X, AlertTriangle, Search, LayoutGrid,
   HelpCircle, Pencil, Camera, FileUp, Upload, Loader2, Filter, Receipt, UserX, Wallet, BadgeCheck, BadgeX,
   Menu, Lock, Unlock, MessageSquare, MessageCircle, Trash2 as Trash2Icon, SquarePen, Delete,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -1261,6 +1263,8 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
   const imageInputRef = useRef<HTMLInputElement>(null);
   const answersInputRef = useRef<HTMLInputElement>(null);
   const explanationsInputRef = useRef<HTMLInputElement>(null);
+  const excelInputRef = useRef<HTMLInputElement>(null);
+  const [importingExcel, setImportingExcel] = useState(false);
 
   useEffect(() => {
     const filledCount = questions.filter(q => q.question.trim() !== '').length;
@@ -1526,6 +1530,64 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
     finally { setImportingExplanations(false); e.target.value = ''; }
   }
 
+  async function handleImportExcel(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportingExcel(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+      if (rows.length === 0) {
+        toast.error('Excel file is empty or has no data rows.');
+        return;
+      }
+
+      // Map column headers (case-insensitive, flexible matching)
+      const getVal = (row: Record<string, unknown>, ...possibleKeys: string[]) => {
+        const lowerKeys = Object.keys(row).map(k => k.toLowerCase().trim());
+        for (const key of possibleKeys) {
+          const idx = lowerKeys.indexOf(key.toLowerCase());
+          if (idx !== -1) return String(row[Object.keys(row)[idx]] || '').trim();
+        }
+        return '';
+      };
+
+      const imported: QuestionForm[] = rows.map(row => ({
+        question: getVal(row, 'question', 'q', 'ques', 'questiontext'),
+        optionA: getVal(row, 'optiona', 'a', 'option a', 'opta'),
+        optionB: getVal(row, 'optionb', 'b', 'option b', 'optb'),
+        optionC: getVal(row, 'optionc', 'c', 'option c', 'optc'),
+        optionD: getVal(row, 'optiond', 'd', 'option d', 'optd'),
+        correctOption: String(getVal(row, 'correctoption', 'correct', 'answer', 'correct_option', 'ans')).toUpperCase().charAt(0) || 'A',
+        explanation: getVal(row, 'explanation', 'explanationtext', 'solution', 'explain'),
+        section: getVal(row, 'section', 'subject', 'topic', 'category') || 'General',
+        negativeMark: getVal(row, 'negativemark', 'negative_mark', 'negmark', 'negative') || '0.25',
+      }));
+
+      const valid = imported.filter(q => q.question && q.optionA && q.optionB && q.optionC && q.optionD);
+      if (valid.length === 0) {
+        toast.error('No valid questions found. Make sure columns are: Question, OptionA, OptionB, OptionC, OptionD, CorrectOption');
+        return;
+      }
+
+      // Clean existing empty questions, then append imported ones
+      setQuestions(prev => {
+        const nonEmpty = prev.filter(q => q.question.trim() || q.optionA.trim());
+        return [...nonEmpty, ...valid];
+      });
+
+      toast.success(`📊 ${valid.length} questions imported from Excel! ${rows.length - valid.length > 0 ? `(${rows.length - valid.length} skipped — incomplete data)` : ''}`);
+    } catch (err: any) {
+      toast.error(`Failed to read Excel: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setImportingExcel(false);
+      e.target.value = '';
+    }
+  }
+
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* Step Indicator — compact on mobile */}
@@ -1652,6 +1714,7 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
           <input type="file" ref={imageInputRef} accept="image/*" onChange={handleImageExtract} className="hidden" />
           <input type="file" ref={answersInputRef} accept=".txt,.csv" onChange={handleImportAnswers} className="hidden" />
           <input type="file" ref={explanationsInputRef} accept=".txt" onChange={handleImportExplanations} className="hidden" />
+          <input type="file" ref={excelInputRef} accept=".xlsx,.xls,.csv" onChange={handleImportExcel} className="hidden" />
 
           {/* Import Actions Bar */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -1689,6 +1752,11 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
             <Button variant="outline" size="sm" onClick={() => explanationsInputRef.current?.click()} disabled={importingExplanations} className="gap-1.5 text-xs">
               {importingExplanations ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
               <span className="hidden sm:inline">{importingExplanations ? 'Importing...' : 'Explanations'}</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => excelInputRef.current?.click()} disabled={importingExcel} className="gap-1.5 text-xs bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
+              {importingExcel ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{importingExcel ? 'Importing...' : '📊 Import Excel'}</span>
+              <span className="sm:hidden">📊 Excel</span>
             </Button>
           </div>
 
