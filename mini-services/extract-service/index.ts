@@ -10,19 +10,25 @@ Return ONLY a valid JSON array. No markdown, no code blocks, no explanation, no 
 Output format: [{"question":"...","optionA":"...","optionB":"...","optionC":"...","optionD":"...","correctOption":"A","explanation":"","section":"General","negativeMark":"0"}]
 
 Field rules:
-- "question": full question text WITH the question number (e.g. "Q1. What is the capital of India?")
-- "optionA" / "optionB" / "optionC" / "optionD": exact text of each option. If option uses (a),(b),(c),(d) or 1,2,3,4 — still map them to A,B,C,D.
-- "correctOption": "A" | "B" | "C" | "D". If a correct answer is marked (circle/tick/highlight), use it. Otherwise default to "A".
-- "explanation": "" (empty)
+- "question": full question text ONLY. Do NOT include any options in this field. Remove the question number prefix (e.g. remove "1." or "Q1."). Include the COMPLETE question text — NEVER truncate or cut it short with "...".
+- "optionA": ONLY the text of option A/first option. Do NOT include the "(A)" label. Do NOT include any other option's text. Each option field must contain EXACTLY ONE option.
+- "optionB": ONLY the text of option B/second option. Do NOT include the "(B)" label. Do NOT include any other option's text.
+- "optionC": ONLY the text of option C/third option. Do NOT include the "(C)" label. Do NOT include any other option's text.
+- "optionD": ONLY the text of option D/fourth option. Do NOT include the "(D)" label. Do NOT include any other option's text.
+- "correctOption": "A" | "B" | "C" | "D". If a correct answer is marked (circle/tick/highlight/underline/bold), use it. If text says "उत्तर: (B)" or "Answer: (C)", use that letter. Otherwise default to "A".
+- "explanation": "" (always empty string, no text)
 - "section": "General"
 - "negativeMark": "0"
 
-Strict rules:
-1. Extract EVERY question from the image — even if there are 30 or 50.
-2. Keep the original language (English OR Hindi OR mixed) — do NOT translate.
-3. Return ONLY the JSON array. First character must be "[" and last must be "]".
-4. No trailing commas, no comments, no prose.
-5. If the image has N questions, return exactly N objects.
+CRITICAL RULES — FAILURE TO FOLLOW THESE WILL CAUSE DATA CORRUPTION:
+1. NEVER MERGE OPTIONS. Each of optionA, optionB, optionC, optionD must contain EXACTLY ONE option text. NEVER put multiple options in one field like "(A) text1 (B) text2".
+2. NEVER TRUNCATE. Always output the COMPLETE text of every question and option. Never use "..." to cut short.
+3. Extract EVERY question from the image — even if there are 30, 50, or 100.
+4. Keep the original language (English OR Hindi OR Hinglish/mixed) — do NOT translate or modify.
+5. Return ONLY the JSON array. First character must be "[" and last must be "]".
+6. No trailing commas, no comments, no prose, no markdown.
+7. If the image shows a multi-column layout (questions in 2 or 3 columns side by side), extract ALL questions from ALL columns in order.
+8. Each question MUST have exactly 4 option fields. If fewer than 4 options are visible, put "" for the missing ones.
 
 BEGIN JSON NOW:`;
 
@@ -65,15 +71,26 @@ function normalize(q: Record<string, any>, index: number) {
     const first = cleaned.charAt(0);
     if (['A', 'B', 'C', 'D'].includes(first)) correctOpt = first;
   }
+
+  // Clean option text — remove (A)/(B)/(C)/(D) prefixes and merge artifacts
+  const cleanOpt = (val: any) => {
+    let text = String(val ?? '').trim();
+    // Remove option label prefix like (A), (B), a), b), A., B.
+    text = text.replace(/^\s*\(?[A-Da-d]\)?[\).]\s*/, '');
+    // Remove merged option artifacts: if text contains another option label, cut it
+    text = text.replace(/\s*\(?[A-Da-d]\)?[\).].*$/s, '');
+    return text.trim();
+  };
+
   return {
     question: String(q.question || `Question ${index + 1}`).trim(),
-    optionA: String(q.optionA ?? q.option_a ?? q.A ?? '').trim(),
-    optionB: String(q.optionB ?? q.option_b ?? q.B ?? '').trim(),
-    optionC: String(q.optionC ?? q.option_c ?? q.C ?? '').trim(),
-    optionD: String(q.optionD ?? q.option_d ?? q.D ?? '').trim(),
+    optionA: cleanOpt(q.optionA ?? q.option_a ?? q.A),
+    optionB: cleanOpt(q.optionB ?? q.option_b ?? q.B),
+    optionC: cleanOpt(q.optionC ?? q.option_c ?? q.C),
+    optionD: cleanOpt(q.optionD ?? q.option_d ?? q.D),
     correctOption: correctOpt,
-    explanation: String(q.explanation ?? '').trim(),
-    section: String(q.section ?? 'General').trim() || 'General',
+    explanation: '',
+    section: 'General',
     negativeMark: String(q.negativeMark ?? '0').trim() || '0',
   };
 }

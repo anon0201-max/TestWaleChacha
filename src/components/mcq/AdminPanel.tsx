@@ -1560,12 +1560,46 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
 
       if (isOneCol) {
         // ===== SINGLE-COLUMN PARSER =====
-        // Format: Q text, (A), (B), (C), (D), उत्तर: (X) — 6 rows per question
+        // Supports 2 formats:
+        // Format A: Q, (A), (B), (C), (D), उत्तर — 6 rows per question
+        // Format B: Each row has Q + options separated by \n within one cell
         let i = 0;
         while (i < rawRows.length) {
           const cell = String(rawRows[i][0] || '').trim();
           const qMatch = cell.match(/^(\d+)\.\s*(.+)/);
-          if (qMatch && i + 5 < rawRows.length) {
+
+          // Check if options are embedded in same cell (Format B)
+          const cellHasAll = cell.includes('(A)') && cell.includes('(B)') && (cell.includes('(C)') || cell.includes('(c)'));
+
+          if (qMatch && cellHasAll) {
+            // Format B: parse options from same cell using newlines
+            const lines = cell.split(/\n/).map(l => l.trim()).filter(Boolean);
+            let qText = qMatch[2].trim();
+            // If first line after Q# has (A), then Q text is just the first part
+            const firstLineParts = qText.split(/\n/);
+            if (firstLineParts.length > 1) {
+              qText = firstLineParts[0].trim();
+            }
+            const optRe = /^\(?[A-Da-d]\)?[\).]\s*/;
+            const opts: string[] = ['', '', '', ''];
+            let optIdx = 0;
+            for (const line of lines) {
+              const m = line.match(/^\(?([A-Da-d])\)?[\).]\s*(.*)/);
+              if (m) {
+                const idx = 'ABCD'.indexOf(m[1].toUpperCase());
+                if (idx >= 0) { opts[idx] = m[2].trim(); optIdx = idx; }
+              }
+            }
+            if (opts[0] && opts[1] && opts[2] && opts[3]) {
+              imported.push({
+                question: qText, optionA: opts[0], optionB: opts[1],
+                optionC: opts[2], optionD: opts[3], correctOption: 'A',
+                explanation: '', section: 'General', negativeMark: '0.25',
+              });
+            }
+            i++;
+          } else if (qMatch && i + 5 < rawRows.length) {
+            // Format A: 6 rows per question
             const optA = String(rawRows[i+1][0] || '').replace(/^\(A\)\s*/i, '');
             const optB = String(rawRows[i+2][0] || '').replace(/^\(B\)\s*/i, '');
             const optC = String(rawRows[i+3][0] || '').replace(/^\(C\)\s*/i, '');
