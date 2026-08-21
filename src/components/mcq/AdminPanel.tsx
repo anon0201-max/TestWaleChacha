@@ -1213,6 +1213,32 @@ interface QuestionForm {
   negativeMark: string;
 }
 
+/**
+ * Robust answer letter extraction from any format:
+ * (A), [A], (a), A), (A, उत्तर: A, Ans: B, Answer: C, Option D, उत्तर: (B), उत्तर - A, etc.
+ */
+function extractAnswer(text: string): string {
+  if (!text) return '';
+  const t = String(text).trim();
+  // 1. (A) or [A] or (a) or [b] — full brackets/parens
+  let m = t.match(/[\(\[\{]([A-Da-d])[\)\]\}]/);
+  if (m) return m[1].toUpperCase();
+  // 2. Half-open: "(A" or "[A" or "A)" or "A]" at word boundary
+  m = t.match(/(?:^|[\s:(-])\(?([A-Da-d])[\).]?(?:$|[\s,;.])/);
+  if (m) return m[1].toUpperCase();
+  // 3. After answer keywords: उत्तर/Ans/Answer/Correct followed by :/-/= then optional parens then letter
+  m = t.match(/(?:उत्तर|Ans(?:wer)?|Correct|Option)\s*[:\-=]?\s*\(?([A-Da-d])\)?/i);
+  if (m) return m[1].toUpperCase();
+  // 4. Standalone single letter A-D at end of string (e.g., "उत्तर: (B)" already handled, this catches "Answer A")
+  m = t.match(/\b([A-Da-d])\s*$/);
+  if (m) {
+    const letter = m[1].toUpperCase();
+    // Only accept if the text is short (< 30 chars) to avoid matching random letters in long text
+    if (t.length < 30) return letter;
+  }
+  return '';
+}
+
 const emptyQuestion = (): QuestionForm => ({
   question: '',
   optionA: '',
@@ -1611,8 +1637,8 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
               // Check for answer line: must START with उत्तर followed by colon/dash
               // This avoids false matches on words like उत्तराखंड, उत्तर प्रदेश
               if (/^उत्तर\s*[:\-=]/.test(line)) {
-                const am = line.match(/[\(\[]([A-Da-d])[\)\]]/);
-                if (am) correctOpt = am[1].toUpperCase();
+                const extracted = extractAnswer(line);
+                if (extracted) correctOpt = extracted;
                 continue;
               }
               const m = line.match(/^\(?([A-Da-d])\)?[\).]\s*(.*)/);
@@ -1636,8 +1662,7 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
             const optC = String(rawRows[i+3][0] || '').replace(/^\(C\)\s*/i, '');
             const optD = String(rawRows[i+4][0] || '').replace(/^\(D\)\s*/i, '');
             const ansText = String(rawRows[i+5][0] || '');
-            const ansMatch = ansText.match(/[\(\[]([A-Da-d])[\)\]]/);
-            const correctOpt = ansMatch ? ansMatch[1].toUpperCase() : 'A';
+            const correctOpt = extractAnswer(ansText) || 'A';
             if (optA && optB && optC && optD) {
               imported.push({
                 question: qMatch[2].trim(), optionA: optA, optionB: optB,
@@ -1693,10 +1718,9 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
               const optC = rawC.replace(/^\(C\)\s*/i, '');
               const optD = rawD.replace(/^\(D\)\s*/i, '');
 
-              // Extract answer from उत्तर: (X) or उत्तर : (X)
+              // Extract answer from उत्तर: (X), उत्तर: X, or any other format
               const ansText = ansRow[colQ] || ansRow[colO] || '';
-              const ansMatch = ansText.match(/[\(\[]([A-Da-d])[\)\]]/);
-              const correctOpt = ansMatch ? ansMatch[1].toUpperCase() : 'A';
+              const correctOpt = extractAnswer(ansText) || 'A';
 
               imported.push({
                 question: qMatch[2].trim(),
@@ -1735,7 +1759,7 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
               optionB: getVal(row, 'optionb', 'b', 'option b'),
               optionC: getVal(row, 'optionc', 'c', 'option c'),
               optionD: getVal(row, 'optiond', 'd', 'option d'),
-              correctOption: String(getVal(row, 'correctoption', 'correct', 'answer', 'ans')).toUpperCase().charAt(0) || 'A',
+              correctOption: extractAnswer(getVal(row, 'correctoption', 'correct', 'answer', 'ans')) || String(getVal(row, 'correctoption', 'correct', 'answer', 'ans')).toUpperCase().charAt(0) || 'A',
               explanation: getVal(row, 'explanation', 'solution'),
               section: getVal(row, 'section', 'subject', 'topic') || 'General',
               negativeMark: getVal(row, 'negativemark', 'negative') || '0.25',
@@ -1806,8 +1830,8 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
           let correctOpt = 'A';
           if (colAns >= 0) {
             const ansText = row[colAns] || '';
-            const ansMatch = ansText.match(/[\(\[]([A-Da-d])[\)\]]/);
-            if (ansMatch) correctOpt = ansMatch[1].toUpperCase();
+            const extracted = extractAnswer(ansText);
+            if (extracted) correctOpt = extracted;
           }
 
           if (optA && optB && optC && optD) {
@@ -1838,7 +1862,7 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
               optionB: getVal(row, 'optionb', 'b', 'option b'),
               optionC: getVal(row, 'optionc', 'c', 'option c'),
               optionD: getVal(row, 'optiond', 'd', 'option d'),
-              correctOption: String(getVal(row, 'correctoption', 'correct', 'answer', 'ans')).toUpperCase().charAt(0) || 'A',
+              correctOption: extractAnswer(getVal(row, 'correctoption', 'correct', 'answer', 'ans')) || String(getVal(row, 'correctoption', 'correct', 'answer', 'ans')).toUpperCase().charAt(0) || 'A',
               explanation: getVal(row, 'explanation', 'solution'),
               section: getVal(row, 'section', 'subject', 'topic') || 'General',
               negativeMark: getVal(row, 'negativemark', 'negative') || '0.25',
@@ -1864,7 +1888,7 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
           optionB: getVal(row, 'optionb', 'b', 'option b', 'optb'),
           optionC: getVal(row, 'optionc', 'c', 'option c', 'optc'),
           optionD: getVal(row, 'optiond', 'd', 'option d', 'optd'),
-          correctOption: String(getVal(row, 'correctoption', 'correct', 'answer', 'correct_option', 'ans')).toUpperCase().charAt(0) || 'A',
+          correctOption: extractAnswer(getVal(row, 'correctoption', 'correct', 'answer', 'correct_option', 'ans')) || String(getVal(row, 'correctoption', 'correct', 'answer', 'correct_option', 'ans')).toUpperCase().charAt(0) || 'A',
           explanation: getVal(row, 'explanation', 'explanationtext', 'solution', 'explain'),
           section: getVal(row, 'section', 'subject', 'topic', 'category') || 'General',
           negativeMark: getVal(row, 'negativemark', 'negative_mark', 'negmark', 'negative') || '0.25',
