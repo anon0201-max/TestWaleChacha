@@ -1226,8 +1226,8 @@ function extractAnswer(text: string): string {
   // 2. Half-open: "(A" or "[A" or "A)" or "A]" at word boundary
   m = t.match(/(?:^|[\s:(-])\(?([A-Da-d])[\).]?(?:$|[\s,;.])/);
   if (m) return m[1].toUpperCase();
-  // 3. After answer keywords: उत्तर/Ans/Answer/Correct followed by :/-/= then optional parens then letter
-  m = t.match(/(?:उत्तर|Ans(?:wer)?|Correct|Option)\s*[:\-=]?\s*\(?([A-Da-d])\)?/i);
+  // 3. After answer keywords: सही उत्तर/उत्तर/Ans/Answer/Correct followed by :/-/= then optional parens then letter
+  m = t.match(/(?:सही\s+)?(?:उत्तर|Ans(?:wer)?|Correct|Option)\s*[:\-=]?\s*\(?([A-Da-d])\)?/i);
   if (m) return m[1].toUpperCase();
   // 4. Standalone single letter A-D at end of string (e.g., "उत्तर: (B)" already handled, this catches "Answer A")
   m = t.match(/\b([A-Da-d])\s*$/);
@@ -1633,12 +1633,19 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
             }
             const opts: string[] = ['', '', '', ''];
             let correctOpt = 'A';
+            let explanation = '';
             for (const line of lines) {
-              // Check for answer line: must START with उत्तर followed by colon/dash
-              // This avoids false matches on words like उत्तराखंड, उत्तर प्रदेश
-              if (/^उत्तर\s*[:\-=]/.test(line)) {
+              // Check for answer line: "सही उत्तर:" or "उत्तर:" followed by colon/dash
+              // Must contain उत्तर as a word, preceded optionally by सही
+              if (/(?:^|\s)उत्तर\s*[:\-=]/.test(line) || /^सही\s+उत्तर\s*[:\-=]/.test(line)) {
                 const extracted = extractAnswer(line);
                 if (extracted) correctOpt = extracted;
+                continue;
+              }
+              // Check for explanation/solution line: "समाधान:", "व्याख्या:", "Solution:", "Explanation:", "Explain:"
+              const solMatch = line.match(/^(?:समाधान|व्याख्या|Solution|Explanation|Explain|स्पष्टीकरण)\s*[:\-–—]\s*(.+)/i);
+              if (solMatch) {
+                explanation = solMatch[1].trim();
                 continue;
               }
               const m = line.match(/^\(?([A-Da-d])\)?[\).]\s*(.*)/);
@@ -1651,7 +1658,7 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
               imported.push({
                 question: qText, optionA: opts[0], optionB: opts[1],
                 optionC: opts[2], optionD: opts[3], correctOption: correctOpt,
-                explanation: '', section: 'General', negativeMark: '0.25',
+                explanation, section: 'General', negativeMark: '0.25',
               });
             }
             i++;
