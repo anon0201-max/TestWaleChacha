@@ -1542,18 +1542,43 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
       // Try raw array format first (for PDF-layout detection)
       const rawRows: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-      // Detect PDF-layout: 6+ columns, first cell looks like a header, rows have (A)/(B)/(C)/(D) patterns
-      const isPdfLayout = rawRows.length > 3 &&
-        (rawRows[0].length >= 6) &&
-        !String(rawRows[0][0] || '').toLowerCase().includes('question') &&
-        String(rawRows[0][0] || '').includes('प्र');
-
-      // Also detect by checking if any cell has उत्तर pattern
+      // Detect 1-column format: 1-2 cols, has उत्तर pattern
       const hasUttar = rawRows.some(r => r.some(c => String(c || '').includes('उत्तर')));
-
-      // Detect 1-column format: 1 col, has उत्तर pattern, no standard headers
       const isOneCol = rawRows.length > 5 &&
         (rawRows[0]?.length || 0) <= 2 &&
+        hasUttar;
+
+      // Detect PDF-layout: 6 columns, Hindi header with प्र, AND option rows have (A)/(B)/(C)/(D) in correct positions
+      const firstCellHasPr = String(rawRows[0]?.[0] || '').includes('प्र');
+      const firstCellIsEnglish = String(rawRows[0]?.[0] || '').toLowerCase().includes('question');
+      // Verify PDF-layout by checking option rows actually have (A)/(B) in paired columns
+      let pdfLayoutConfirmed = false;
+      if (rawRows.length > 5 && rawRows[0].length >= 6 && firstCellHasPr && !firstCellIsEnglish) {
+        // Find first question row, then check if next row has (A) in colQ and (B) in colO
+        for (let checkIdx = 1; checkIdx < Math.min(rawRows.length - 2, 10); checkIdx++) {
+          const checkCell = String(rawRows[checkIdx]?.[0] || '').trim();
+          if (checkCell.match(/^\d+\./)) {
+            const nextRow = rawRows[checkIdx + 1];
+            if (nextRow) {
+              const c0 = String(nextRow[0] || '').trim();
+              const c1 = String(nextRow[1] || '').trim();
+              if (/^\(A\)/i.test(c0) && /^\(B\)/i.test(c1)) {
+                pdfLayoutConfirmed = true;
+              }
+            }
+            break;
+          }
+        }
+      }
+      const isPdfLayout = pdfLayoutConfirmed;
+
+      // Detect 3-5 column Hindi format: Q in col 0, options in separate cols, no English headers
+      // e.g. [Question, (A), (B), (C), (D), उत्तर] — one row per question
+      const isHindiColFormat = !isOneCol && !isPdfLayout &&
+        rawRows.length > 2 &&
+        (rawRows[0]?.length || 0) >= 4 &&
+        (rawRows[0]?.length || 0) <= 7 &&
+        !firstCellIsEnglish &&
         hasUttar;
 
       let imported: QuestionForm[] = [];
@@ -1580,20 +1605,25 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
             if (firstLineParts.length > 1) {
               qText = firstLineParts[0].trim();
             }
-            const optRe = /^\(?[A-Da-d]\)?[\).]\s*/;
             const opts: string[] = ['', '', '', ''];
-            let optIdx = 0;
+            let correctOpt = 'A';
             for (const line of lines) {
+              // Check for answer line first
+              if (line.includes('उत्तर')) {
+                const am = line.match(/[\(\[]([A-Da-d])[\)\]]/);
+                if (am) correctOpt = am[1].toUpperCase();
+                continue;
+              }
               const m = line.match(/^\(?([A-Da-d])\)?[\).]\s*(.*)/);
               if (m) {
                 const idx = 'ABCD'.indexOf(m[1].toUpperCase());
-                if (idx >= 0) { opts[idx] = m[2].trim(); optIdx = idx; }
+                if (idx >= 0) opts[idx] = m[2].trim();
               }
             }
             if (opts[0] && opts[1] && opts[2] && opts[3]) {
               imported.push({
                 question: qText, optionA: opts[0], optionB: opts[1],
-                optionC: opts[2], optionD: opts[3], correctOption: 'A',
+                optionC: opts[2], optionD: opts[3], correctOption: correctOpt,
                 explanation: '', section: 'General', negativeMark: '0.25',
               });
             }
@@ -1619,7 +1649,7 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
             i++;
           }
         }
-      } else if (isPdfLayout || (hasUttar && rawRows[0].length >= 4)) {
+      } else if (isPdfLayout) {
         // ===== PDF-LAYOUT PARSER =====
         // Format: 3 column-pairs, each pair has Q text + (A)(B) + (C)(D) + उत्तर: (X)
         // Col pairs: (0,1), (2,3), (4,5)
@@ -1644,29 +1674,40 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
               // Row after should have उत्तर
               const ansRow = i + 3 < rawRows.length ? rawRows[i + 3].map(c => String(c || '').trim()) : [];
 
-              const optA = (optRow1[colQ] || '').replace(/^\(A\)\s*/i, '');
-              const optB = (optRow1[colO] || '').replace(/^\(B\)\s*/i, '');
-              const optC = (optRow2[colQ] || '').replace(/^\(C\)\s*/i, '');
-              const optD = (optRow2[colO] || '').replace(/^\(D\)\s*/i, '');
+              // VALIDATE: option rows must have correct prefixes — prevents question text leaking into options
+              const rawA = String(optRow1[colQ] || '');
+              const rawB = String(optRow1[colO] || '');
+              const rawC = String(optRow2[colQ] || '');
+              const rawD = String(optRow2[colO] || '');
+
+              if (!/^\(A\)/i.test(rawA) || !/^\(B\)/i.test(rawB) ||
+                  !/^\(C\)/i.test(rawC) || !/^\(D\)/i.test(rawD)) {
+                // Option rows don't have expected prefixes — skip this (wrong format)
+                i++;
+                continue;
+              }
+
+              const optA = rawA.replace(/^\(A\)\s*/i, '');
+              const optB = rawB.replace(/^\(B\)\s*/i, '');
+              const optC = rawC.replace(/^\(C\)\s*/i, '');
+              const optD = rawD.replace(/^\(D\)\s*/i, '');
 
               // Extract answer from उत्तर: (X) or उत्तर : (X)
               const ansText = ansRow[colQ] || ansRow[colO] || '';
               const ansMatch = ansText.match(/[\(\[]([A-Da-d])[\)\]]/);
               const correctOpt = ansMatch ? ansMatch[1].toUpperCase() : 'A';
 
-              if (optA && optB && optC && optD) {
-                imported.push({
-                  question: qMatch[2].trim(),
-                  optionA: optA,
-                  optionB: optB,
-                  optionC: optC,
-                  optionD: optD,
-                  correctOption: correctOpt,
-                  explanation: '',
-                  section: 'General',
-                  negativeMark: '0.25',
-                });
-              }
+              imported.push({
+                question: qMatch[2].trim(),
+                optionA: optA,
+                optionB: optB,
+                optionC: optC,
+                optionD: optD,
+                correctOption: correctOpt,
+                explanation: '',
+                section: 'General',
+                negativeMark: '0.25',
+              });
 
               i += 4; // skip past the 4 rows of this question
             } else {
@@ -1675,8 +1716,111 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
           }
         }
 
+        // If PDF-layout produced nothing, try standard format as fallback
         if (imported.length === 0) {
-          // Fallback: try standard column format
+          const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+          imported = rows.map(row => {
+            const getVal = (r: Record<string, unknown>, ...keys: string[]) => {
+              const lk = Object.keys(r).map(k => k.toLowerCase().trim());
+              for (const key of keys) {
+                const idx = lk.indexOf(key.toLowerCase());
+                if (idx !== -1) return String(r[Object.keys(r)[idx]] || '').trim();
+              }
+              return '';
+            };
+            return {
+              question: getVal(row, 'question', 'q', 'ques'),
+              optionA: getVal(row, 'optiona', 'a', 'option a'),
+              optionB: getVal(row, 'optionb', 'b', 'option b'),
+              optionC: getVal(row, 'optionc', 'c', 'option c'),
+              optionD: getVal(row, 'optiond', 'd', 'option d'),
+              correctOption: String(getVal(row, 'correctoption', 'correct', 'answer', 'ans')).toUpperCase().charAt(0) || 'A',
+              explanation: getVal(row, 'explanation', 'solution'),
+              section: getVal(row, 'section', 'subject', 'topic') || 'General',
+              negativeMark: getVal(row, 'negativemark', 'negative') || '0.25',
+            };
+          });
+        }
+      } else if (isHindiColFormat) {
+        // ===== HINDI COLUMN FORMAT PARSER =====
+        // Format: [Question, (A), (B), (C), (D), उत्तर] — one row per question
+        // Supports both with header row and without
+        const numCols = rawRows[0]?.length || 0;
+
+        // Determine column mapping: find which col has (A), (B), (C), (D) in header or data rows
+        // Try header row first
+        let colQ = -1, colA = -1, colB = -1, colC = -1, colD = -1, colAns = -1;
+
+        // Check if first row is a header (not starting with a number)
+        const firstRowStr = rawRows.map(r => r.map(c => String(c || '').trim()));
+        let startRow = 0;
+        const firstCell = String(rawRows[0]?.[0] || '').trim();
+        if (!firstCell.match(/^\d+\./)) {
+          // First row is a header — detect columns from it
+          const header = firstRowStr[0];
+          for (let ci = 0; ci < header.length; ci++) {
+            const h = header[ci].toLowerCase();
+            if (/\(a\)/i.test(header[ci]) || /^a$/i.test(header[ci]) || h.includes('option a') || h.includes('opt a')) colA = ci;
+            else if (/\(b\)/i.test(header[ci]) || /^b$/i.test(header[ci]) || h.includes('option b') || h.includes('opt b')) colB = ci;
+            else if (/\(c\)/i.test(header[ci]) || /^c$/i.test(header[ci]) || h.includes('option c') || h.includes('opt c')) colC = ci;
+            else if (/\(d\)/i.test(header[ci]) || /^d$/i.test(header[ci]) || h.includes('option d') || h.includes('opt d')) colD = ci;
+            else if (h.includes('उत्तर') || h.includes('answer') || h.includes('ans') || h.includes('correct')) colAns = ci;
+            else if (colQ === -1) colQ = ci; // first unrecognized col is question
+          }
+          startRow = 1;
+        }
+
+        // If header detection failed, try to detect from data rows
+        if (colQ === -1) {
+          // Assume: col 0 = Q, then find (A) in subsequent cols
+          colQ = 0;
+          for (let ci = 1; ci < numCols; ci++) {
+            const sample = String(rawRows[startRow]?.[ci] || '').trim();
+            if (/^\(A\)/i.test(sample)) colA = ci;
+            else if (/^\(B\)/i.test(sample)) colB = ci;
+            else if (/^\(C\)/i.test(sample)) colC = ci;
+            else if (/^\(D\)/i.test(sample)) colD = ci;
+            else if (String(sample).includes('उत्तर')) colAns = ci;
+          }
+        }
+
+        // Parse each data row
+        for (let ri = startRow; ri < rawRows.length; ri++) {
+          const row = rawRows[ri].map(c => String(c || '').trim());
+          const qText = (row[colQ >= 0 ? colQ : 0] || '').trim();
+          const qMatch = qText.match(/^(?:\d+\.\s*)?(.+)/);
+          if (!qMatch || !qMatch[1].trim()) continue;
+
+          const getCol = (idx: number) => {
+            if (idx < 0 || idx >= row.length) return '';
+            return row[idx].replace(/^\(?[A-Da-d]\)?[\).]\s*/i, '').trim();
+          };
+
+          const optA = getCol(colA);
+          const optB = getCol(colB);
+          const optC = getCol(colC);
+          const optD = getCol(colD);
+
+          // Extract answer
+          let correctOpt = 'A';
+          if (colAns >= 0) {
+            const ansText = row[colAns] || '';
+            const ansMatch = ansText.match(/[\(\[]([A-Da-d])[\)\]]/);
+            if (ansMatch) correctOpt = ansMatch[1].toUpperCase();
+          }
+
+          if (optA && optB && optC && optD) {
+            imported.push({
+              question: qMatch[1].trim(),
+              optionA: optA, optionB: optB, optionC: optC, optionD: optD,
+              correctOption: correctOpt,
+              explanation: '', section: 'General', negativeMark: '0.25',
+            });
+          }
+        }
+
+        // If Hindi column format produced nothing, try standard English format
+        if (imported.length === 0) {
           const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
           imported = rows.map(row => {
             const getVal = (r: Record<string, unknown>, ...keys: string[]) => {

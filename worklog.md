@@ -153,3 +153,28 @@ Stage Summary:
 - Messages can be deleted from admin panel
 - API validation ensures clean data (10-digit Indian mobile, valid email)
 - Fixed: API routes now use MongoDB on Vercel (MONGODB_URI env), SQLite locally (fallback)
+---
+Task ID: 7
+Agent: Main Agent
+Task: Fix Excel import - question text appearing in option fields
+
+Work Log:
+- Analyzed the PDF-layout Excel parser in AdminPanel.tsx handleImportExcel()
+- Examined raw data structure of MCQ_All_100_PDF_Layout.xlsx (6 cols, 171 rows, 3 column-pairs)
+- Examined First_30_Questions_With_Visible_Answers.xlsx (1 col, embedded options with \n)
+- Ran Node.js simulations of all 3 parsers on all 3 test files
+- Identified root cause: the condition `isPdfLayout || (hasUttar && rawRows[0].length >= 4)` was too broad — any 4+ column file with उत्तर text would trigger the PDF-layout parser even if data was in a completely different format, causing question text from subsequent rows to fill into option fields
+- Fixed format detection: replaced simple `isPdfLayout` boolean with `pdfLayoutConfirmed` that actually verifies option rows contain (A)/(B) prefixes in the expected column positions
+- Removed the dangerous `hasUttar && rawRows[0].length >= 4` fallback condition entirely
+- Added option prefix validation in PDF-layout parser: each option row must start with the expected (A)/(B)/(C)/(D) prefix, otherwise the question is skipped (prevents question text leaking into options)
+- Added new `isHindiColFormat` detection for 3-5 column Hindi format files (Q + 4 options + answer, one row per question)
+- Added Hindi column format parser with auto-detection of column positions from headers or data patterns
+- Fixed Format B (embedded options in single cell) to properly extract correct answer from उत्तर line
+- Verified all 3 test files produce correct results: PDF-layout 100/100, 1-column detected correctly, embedded format 25/30
+
+Stage Summary:
+- Root cause fixed: PDF-layout parser no longer misfires on non-PDF files
+- Option prefix validation prevents question text from leaking into option fields
+- New Hindi column format parser handles 3-5 column files that were previously unsupported
+- Format B now correctly extracts the answer from उत्तर lines
+- Lint passes (no new errors)
