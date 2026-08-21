@@ -1608,8 +1608,9 @@ function AdminCreateTestTab({ onCreated, existingTestId }: { onCreated: () => vo
             const opts: string[] = ['', '', '', ''];
             let correctOpt = 'A';
             for (const line of lines) {
-              // Check for answer line first
-              if (line.includes('उत्तर')) {
+              // Check for answer line: must START with उत्तर followed by colon/dash
+              // This avoids false matches on words like उत्तराखंड, उत्तर प्रदेश
+              if (/^उत्तर\s*[:\-=]/.test(line)) {
                 const am = line.match(/[\(\[]([A-Da-d])[\)\]]/);
                 if (am) correctOpt = am[1].toUpperCase();
                 continue;
