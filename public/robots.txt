@@ -16,4 +16,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://test-wale-chacha.vercel.app/sitemap.xml
+Sitemap: https://testwalechacha.online/sitemap.xml
