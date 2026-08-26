@@ -265,9 +265,9 @@ export function HomePage() {
             >
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {[
-                  { icon: Users, value: '8+', label: 'Exam Categories', color: 'from-blue-500/20 to-blue-600/10', iconColor: 'text-blue-400' },
-                  { icon: Flame, value: '50+', label: 'Mock Tests', color: 'from-orange-500/20 to-orange-600/10', iconColor: 'text-orange-400' },
-                  { icon: GraduationCap, value: 'Free', label: '5 Tests on Signup', color: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400' },
+                  { icon: Users, value: `${categories.length}+`, label: 'Exam Categories', color: 'from-blue-500/20 to-blue-600/10', iconColor: 'text-blue-400' },
+                  { icon: Flame, value: `${tests.length}+`, label: 'Mock Tests', color: 'from-orange-500/20 to-orange-600/10', iconColor: 'text-orange-400' },
+                  { icon: GraduationCap, value: 'Free', label: `${freeTestsRemaining} Tests on Signup`, color: 'from-emerald-500/20 to-emerald-600/10', iconColor: 'text-emerald-400' },
                   { icon: Crown, value: '₹100', label: 'PRO Unlimited', color: 'from-amber-500/20 to-amber-600/10', iconColor: 'text-amber-400' },
                 ].map((stat, i) => (
                   <motion.div
@@ -456,9 +456,9 @@ export function HomePage() {
       <ScrollSection className="lg:hidden max-w-[1400px] mx-auto px-4 sm:px-6 mt-6 sm:mt-8">
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: Users, value: '8+', label: 'Exam Categories', bg: 'bg-blue-50', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
-            { icon: Flame, value: '50+', label: 'Mock Tests', bg: 'bg-orange-50', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
-            { icon: GraduationCap, value: 'Free', label: '5 Tests on Signup', bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
+            { icon: Users, value: `${categories.length}+`, label: 'Exam Categories', bg: 'bg-blue-50', iconBg: 'bg-blue-100', iconColor: 'text-blue-600' },
+            { icon: Flame, value: `${tests.length}+`, label: 'Mock Tests', bg: 'bg-orange-50', iconBg: 'bg-orange-100', iconColor: 'text-orange-600' },
+            { icon: GraduationCap, value: 'Free', label: `${freeTestsRemaining} Tests on Signup`, bg: 'bg-emerald-50', iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600' },
             { icon: Crown, value: '₹100', label: 'PRO Unlimited', bg: 'bg-amber-50', iconBg: 'bg-amber-100', iconColor: 'text-amber-600' },
           ].map((stat, i) => (
             <motion.div key={stat.label} custom={i} variants={fadeUp}>
