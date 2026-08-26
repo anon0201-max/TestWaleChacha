@@ -27,6 +27,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/?admin=true'],
       },
     ],
-    sitemap: 'https://test-wale-chacha.vercel.app/sitemap.xml',
+    sitemap: 'https://testwalechacha.online/sitemap.xml',
   };
 }

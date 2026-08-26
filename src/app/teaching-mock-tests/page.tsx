@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free CTET, TET, Super TET Mock Tests Online | TestWaleChacha',
     description: 'Practice free teaching mock tests for CTET, TET, Super TET, KVS, and NVS with real exam interface and detailed solutions.',
-    url: 'https://test-wale-chacha.vercel.app/teaching-mock-tests',
+    url: 'https://testwalechacha.online/teaching-mock-tests',
   },
 };
 
-const SITE_URL = 'https://test-wale-chacha.vercel.app';
+const SITE_URL = 'https://testwalechacha.online';
 
 export default function TeachingMockTestsPage() {
   return (

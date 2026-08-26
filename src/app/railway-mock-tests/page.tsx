@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free RRB NTPC, Group D Mock Tests Online | TestWaleChacha',
     description: 'Practice free railway mock tests for RRB NTPC, Group D, ALP, and JE with real exam interface and detailed solutions.',
-    url: 'https://test-wale-chacha.vercel.app/railway-mock-tests',
+    url: 'https://testwalechacha.online/railway-mock-tests',
   },
 };
 
-const SITE_URL = 'https://test-wale-chacha.vercel.app';
+const SITE_URL = 'https://testwalechacha.online';
 
 export default function RailwayMockTestsPage() {
   return (

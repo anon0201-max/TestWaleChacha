@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Read the Terms and Conditions for using TestWaleChacha. Understand your rights and obligations regarding our online mock test platform, subscription, and services.',
 };
 
-const BASE_URL = 'https://test-wale-chacha.vercel.app';
+const BASE_URL = 'https://testwalechacha.online';
 const SITE_NAME = 'TestWaleChacha';
 const EMAIL = 'testwalechacha@gmail.com';
 

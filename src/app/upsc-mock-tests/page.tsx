@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free UPSC CSE Prelims Mock Tests Online | TestWaleChacha',
     description: 'Practice free UPSC mock tests for CSE Prelims GS Paper 1 and CSAT with detailed solutions and real exam interface.',
-    url: 'https://test-wale-chacha.vercel.app/upsc-mock-tests',
+    url: 'https://testwalechacha.online/upsc-mock-tests',
   },
 };
 
-const SITE_URL = 'https://test-wale-chacha.vercel.app';
+const SITE_URL = 'https://testwalechacha.online';
 
 export default function UPSCMockTestsPage() {
   return (

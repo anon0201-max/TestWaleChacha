@@ -81,13 +81,13 @@ export function AppFooter() {
                 <li><button onClick={() => { setView('tests'); scrollToTop(); }} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">All Tests</button></li>
                 <li><button onClick={() => { setView('my-attempts'); scrollToTop(); }} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">My Attempts</button></li>
                 <li><button onClick={handleSubscribeClick} className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Subscribe — ₹100</button></li>
-                <li><a href="https://test-wale-chacha.vercel.app/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Privacy Policy</a></li>
-                <li><a href="https://test-wale-chacha.vercel.app/terms" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Terms &amp; Conditions</a></li>
-                <li><a href="https://test-wale-chacha.vercel.app/refund-policy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Refund Policy</a></li>
-                <li><a href="https://test-wale-chacha.vercel.app/about" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">About Us</a></li>
-                <li><a href="https://test-wale-chacha.vercel.app/faq" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">FAQ</a></li>
-                <li><a href="https://test-wale-chacha.vercel.app/how-it-works" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">How It Works</a></li>
-                <li><a href="https://test-wale-chacha.vercel.app/contact" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Contact Us</a></li>
+                <li><a href="https://testwalechacha.online/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Privacy Policy</a></li>
+                <li><a href="https://testwalechacha.online/terms" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Terms &amp; Conditions</a></li>
+                <li><a href="https://testwalechacha.online/refund-policy" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Refund Policy</a></li>
+                <li><a href="https://testwalechacha.online/about" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">About Us</a></li>
+                <li><a href="https://testwalechacha.online/faq" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">FAQ</a></li>
+                <li><a href="https://testwalechacha.online/how-it-works" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">How It Works</a></li>
+                <li><a href="https://testwalechacha.online/contact" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white text-xs sm:text-sm transition-colors">Contact Us</a></li>
               </ul>
             </div>
 
@@ -135,19 +135,19 @@ export function AppFooter() {
             </span>
             <div className="flex items-center gap-4 text-xs">
               <span className="text-gray-600">
-                <a href="https://test-wale-chacha.vercel.app/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Privacy</a>
+                <a href="https://testwalechacha.online/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Privacy</a>
                 {' · '}
-                <a href="https://test-wale-chacha.vercel.app/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Terms</a>
+                <a href="https://testwalechacha.online/terms" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Terms</a>
                 {' · '}
-                <a href="https://test-wale-chacha.vercel.app/refund-policy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Refund Policy</a>
+                <a href="https://testwalechacha.online/refund-policy" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Refund Policy</a>
                 {' · '}
-                <a href="https://test-wale-chacha.vercel.app/about" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">About Us</a>
+                <a href="https://testwalechacha.online/about" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">About Us</a>
                 {' · '}
-                <a href="https://test-wale-chacha.vercel.app/faq" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">FAQ</a>
+                <a href="https://testwalechacha.online/faq" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">FAQ</a>
                 {' · '}
-                <a href="https://test-wale-chacha.vercel.app/how-it-works" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">How It Works</a>
+                <a href="https://testwalechacha.online/how-it-works" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">How It Works</a>
                 {' · '}
-                <a href="https://test-wale-chacha.vercel.app/contact" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Contact</a>
+                <a href="https://testwalechacha.online/contact" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 transition-colors">Contact</a>
               </span>
               <button
                 onClick={scrollToTop}

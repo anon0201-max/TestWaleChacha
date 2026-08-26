@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free CDS, NDA Mock Tests Online | TestWaleChacha',
     description: 'Practice free defence mock tests for CDS and NDA with real exam interface, timer, and detailed solutions.',
-    url: 'https://test-wale-chacha.vercel.app/defence-mock-tests',
+    url: 'https://testwalechacha.online/defence-mock-tests',
   },
 };
 
-const SITE_URL = 'https://test-wale-chacha.vercel.app';
+const SITE_URL = 'https://testwalechacha.online';
 
 export default function DefenceMockTestsPage() {
   return (

@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free IBPS PO, SBI PO, Clerk Mock Tests Online | TestWaleChacha',
     description: 'Practice free banking mock tests for IBPS PO, SBI PO, Clerk, and RBI Assistant with real exam interface and detailed solutions.',
-    url: 'https://test-wale-chacha.vercel.app/banking-mock-tests',
+    url: 'https://testwalechacha.online/banking-mock-tests',
   },
 };
 
-const SITE_URL = 'https://test-wale-chacha.vercel.app';
+const SITE_URL = 'https://testwalechacha.online';
 
 export default function BankingMockTestsPage() {
   return (

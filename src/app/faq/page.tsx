@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Get answers to common questions about TestWaleChacha — how to take mock tests, pricing, subscription, exam categories, negative marking, and more. Complete guide for Indian government exam aspirants.',
 };
 
-const BASE_URL = 'https://test-wale-chacha.vercel.app';
+const BASE_URL = 'https://testwalechacha.online';
 const SITE_NAME = 'TestWaleChacha';
 
 export default function FAQPage() {

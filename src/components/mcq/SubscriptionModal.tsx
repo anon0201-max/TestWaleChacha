@@ -78,7 +78,7 @@ export function SubscriptionModal() {
         currency: orderData.currency,
         name: 'TestWaleChacha',
         description: 'Pro Subscription — Unlimited Mock Tests',
-        image: 'https://test-wale-chacha.vercel.app/logo.png',
+        image: 'https://testwalechacha.online/logo.png',
         order_id: orderData.id,
         handler: async function (response: any) {
           // Step 3: Verify payment on backend

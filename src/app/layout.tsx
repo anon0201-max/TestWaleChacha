@@ -7,7 +7,7 @@ import JsonLd from "@/components/JsonLd";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-const SITE_URL = "https://test-wale-chacha.vercel.app";
+const SITE_URL = "https://testwalechacha.online";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Learn how TestWaleChacha collects, uses, and protects your personal data. Read our complete privacy policy including DPDPA 2023 compliance, cookie usage, and user rights.',
 };
 
-const BASE_URL = 'https://test-wale-chacha.vercel.app';
+const BASE_URL = 'https://testwalechacha.online';
 const SITE_NAME = 'TestWaleChacha';
 const EMAIL = 'testwalechacha@gmail.com';
 

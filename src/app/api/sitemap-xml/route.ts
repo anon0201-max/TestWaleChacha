@@ -1,5 +1,5 @@
 export async function GET() {
-  const SITE_URL = 'https://test-wale-chacha.vercel.app';
+  const SITE_URL = 'https://testwalechacha.online';
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Learn about TestWaleChacha — our mission, team, and commitment to helping Indian students crack government exams with free and affordable online mock tests.',
 };
 
-const BASE_URL = 'https://test-wale-chacha.vercel.app';
+const BASE_URL = 'https://testwalechacha.online';
 const SITE_NAME = 'TestWaleChacha';
 const EMAIL = 'testwalechacha@gmail.com';
 

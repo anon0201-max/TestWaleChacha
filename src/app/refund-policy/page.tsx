@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Read the Refund and Cancellation Policy of TestWaleChacha. Understand the conditions for subscription refunds, how to request a refund, and processing timelines.',
 };
 
-const BASE_URL = 'https://test-wale-chacha.vercel.app';
+const BASE_URL = 'https://testwalechacha.online';
 const SITE_NAME = 'TestWaleChacha';
 const EMAIL = 'testwalechacha@gmail.com';
 

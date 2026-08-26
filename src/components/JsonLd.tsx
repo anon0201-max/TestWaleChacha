@@ -1,6 +1,6 @@
 'use client';
 
-const SITE_URL = 'https://test-wale-chacha.vercel.app';
+const SITE_URL = 'https://testwalechacha.online';
 
 const orgJsonLd = {
   '@context': 'https://schema.org',
