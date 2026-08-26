@@ -8,14 +8,6 @@ const nextConfig: NextConfig = {
     "space-z.ai",
     "*.space-z.ai",
   ],
-  async rewrites() {
-    return [
-      {
-        source: "/ads.txt",
-        destination: "/api/ads-txt",
-      },
-    ];
-  },
   async headers() {
     return [
       // Security & SEO headers for all routes
