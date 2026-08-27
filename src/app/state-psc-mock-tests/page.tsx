@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free State PSC Mock Tests Online - BPSC, MPPSC, UPPSC | TestWaleChacha',
     description: 'Practice free State PSC mock tests for BPSC, MPPSC, UPPSC, RPSC, and HPSC with real exam interface and detailed solutions.',
-    url: 'https://testwalechacha.online/state-psc-mock-tests',
+    url: 'https://www.testwalechacha.online/state-psc-mock-tests',
   },
 };
 
-const SITE_URL = 'https://testwalechacha.online';
+const SITE_URL = 'https://www.testwalechacha.online';
 
 export default function StatePSCMockTestsPage() {
   return (

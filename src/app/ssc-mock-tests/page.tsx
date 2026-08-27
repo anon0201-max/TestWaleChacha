@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free SSC CGL, CHSL, MTS Mock Tests Online | TestWaleChacha',
     description: 'Practice free SSC CGL, CHSL, MTS, GD, and Stenographer mock tests online with real exam interface and detailed solutions.',
-    url: 'https://testwalechacha.online/ssc-mock-tests',
+    url: 'https://www.testwalechacha.online/ssc-mock-tests',
   },
 };
 
-const SITE_URL = 'https://testwalechacha.online';
+const SITE_URL = 'https://www.testwalechacha.online';
 
 export default function SSCMockTestsPage() {
   return (

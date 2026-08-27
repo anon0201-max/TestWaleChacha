@@ -27,6 +27,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/?admin=true'],
       },
     ],
-    sitemap: 'https://testwalechacha.online/sitemap.xml',
+    sitemap: 'https://www.testwalechacha.online/sitemap.xml',
   };
 }

@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "test-wale-chacha.vercel.app"
+        }
+      ],
+      "destination": "https://www.testwalechacha.online/$1",
+      "permanent": true
+    }
+  ]
+}

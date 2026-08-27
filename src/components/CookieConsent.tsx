@@ -42,7 +42,7 @@ export function CookieConsent() {
         <p className="text-sm text-gray-300 text-center sm:text-left">
           We use cookies to improve your experience and for Google Ads.{' '}
           <a
-            href="https://testwalechacha.online/privacy-policy"
+            href="https://www.testwalechacha.online/privacy-policy"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-white transition-colors"

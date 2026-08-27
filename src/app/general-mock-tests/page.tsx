@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Free General Studies, GK, Current Affairs Mock Tests | TestWaleChacha',
     description: 'Practice free GK, current affairs, and subject-specific mock tests with real exam interface and detailed solutions.',
-    url: 'https://testwalechacha.online/general-mock-tests',
+    url: 'https://www.testwalechacha.online/general-mock-tests',
   },
 };
 
-const SITE_URL = 'https://testwalechacha.online';
+const SITE_URL = 'https://www.testwalechacha.online';
 
 export default function GeneralMockTestsPage() {
   return (

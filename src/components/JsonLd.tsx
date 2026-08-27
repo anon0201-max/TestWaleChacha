@@ -1,6 +1,6 @@
 'use client';
 
-const SITE_URL = 'https://testwalechacha.online';
+const SITE_URL = 'https://www.testwalechacha.online';
 
 const orgJsonLd = {
   '@context': 'https://schema.org',

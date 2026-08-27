@@ -78,7 +78,7 @@ export function SubscriptionModal() {
         currency: orderData.currency,
         name: 'TestWaleChacha',
         description: 'Pro Subscription — Unlimited Mock Tests',
-        image: 'https://testwalechacha.online/logo.png',
+        image: 'https://www.testwalechacha.online/logo.png',
         order_id: orderData.id,
         handler: async function (response: any) {
           // Step 3: Verify payment on backend

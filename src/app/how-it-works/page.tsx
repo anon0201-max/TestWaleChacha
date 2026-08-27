@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Learn how to use TestWaleChacha for your government exam preparation. Complete step-by-step guide: sign up, take mock tests, review solutions, track performance, and improve your score.',
 };
 
-const BASE_URL = 'https://testwalechacha.online';
+const BASE_URL = 'https://www.testwalechacha.online';
 const SITE_NAME = 'TestWaleChacha';
 
 export default function HowItWorksPage() {
